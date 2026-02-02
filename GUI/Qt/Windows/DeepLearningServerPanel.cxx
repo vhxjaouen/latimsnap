@@ -1,3 +1,4 @@
+#include <QDialogButtonBox>
 #include "DeepLearningServerPanel.h"
 #include "DeepLearningServerEditor.h"
 #include "ui_DeepLearningServerPanel.h"
@@ -24,7 +25,7 @@
 #include <QPainter>
 #include <QPaintDevice>
 #include "DeepLearningConnectionStatusCouplingTraits.h"
-
+#include <QDialogButtonBox>
 /**
  * Traits for mapping status codes to a label
  */
@@ -178,7 +179,7 @@ DeepLearningServerPanel::setupSSHTunnel()
   m_Model->SetTunnelStatus(dls_model::TunnelStatus(dls_model::TUNNEL_ESTABLISHING));
 
   // Start the thread - this means that the server will start connecting
-  qDebug() << "Starting SSH tunnel thread for " << p->GetHostname() << " port " << p->GetPort();
+  qDebug() << "Starting SSH tunnel thread for " << QString::fromStdString(p->GetHostname()) << " port " << p->GetPort();
   m_SSHTunnelWorkerThread->start();
 }
 

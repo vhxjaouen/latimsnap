@@ -235,6 +235,7 @@ class PushButtonWithMenuValueTraits
 public:
   const char *GetSignal()
   {
+  return nullptr;
     // return SIGNAL(toggled(bool));
   }
 

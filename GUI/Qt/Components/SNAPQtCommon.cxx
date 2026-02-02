@@ -1,3 +1,4 @@
+#include <QTimeZone>
 #include "SNAPQtCommon.h"
 #include <QPainter>
 #include <QPixmap>
@@ -18,7 +19,7 @@
 #include <QDateTime>
 #include <QToolButton>
 #include "SNAPQtCommonTranslations.h"
-
+#include <QTimeZone>
 #include "QtCursorOverride.h"
 #include "GlobalUIModel.h"
 #include "SystemInterface.h"

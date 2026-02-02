@@ -1270,12 +1270,12 @@ set_target_properties(${SNAP_BUNDLE_NAME} PROPERTIES INSTALL_RPATH_USE_LINK_PATH
 
 set(QT_I18N_TRANSLATED_LANGUAGES de es zh_CN)
 string(JOIN " " QT_I18N_TRANSLATED_LANGUAGES_STRING ${QT_I18N_TRANSLATED_LANGUAGES})
-qt_add_translations(
-  TARGETS ${SNAP_BUNDLE_NAME}
-  SOURCE_TARGETS itksnapui_qt ${SNAP_BUNDLE_NAME}
-  TS_FILE_DIR GUI/Qt/Translations
-  TS_FILE_BASE itksnap
-)
+#qt_add_translations(
+#  TARGETS ${SNAP_BUNDLE_NAME}
+#  SOURCE_TARGETS itksnapui_qt ${SNAP_BUNDLE_NAME}
+#  TS_FILE_DIR GUI/Qt/Translations
+#  TS_FILE_BASE itksnap
+#)
 
 #--------------------------------------------------------------------------------
 # Testing-related executables
@@ -1585,19 +1585,19 @@ IF(APPLE)
   # Use Qt deployment script to take care of plugins
   set(executable_path "../../../${SNAP_BUNDLE_NAME}.app")
 
-  qt_generate_deploy_script(
-      TARGET ${SNAP_BUNDLE_NAME}
-      OUTPUT_SCRIPT deploy_script
-      CONTENT "
-  qt_deploy_runtime_dependencies(
-      EXECUTABLE \"${executable_path}\"
-      GENERATE_QT_CONF
-  )
-  qt_deploy_translations(
-      CATALOGS qtbase
-      LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
-  )")
-  install(SCRIPT ${deploy_script})
+  #qt_generate_deploy_script(
+  #    TARGET ${SNAP_BUNDLE_NAME}
+  #    OUTPUT_SCRIPT deploy_script
+  #    CONTENT "
+  #qt_deploy_runtime_dependencies(
+  #    EXECUTABLE \"${executable_path}\"
+  #    GENERATE_QT_CONFt
+  #)
+  #qt_deploy_translations(
+  #    CATALOGS qtbase
+  #    LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
+  #)")
+  #install(SCRIPT ${deploy_script})
 
 ELSEIF(WIN32)
 
@@ -1645,19 +1645,19 @@ ELSEIF(WIN32)
   #endif()
 
   # Install with the plugin
-  qt_generate_deploy_script(
-      TARGET ${SNAP_BUNDLE_NAME}
-      OUTPUT_SCRIPT deploy_script
-      CONTENT "
-  qt_deploy_runtime_dependencies(
-      EXECUTABLE \"bin/${SNAP_BUNDLE_NAME}.exe\"
-      GENERATE_QT_CONF
-  )
-  qt_deploy_translations(
-      CATALOGS qtbase
-      LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
-  )")
-  install(SCRIPT ${deploy_script})
+  #  qt_generate_deploy_script(
+  #    TARGET ${SNAP_BUNDLE_NAME}
+  #    OUTPUT_SCRIPT deploy_script
+  #    CONTENT "
+  #qt_deploy_runtime_dependencies(
+  #    EXECUTABLE \"bin/${SNAP_BUNDLE_NAME}.exe\"
+  #    GENERATE_QT_CONF
+  #)
+  #qt_deploy_translations(
+  #    CATALOGS qtbase
+  #    LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
+  #)")
+  #install(SCRIPT ${deploy_script})
 
   # On windows, we have to configure NSIS
   SET(CPACK_NSIS_MUI_ICON "${SNAP_SOURCE_DIR}/Utilities/Win32/snaplogo.ico")
@@ -1720,22 +1720,22 @@ ELSE()
   # Use Qt deployment script to take care of plugins
   set(executable_path "${SNAP_MAIN_INSTALL_DIR}/${SNAP_BUNDLE_NAME}")
 
-  qt_generate_deploy_script(
-      TARGET ${SNAP_BUNDLE_NAME}
-      OUTPUT_SCRIPT deploy_script
-      CONTENT "
-  qt_deploy_runtime_dependencies(
-      EXECUTABLE \"${executable_path}\"
-      GENERATE_QT_CONF
-      LIB_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
-      PLUGINS_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
-      VERBOSE
-  )
-  qt_deploy_translations(
-      CATALOGS qtbase
-      LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
-  )")
-  install(SCRIPT ${deploy_script})
+  # qt_generate_deploy_script(
+  #     TARGET ${SNAP_BUNDLE_NAME}
+  #     OUTPUT_SCRIPT deploy_script
+  #     CONTENT "
+  # qt_deploy_runtime_dependencies(
+  #     EXECUTABLE \"${executable_path}\"
+  #     GENERATE_QT_CONF
+  #     LIB_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
+  #     PLUGINS_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
+  #     VERBOSE
+  # )
+  # qt_deploy_translations(
+  #     CATALOGS qtbase
+  #     LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
+  # )")
+  # install(SCRIPT ${deploy_script})
 
 ENDIF()
 
