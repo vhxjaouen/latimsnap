@@ -1,80 +1,27 @@
-# Utilisation d'Ubuntu 24.04 (Noble Numbat)
-FROM ubuntu:24.04
+FROM ghcr.io/vhxjaouen/latimsnap-base:latest
 
-# Éviter les questions interactives lors de l'installation des paquets
-ENV DEBIAN_FRONTEND=noninteractive
-
-# 1. Installation des dépendances système complètes
+# 2. Install Python, Pip, and dependencies for Torch/Nibabel
 RUN apt-get update && apt-get install -y \
-    build-essential \
-    cmake \
-    git \
-    ninja-build \
-    wget \
-    pkg-config \
-    libcurl4-openssl-dev \
-    # Dépendances Graphiques / X11
-    libgl1-mesa-dev \
-    libglu1-mesa-dev \
-    libxt-dev \
-    libxrender-dev \
-    libxcursor-dev \
-    libxft-dev \
-    libxinerama-dev \
-    libxrandr-dev \
-    libxkbcommon-dev \
-    libxkbcommon-x11-dev \
-    libvulkan-dev \
-    # Dépendances ITK-SNAP spécifiques (vu dans tes logs)
-    libssh-dev \
-    libsqlite3-dev \
-    libexpat1-dev \
-    # Paquets Qt6 vérifiés pour 24.04
-    qt6-base-dev \
-    qt6-base-dev-tools \
-    qt6-base-private-dev \
-    qt6-declarative-dev \
-    qt6-tools-dev \
-    qt6-tools-dev-tools \
-    libqt6opengl6-dev \
-    libqt6svg6-dev \
-    # Pour le debugging et l'outil VS Code
-    gdb \
+    python3-pip \
+    python3-dev \
+    libglib2.0-0 \
     && rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt
+# 3. Install the heavy hitters
+# Note: We use --no-cache-dir to keep the image size down
+RUN pip3 install --break-system-packages --no-cache-dir \
+    nibabel \
+    monai \
+    torchvision \
+    scikit-image \
+    numpy 
 
-# 2. Compilation de VTK 9.3.1 (Version avec TOUS les modules SNAP)
-RUN git clone --branch v9.3.1 https://github.com/Kitware/VTK.git vtk-src && \
-    cmake -S vtk-src -B vtk-build -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DVTK_GROUP_ENABLE_Qt=YES \
-    -DVTK_MODULE_ENABLE_VTK_GUISupportQt=YES \
-    -DVTK_MODULE_ENABLE_VTK_RenderingQt=YES \
-    -DVTK_MODULE_ENABLE_VTK_ViewsQt=YES \
-    -DVTK_MODULE_ENABLE_VTK_GUISupportQtQuick=NO \
-    -DVTK_MODULE_ENABLE_VTK_RenderingExternal=YES \
-    -DVTK_QT_VERSION=6 && \
-    cmake --build vtk-build --target install && \
-    rm -rf vtk-src vtk-build
-
-# 3. Compilation de ITK 5.4.0 (Inclusion des modules de recherche/segmentation)
-RUN git clone --branch v5.4.0 https://github.com/InsightSoftwareConsortium/ITK.git itk-src && \
-    cmake -S itk-src -B itk-build -G Ninja \
-    -DCMAKE_BUILD_TYPE=Release \
-    -DITK_USE_SYSTEM_VTK=ON \
-    -DVTK_DIR=/usr/local/lib/cmake/vtk-9.3 \
-    # Modules critiques pour ITK-SNAP
-    -DModule_ITKReview=ON \
-    -DModule_MorphologicalContourInterpolation=ON \
-    -DITK_LEGACY_REMOVE=OFF \
-    -DITK_BUILD_DEFAULT_MODULES=ON && \
-    cmake --build itk-build --target install && \
-    rm -rf itk-src itk-build
-
-# 4. Variables d'environnement pour le développement
-ENV CXXFLAGS="-fpermissive"
-ENV VTK_DIR="/usr/local/lib/cmake/vtk-9.3"
-ENV ITK_DIR="/usr/local/lib/cmake/ITK-5.4"
-
+# 2. Set the working directory (standard for VS Code)
 WORKDIR /workspaces/latimsnap
+
+ENV LIBGL_ALWAYS_SOFTWARE=1
+ENV QT_X11_NO_MITSHM=1
+ENV QT_XCB_GL_INTEGRATION=xcb_glx
+ENV QT_QUICK_BACKEND=software
+
+# RUN apt-get update && apt-get install -y some-tool

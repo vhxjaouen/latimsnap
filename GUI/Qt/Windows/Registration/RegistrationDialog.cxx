@@ -19,6 +19,7 @@
 #include "ProcessEventsITKCommand.h"
 #include "OptimizationProgressRenderer.h"
 #include "QtVTKRenderWindowBox.h"
+#include "ImageWrapperBase.h"
 
 Q_DECLARE_METATYPE(RegistrationModel::Transformation)
 Q_DECLARE_METATYPE(RegistrationModel::SimilarityMetric)
@@ -279,10 +280,23 @@ void RegistrationDialog::on_btnReslice_clicked()
 
   dialog->setWindowTitle(tr("Reslicing Options - ITK-SNAP"));
 
+  // Check if we are dealing with a vector image
+  bool isVectorImage = false;
+  ImageWrapperBase *wrapper = m_Model->GetMovingLayerWrapper();
+  if (wrapper && !wrapper->IsScalar())
+    {
+    isVectorImage = true;
+    }
+
   // Set up interpolation options
   QComboBox *cbInterp = new QComboBox(dialog);
   cbInterp->addItem(tr("Nearest Neighbor"), QVariant(NEAREST_NEIGHBOR));
   cbInterp->addItem(tr("Linear"), QVariant(TRILINEAR));
+  if(!isVectorImage)
+    {
+    cbInterp->addItem(tr("Cubic (B-Spline)"), QVariant(TRICUBIC));
+    cbInterp->addItem(tr("Sinc (Windowed)"), QVariant(SINC_WINDOW_05));
+    }
   cbInterp->setCurrentIndex(1);
   lo->addRow(tr("&Interpolation:"), cbInterp);
 
@@ -314,8 +328,9 @@ void RegistrationDialog::on_btnReslice_clicked()
   // Get the selected values
   if(dialog->exec() == QDialog::Accepted)
     {
-    bool is_linear = (cbInterp->currentData() == TRILINEAR);
-    m_Model->ResliceMovingImage(is_linear ? TRILINEAR : NEAREST_NEIGHBOR);
+    InterpolationMethod method = (InterpolationMethod)
+        cbInterp->itemData(cbInterp->currentIndex()).toInt();
+    m_Model->ResliceMovingImage(method);
     }
 
   delete dialog;
