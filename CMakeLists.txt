@@ -268,6 +268,7 @@ SET(LOGIC_CXX
   Logic/ImageWrapper/ImageWrapper.cxx
   Logic/ImageWrapper/LabelImageWrapper.cxx
   Logic/ImageWrapper/GuidedNativeImageIO.cxx
+  Logic/ImageWrapper/VTIImageIO.cxx
   Logic/ImageWrapper/MultiChannelDisplayMode.cxx
   Logic/ImageWrapper/MeshDisplayMappingPolicy.cxx
   Logic/ImageWrapper/ScalarImageHistogram.cxx
@@ -387,6 +388,7 @@ SET(LOGIC_HEADERS
   Logic/Framework/UndoDataManager.txx
   Logic/ImageWrapper/DisplayMappingPolicy.h
   Logic/ImageWrapper/GuidedNativeImageIO.h
+  Logic/ImageWrapper/VTIImageIO.h
   Logic/ImageWrapper/ImageWrapper.h
   Logic/ImageWrapper/ImageWrapperBase.h
   Logic/ImageWrapper/ImageWrapperTraits.h
@@ -1305,6 +1307,7 @@ SET(GUI_TESTS
   MeshImport
   MeshWorkspace
   SegmentationMesh
+  4DReplayWithMeshUpdate
   VolumeRendering
   Reloading
   4DToMC
@@ -1397,6 +1400,14 @@ TARGET_LINK_LIBRARIES(logic_api_test ${SNAP_EXTERNAL_LIBS} itksnaplogic)
 TARGET_INCLUDE_DIRECTORIES(logic_api_test PUBLIC ${SNAP_INCLUDE_DIRS})
 
 add_test(NAME IRISApplicationTest COMMAND logic_api_test)
+
+# Test: large-image size guard throws IRISException instead of crashing with SIGBUS
+ADD_EXECUTABLE(TestLargeImageCheck
+    Testing/Logic/TestLargeImageCheck.cxx)
+TARGET_LINK_LIBRARIES(TestLargeImageCheck ${SNAP_EXTERNAL_LIBS} itksnaplogic)
+TARGET_INCLUDE_DIRECTORIES(TestLargeImageCheck PUBLIC ${SNAP_INCLUDE_DIRS})
+
+add_test(NAME TestLargeImageCheck COMMAND TestLargeImageCheck ${TEMP})
 
 # Set up a test for each GUI test
 FOREACH(GUI_TEST ${GUI_TESTS})
