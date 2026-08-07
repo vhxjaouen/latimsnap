@@ -111,6 +111,7 @@ FIND_PACKAGE(Qt6Widgets)
 FIND_PACKAGE(Qt6OpenGL)
 FIND_PACKAGE(Qt6Concurrent)
 FIND_PACKAGE(Qt6Qml)
+FIND_PACKAGE(Qt6Network)
 FIND_PACKAGE(Qt6LinguistTools)
 
 SET(SNAP_QT_INCLUDE_DIRS
@@ -118,6 +119,7 @@ SET(SNAP_QT_INCLUDE_DIRS
   ${Qt6OpenGL_INCLUDE_DIRS}
   ${Qt6Concurrent_INCLUDE_DIRS}
   ${Qt6Qml_INCLUDE_DIRS}
+  ${Qt6Network_INCLUDE_DIRS}
   ${Qt6LinguistTools_INCLUDE_DIRS}
 )
 
@@ -126,6 +128,7 @@ SET(SNAP_QT_LIBRARIES
   Qt6::OpenGL
   Qt6::Concurrent
   Qt6::Qml
+  Qt6::Network
 )
 
 # On Linux the X11Extras library is required

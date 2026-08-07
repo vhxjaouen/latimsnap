@@ -682,6 +682,7 @@ SET(UI_QT_CXX
   GUI/Qt/Components/MetadataInspector.cxx
   GUI/Qt/Components/GeneralLayerInspector.cxx
   GUI/Qt/Components/PaintbrushToolPanel.cxx
+  GUI/Qt/Components/OllamaQAWidget.cxx
   GUI/Qt/Components/PolygonToolPanel.cxx
   GUI/Qt/Components/QActionButton.cxx
   GUI/Qt/Components/QColorButtonWidget.cxx
@@ -791,6 +792,7 @@ SET(UI_MOC_HEADERS
   GUI/Qt/Components/MetadataInspector.h
   GUI/Qt/Components/GeneralLayerInspector.h
   GUI/Qt/Components/PaintbrushToolPanel.h
+  GUI/Qt/Components/OllamaQAWidget.h
   GUI/Qt/Components/PolygonToolPanel.h
   GUI/Qt/Components/QActionButton.h
   GUI/Qt/Components/QColorButtonWidget.h
@@ -919,6 +921,7 @@ SET(UI_FORMS
   GUI/Qt/Components/MetadataInspector.ui
   GUI/Qt/Components/GeneralLayerInspector.ui
   GUI/Qt/Components/PaintbrushToolPanel.ui
+  GUI/Qt/Components/OllamaQAWidget.ui
   GUI/Qt/Components/PolygonToolPanel.ui
   GUI/Qt/Components/QDoubleSliderWithEditor.ui
   GUI/Qt/Components/QtWarningDialog.ui

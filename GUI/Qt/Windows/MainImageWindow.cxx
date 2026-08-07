@@ -29,6 +29,7 @@
 #include "ui_MainImageWindow.h"
 
 #include "MainControlPanel.h"
+#include "OllamaQAWidget.h"
 #include "ImageIOWizard.h"
 #include "ImageIOWizardModel.h"
 #include "GlobalUIModel.h"
@@ -264,6 +265,28 @@ MainImageWindow::MainImageWindow(QWidget *parent) :
   m_RightDockStack->addWidget(m_RegistrationDialog);
 
   this->addDockWidget(Qt::RightDockWidgetArea, m_DockRight);
+
+  // Set up the AI Assistant (Ollama Q&A) dock widget
+  m_DockOllama = new QDockWidget(tr("AI Assistant"), this);
+  m_DockOllama->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
+  m_DockOllama->setFeatures(
+        QDockWidget::DockWidgetFloatable |
+        QDockWidget::DockWidgetMovable |
+        QDockWidget::DockWidgetClosable);
+  m_OllamaWidget = new OllamaQAWidget(this);
+  m_OllamaWidget->SetMainImageWindow(this);
+  m_DockOllama->setWidget(m_OllamaWidget);
+  this->addDockWidget(Qt::RightDockWidgetArea, m_DockOllama);
+  // Start hidden; users can toggle via View menu (dock widget toggle action)
+  m_DockOllama->setVisible(false);
+
+  // Add a toggle action to the Views menu so users can show/hide the panel
+  if (ui->menuViews)
+  {
+    QAction *toggleOllama = m_DockOllama->toggleViewAction();
+    toggleOllama->setText(tr("AI Assistant (Ollama)"));
+    ui->menuViews->addAction(toggleOllama);
+  }
 
   // Set up the recent items panels
   connect(ui->panelRecentImages, SIGNAL(RecentItemSelected(QString)),

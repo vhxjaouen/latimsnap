@@ -56,6 +56,7 @@ class SmoothLabelsDialog;
 class ImageIOWizard;
 class ImageIOWizardModel;
 class DistributedSegmentationDialog;
+class OllamaQAWidget;
 
 class QTimer;
 
@@ -406,6 +407,8 @@ private:
 
   // Left and right docks
   QDockWidget *m_DockLeft, *m_DockRight;
+  QDockWidget *m_DockOllama = nullptr;
+  OllamaQAWidget *m_OllamaWidget = nullptr;
 
   // A stack widget for the right dock
   QStackedWidget *m_RightDockStack;
