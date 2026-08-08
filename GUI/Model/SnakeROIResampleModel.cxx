@@ -110,17 +110,17 @@ void SnakeROIResampleModel::ComputeCachedDomains()
     m_DimensionsDomain[i].Set(1, sz[i]*10, 1);
     }
 
-  // TODO: higher order interpolation methods are currently unsupported for
-  // vector images. This is a problem and should be fixed
-
-  // Set up the interpolation mode map
+  // Set up the interpolation mode map. Higher-order interpolators are wired
+  // through the entire pipeline (IRISApplication::ResampleImage,
+  // ImageWrapper::DeepCopyRegion, etc.) so exposing them here is safe. For
+  // vector images, ITK will still dispatch a per-component B-Spline.
   m_InterpolationModeDomain[NEAREST_NEIGHBOR] =
       "Nearest neighbor (fast)";
   m_InterpolationModeDomain[TRILINEAR] =
       "Linear interpolation (better quality)";
-  // m_InterpolationModeDomain[SNAPSegmentationROISettings::TRICUBIC] =
-  //     "Cubic interpolation (high quality)";
-  // m_InterpolationModeDomain[SNAPSegmentationROISettings::SINC_WINDOW_05] =
+  m_InterpolationModeDomain[TRICUBIC] =
+      "B-Spline order 3 (high quality)";
+  // m_InterpolationModeDomain[SINC_WINDOW_05] =
   //     "Windowed sinc interpolation (best quality)";
 
   m_InterpolationModeModel->SetDomain(m_InterpolationModeDomain);
