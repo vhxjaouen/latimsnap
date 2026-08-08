@@ -48,22 +48,38 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QPushButton" name="btnRefreshModels">
-       <property name="text">
-        <string>↻</string>
-       </property>
-       <property name="toolTip">
-        <string>Refresh model list from server</string>
-       </property>
-       <property name="maximumSize">
-        <size>
-         <width>30</width>
-         <height>16777215</height>
-        </size>
-       </property>
-      </widget>
-     </item>
+      <item>
+       <widget class="QPushButton" name="btnRefreshModels">
+        <property name="text">
+         <string>↻</string>
+        </property>
+        <property name="toolTip">
+         <string>Refresh model list from server</string>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>30</width>
+          <height>16777215</height>
+         </size>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QPushButton" name="btnFreeGpu">
+        <property name="text">
+         <string>🧹</string>
+        </property>
+        <property name="toolTip">
+         <string>Free GPU: unload every model currently resident in the Ollama server's VRAM. Useful before running deformable registration or any other GPU-heavy task. The next chat turn will incur a model-load delay.</string>
+        </property>
+        <property name="maximumSize">
+         <size>
+          <width>30</width>
+          <height>16777215</height>
+         </size>
+        </property>
+       </widget>
+      </item>
     </layout>
    </item>
    <item>
@@ -79,6 +95,19 @@
       <widget class="QCheckBox" name="checkAttachView">
        <property name="text">
         <string>Attach Current View</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkAutoRelease">
+       <property name="text">
+        <string>Auto-release GPU</string>
+       </property>
+       <property name="toolTip">
+        <string>When enabled, ask Ollama to unload the model from VRAM as soon as each reply is complete (keep_alive=0). Prevents the model from camping in GPU memory and blocking other GPU workloads such as pTVreg deformable registration. Disable to keep the model resident between turns for faster subsequent replies.</string>
        </property>
        <property name="checked">
         <bool>true</bool>

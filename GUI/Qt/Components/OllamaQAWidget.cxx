@@ -54,6 +54,8 @@ OllamaQAWidget::OllamaQAWidget(QWidget *parent)
   connect(ui->btnClear, &QPushButton::clicked, this, &OllamaQAWidget::onClearClicked);
   connect(ui->btnRefreshModels, &QPushButton::clicked,
           this, &OllamaQAWidget::onRefreshModelsClicked);
+  connect(ui->btnFreeGpu, &QPushButton::clicked,
+          this, &OllamaQAWidget::onFreeGpuClicked);
   connect(ui->editServer, &QLineEdit::editingFinished,
           this, &OllamaQAWidget::onServerUrlChanged);
 
@@ -231,6 +233,13 @@ OllamaQAWidget::onSendClicked()
   body["messages"] = m_Messages;
   body["stream"]   = true;
 
+  // Prevent the model from camping in VRAM once the reply is done. This is
+  // the primary mechanism to keep the GPU available for pTVreg and other
+  // GPU-heavy workflows. Users can disable via the checkbox for a snappier
+  // multi-turn UX at the cost of GPU residency.
+  if (ui->checkAutoRelease->isChecked())
+    body["keep_alive"] = 0;
+
   QJsonDocument doc(body);
   QByteArray payload = doc.toJson(QJsonDocument::Compact);
 
@@ -239,6 +248,7 @@ OllamaQAWidget::onSendClicked()
   req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
   m_LineBuffer.clear();
+  m_InFlightModel = model;
   m_Reply = m_Network->post(req, payload);
 
   connect(m_Reply, &QNetworkReply::readyRead, this, &OllamaQAWidget::onReadyRead);
@@ -307,6 +317,7 @@ OllamaQAWidget::onFinished()
 
   m_Reply->deleteLater();
   m_Reply = nullptr;
+  m_InFlightModel.clear();
   setBusy(false);
 }
 
@@ -328,6 +339,15 @@ OllamaQAWidget::onStopClicked()
   if (m_Reply)
   {
     m_Reply->abort();
+  }
+  // Aborting the QNetworkReply only closes the client side of the stream;
+  // Ollama's server keeps generating until it hits done, and the model
+  // remains resident in VRAM. Force an explicit unload so the GPU is freed
+  // as soon as the abort is acknowledged.
+  if (!m_InFlightModel.isEmpty())
+  {
+    requestModelUnload(m_InFlightModel);
+    m_InFlightModel.clear();
   }
 }
 
@@ -461,4 +481,150 @@ OllamaQAWidget::onModelsFetchError()
   ui->btnRefreshModels->setEnabled(true);
 
   // finished() will still fire and take care of deleteLater.
+}
+
+// ===========================================================================
+// Free GPU: query /api/ps to enumerate loaded models, then unload each.
+// ===========================================================================
+
+void
+OllamaQAWidget::onFreeGpuClicked()
+{
+  QString server = ui->editServer->text().trimmed();
+  if (server.isEmpty())
+  {
+    ui->labelStatus->setText("Error: server URL is empty.");
+    return;
+  }
+
+  if (m_PsReply)
+  {
+    // A previous free-GPU sequence is already probing the server.
+    return;
+  }
+
+  ui->btnFreeGpu->setEnabled(false);
+  ui->labelStatus->setText("Querying loaded models...");
+
+  QUrl url(server + "/api/ps");
+  QNetworkRequest req(url);
+  m_PsReply = m_Network->get(req);
+
+  connect(m_PsReply, &QNetworkReply::finished,
+          this, &OllamaQAWidget::onPsFetched);
+}
+
+void
+OllamaQAWidget::onPsFetched()
+{
+  if (!m_PsReply)
+    return;
+
+  QNetworkReply::NetworkError netErr = m_PsReply->error();
+  QByteArray data = m_PsReply->readAll();
+  m_PsReply->deleteLater();
+  m_PsReply = nullptr;
+
+  if (netErr != QNetworkReply::NoError)
+  {
+    ui->labelStatus->setText("Error: could not query /api/ps.");
+    ui->btnFreeGpu->setEnabled(true);
+    return;
+  }
+
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson(data, &err);
+  if (err.error != QJsonParseError::NoError || !doc.isObject())
+  {
+    ui->labelStatus->setText("Error: invalid response from /api/ps.");
+    ui->btnFreeGpu->setEnabled(true);
+    return;
+  }
+
+  QJsonArray models = doc.object().value("models").toArray();
+  if (models.isEmpty())
+  {
+    ui->labelStatus->setText("Nothing to unload — no models resident.");
+    ui->btnFreeGpu->setEnabled(true);
+    return;
+  }
+
+  m_PendingUnloads = 0;
+  m_UnloadedSummary.clear();
+
+  for (const QJsonValue &v : models)
+  {
+    QJsonObject o = v.toObject();
+    QString name = o.value("name").toString();
+    if (name.isEmpty())
+      continue;
+
+    qint64 bytes = static_cast<qint64>(o.value("size_vram").toDouble(0.0));
+    QString sizeStr;
+    if (bytes >= (1LL << 30))
+      sizeStr = QString("%1 GB").arg(bytes / double(1LL << 30), 0, 'f', 1);
+    else if (bytes > 0)
+      sizeStr = QString("%1 MB").arg(bytes / double(1LL << 20), 0, 'f', 0);
+
+    m_UnloadedSummary << (sizeStr.isEmpty()
+                            ? name
+                            : QString("%1 (%2)").arg(name, sizeStr));
+    m_PendingUnloads += 1;
+    requestModelUnload(name);
+  }
+
+  if (m_PendingUnloads == 0)
+  {
+    ui->labelStatus->setText("Nothing to unload.");
+    ui->btnFreeGpu->setEnabled(true);
+  }
+}
+
+void
+OllamaQAWidget::requestModelUnload(const QString &modelName)
+{
+  QString server = ui->editServer->text().trimmed();
+  if (server.isEmpty() || modelName.isEmpty())
+    return;
+
+  // POST /api/generate with keep_alive=0 and an empty prompt is Ollama's
+  // documented way to unload a model without a chat turn. The server
+  // responds almost immediately.
+  QJsonObject body;
+  body["model"]      = modelName;
+  body["prompt"]     = "";
+  body["keep_alive"] = 0;
+  body["stream"]     = false;
+
+  QUrl url(server + "/api/generate");
+  QNetworkRequest req(url);
+  req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  QNetworkReply *reply = m_Network->post(
+    req, QJsonDocument(body).toJson(QJsonDocument::Compact));
+  connect(reply, &QNetworkReply::finished,
+          this,  &OllamaQAWidget::onUnloadFinished);
+}
+
+void
+OllamaQAWidget::onUnloadFinished()
+{
+  QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+  if (reply)
+    reply->deleteLater();
+
+  if (m_PendingUnloads > 0)
+    m_PendingUnloads -= 1;
+
+  if (m_PendingUnloads <= 0)
+  {
+    m_PendingUnloads = 0;
+    ui->btnFreeGpu->setEnabled(true);
+    if (!m_UnloadedSummary.isEmpty())
+    {
+      ui->labelStatus->setText(
+        QString("Freed VRAM: %1").arg(m_UnloadedSummary.join(", ")));
+      m_UnloadedSummary.clear();
+    }
+  }
 }

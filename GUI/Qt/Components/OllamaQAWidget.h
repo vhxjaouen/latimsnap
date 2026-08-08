@@ -63,6 +63,9 @@ private slots:
   void onServerUrlChanged();
   void onModelsFetched();
   void onModelsFetchError();
+  void onFreeGpuClicked();
+  void onPsFetched();
+  void onUnloadFinished();
 
 private:
   Ui::OllamaQAWidget *ui;
@@ -70,7 +73,18 @@ private:
   QNetworkAccessManager *m_Network = nullptr;
   QNetworkReply         *m_Reply = nullptr;
   QNetworkReply         *m_ModelsReply = nullptr;
+  QNetworkReply         *m_PsReply = nullptr;
   MainImageWindow       *m_MainWindow = nullptr;
+
+  // Model name of the request currently in flight; used to force an unload
+  // when the user aborts a stream so VRAM does not stay pinned until the
+  // Ollama keep_alive TTL expires server-side.
+  QString m_InFlightModel;
+
+  // Number of unload requests still pending after a "Free GPU" click.
+  int m_PendingUnloads = 0;
+  // Human-readable list of models freed during the current unload batch.
+  QStringList m_UnloadedSummary;
 
   // Conversation history stored as an array of {role, content, images?} objects.
   QJsonArray m_Messages;
@@ -87,6 +101,12 @@ private:
   QString encodeImageBase64(const QImage &img) const;
   void setBusy(bool busy);
   void fetchModels();
+
+  // Issue POST /api/generate {"model": <name>, "keep_alive": 0} to force
+  // Ollama to release VRAM for a specific model. Fire-and-forget: the
+  // finished signal is routed to onUnloadFinished so we can update the
+  // status label once every pending unload has replied.
+  void requestModelUnload(const QString &modelName);
 };
 
 #endif // OLLAMAQAWIDGET_H
