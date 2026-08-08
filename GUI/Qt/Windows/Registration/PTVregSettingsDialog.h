@@ -6,6 +6,7 @@
 class QCheckBox;
 class QComboBox;
 class QDoubleSpinBox;
+class QGroupBox;
 class QLabel;
 class QLineEdit;
 class QPushButton;
@@ -53,6 +54,7 @@ private:
   QCheckBox      *m_chkVfcNormalize;
   QLabel         *m_lblVfcRadius;
   QLabel         *m_lblVfcBeta;
+  QGroupBox      *m_GrpVfc = nullptr;
 
   // Penalties & boundary
   QDoubleSpinBox *m_spinLambdaJac;

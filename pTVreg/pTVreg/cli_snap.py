@@ -129,18 +129,25 @@ def main():
                 np.float32
             )
 
-        # Intensity clipping (typical use: lung CT --clip 80 900)
+        # Intensity clipping (typical use: lung CT --clip 80 900).
+        # When --clip is supplied we normalise using the clip window itself as
+        # the intensity range, matching MATLAB's img_thr(vol, cl_min, cl_max, 1)
+        # (see pTVreg/matlab/examples_ptv/COPD_final.m). Without --clip we
+        # fall back to the per-image min/max range.
         if args.clip:
             cl_min, cl_max = args.clip
-            print(f"Clipping intensities to [{cl_min}, {cl_max}]")
+            print(f"Clipping intensities to [{cl_min}, {cl_max}] and normalising to [0,1]")
             fixed_data = np.clip(fixed_data, cl_min, cl_max)
             moving_data = np.clip(moving_data, cl_min, cl_max)
-
-        # Normalize intensities to [0,1] to match cli.py behaviour
-        fixed_data = (fixed_data - np.min(fixed_data)) / (np.ptp(fixed_data) + 1e-8)
-        moving_data = (moving_data - np.min(moving_data)) / (
-            np.ptp(moving_data) + 1e-8
-        )
+            denom = max(float(cl_max) - float(cl_min), 1e-8)
+            fixed_data = (fixed_data - float(cl_min)) / denom
+            moving_data = (moving_data - float(cl_min)) / denom
+        else:
+            # Normalise using each image's own min/max so intensities lie in [0,1].
+            fixed_data = (fixed_data - np.min(fixed_data)) / (np.ptp(fixed_data) + 1e-8)
+            moving_data = (moving_data - np.min(moving_data)) / (
+                np.ptp(moving_data) + 1e-8
+            )
 
         orig_shape = fixed_data.shape
 

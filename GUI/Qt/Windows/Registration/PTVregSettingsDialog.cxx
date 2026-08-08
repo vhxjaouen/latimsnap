@@ -89,7 +89,7 @@ void PTVregSettingsDialog::BuildUi()
   m_comboMetric->addItem(tr("Sum of Squared Differences (SSD)"), "ssd");
   m_comboMetric->addItem(tr("Nuclear Norm"), "nuclear");
   m_comboMetric->addItem(tr("Expected Mean Squared Error (EMSE)"), "emse");
-  m_comboMetric->addItem(tr("Vector Field Consensus (VFC)"), "vfc");
+  m_comboMetric->addItem(tr("Vector Field Convolution (VFC)"), "vfc");
   m_comboMetric->setToolTip(
     tr("Similarity metric optimised by pTVreg."));
   connect(m_comboMetric, QOverload<int>::of(&QComboBox::currentIndexChanged),
@@ -105,8 +105,8 @@ void PTVregSettingsDialog::BuildUi()
     tr("LCC Gaussian sigma in millimetres. Typical range 1.5–4."));
   lmet->addRow(tr("Metric parameter (--metric_param):"), m_spinMetricParam);
 
-  QGroupBox *grpVfc = new QGroupBox(tr("Vector Field Consensus (VFC)"));
-  QFormLayout *lvfc = new QFormLayout(grpVfc);
+  m_GrpVfc = new QGroupBox(tr("Vector Field Convolution (VFC)"));
+  QFormLayout *lvfc = new QFormLayout(m_GrpVfc);
 
   m_spinVfcRadius = new QDoubleSpinBox;
   m_spinVfcRadius->setRange(0.1, 500.0);
@@ -138,7 +138,7 @@ void PTVregSettingsDialog::BuildUi()
     tr("Makes the metric purely directional."));
   lvfc->addRow(m_chkVfcNormalize);
 
-  lmet->addRow(grpVfc);
+  lmet->addRow(m_GrpVfc);
 
   m_tabs->addTab(pageMetric, tr("Metric && VFC"));
 
@@ -333,10 +333,15 @@ void PTVregSettingsDialog::onMetricChanged(int)
 void PTVregSettingsDialog::RefreshVfcVisibility()
 {
   const bool isVfc = (m_comboMetric->currentData().toString() == "vfc");
-  m_spinVfcRadius->setEnabled(isVfc);
-  m_spinVfcBeta->setEnabled(isVfc);
-  m_chkVfcSignInvariant->setEnabled(isVfc);
-  m_chkVfcNormalize->setEnabled(isVfc);
+  // Hide the whole VFC group when a non-VFC metric is selected so the tab is
+  // not cluttered with widgets that have no effect.
+  if(m_GrpVfc) m_GrpVfc->setVisible(isVfc);
+  m_spinVfcRadius->setVisible(isVfc);
+  m_spinVfcBeta->setVisible(isVfc);
+  m_chkVfcSignInvariant->setVisible(isVfc);
+  m_chkVfcNormalize->setVisible(isVfc);
+  if(m_lblVfcRadius) m_lblVfcRadius->setVisible(isVfc);
+  if(m_lblVfcBeta)   m_lblVfcBeta->setVisible(isVfc);
 }
 
 void PTVregSettingsDialog::onAccept()

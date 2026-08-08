@@ -1426,13 +1426,17 @@ PTVregSettings::PTVregSettings()
 
 void PTVregSettings::ResetToDefaults()
 {
-  gridSpacing         = 8;
+  // Defaults chosen to match the reference MATLAB pipeline
+  // (pTVreg/matlab/examples_ptv/COPD_final.m) and the paper
+  // "Isotropic Total Variation Regularization of Displacements in
+  // Parametric Image Registration".
+  gridSpacing         = 4;      // COPD_final.m: opts.grid_spacing = [4,4,4]
   scaleFactor         = 1.0;
-  iterations          = "100";
-  lambdaReg           = "0.15";
+  iterations          = "80";   // COPD_final.m: opts.max_iters = 80
+  lambdaReg           = "0.11"; // COPD_final.m: opts.isoTV = 0.11
 
-  metric              = "lcc";
-  metricParam         = 2.1;
+  metric              = "lcc";  // paper: LCC image metric
+  metricParam         = 2.1;    // COPD_final.m: opts.metric_param = 2.1
 
   vfcRadius           = 15.0;
   vfcBeta             = 2.0;
@@ -1497,26 +1501,29 @@ QStringList PTVregSettings::ToCliArguments(
          << QString::number(clipMax, 'g', 6);
     }
 
-  // VFC parameters — always passed. cli_snap.py ignores them for other
-  // metrics so it's safe.
-  args << "--vfc-radius" << QString::number(vfcRadius, 'g', 6);
-  args << "--vfc-beta"   << QString::number(vfcBeta,   'g', 6);
-  if(vfcSignInvariant) args << "--vfc-sign-invariant";
-  if(vfcNormalize)     args << "--vfc-normalize";
-
-  // Label-guided soft-Dice.
-  args << "--dice-weight" << QString::number(diceWeight, 'g', 6);
-  if(fixedLabelsLayerId && resolver)
+  // VFC parameters — only passed when the metric is actually VFC. Emitting
+  // them for LCC/SSD/etc. is harmless (cli_snap.py ignores them) but clutters
+  // the log and creates a false coupling.
+  if(metric == "vfc")
     {
-    QString path = resolver(fixedLabelsLayerId);
-    if(!path.isEmpty())
-      args << "--fixed-labels" << path;
+    args << "--vfc-radius" << QString::number(vfcRadius, 'g', 6);
+    args << "--vfc-beta"   << QString::number(vfcBeta,   'g', 6);
+    if(vfcSignInvariant) args << "--vfc-sign-invariant";
+    if(vfcNormalize)     args << "--vfc-normalize";
     }
-  if(movingLabelsLayerId && resolver)
+
+  // Label-guided soft-Dice — only meaningful when both label layers are
+  // provided. Skip the --dice-weight noise otherwise.
+  if(fixedLabelsLayerId && movingLabelsLayerId && resolver)
     {
-    QString path = resolver(movingLabelsLayerId);
-    if(!path.isEmpty())
-      args << "--moving-labels" << path;
+    QString pathF = resolver(fixedLabelsLayerId);
+    QString pathM = resolver(movingLabelsLayerId);
+    if(!pathF.isEmpty() && !pathM.isEmpty())
+      {
+      args << "--dice-weight" << QString::number(diceWeight, 'g', 6);
+      args << "--fixed-labels"  << pathF;
+      args << "--moving-labels" << pathM;
+      }
     }
 
   return args;

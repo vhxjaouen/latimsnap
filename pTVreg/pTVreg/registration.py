@@ -487,7 +487,17 @@ class PTVRegistration(nn.Module):
                     self.knots = nn.Parameter(upsampled_knots)
             
             # 2. Setup Optimizer
-            optimizer = optim.LBFGS([self.knots], lr=lr, max_iter=n_iters, line_search_fn='strong_wolfe')
+            # Tolerances tuned to match the MATLAB reference
+            # (ptv_register.m: optTol=1e-8, progTol≈1e-4/pix_res). Removing
+            # the historical loss * 1e4 scale means the loss magnitude is now
+            # in the same regime as the MATLAB objective, so tighter
+            # tolerances are needed to keep LBFGS from early-stopping.
+            optimizer = optim.LBFGS(
+                [self.knots], lr=lr, max_iter=n_iters,
+                line_search_fn='strong_wolfe',
+                tolerance_grad=1e-10,
+                tolerance_change=1e-12,
+            )
             
             # 3. Optimization Loop
             # Track LBFGS internal iteration so ``iter_callback`` fires once per
@@ -499,9 +509,7 @@ class PTVRegistration(nn.Module):
                 warped, flow = self.forward(i)
                 fixed_curr = self.fixed_pyramid[i] if self.fixed_pyramid else None
                 loss, m_loss, tv, _ = self.compute_loss(warped, fixed_curr, flow, i)
-                # Scale loss to avoid early stopping in LBFGS due to small gradients
-                scaled_loss = loss * 1e4
-                scaled_loss.backward()
+                loss.backward()
 
                 if iter_callback is not None:
                     # LBFGS exposes its internal iteration count via state.
@@ -517,7 +525,7 @@ class PTVRegistration(nn.Module):
                             iter_callback(i, n_iter, float(m_loss.item()))
                         except Exception:
                             pass
-                return scaled_loss
+                return loss
 
             # LBFGS runs internally for multiple iterations
             for epoch in range(1):
