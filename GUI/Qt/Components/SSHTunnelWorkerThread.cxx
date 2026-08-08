@@ -64,14 +64,14 @@ SSHTunnelWorkerThread::callback(CallbackType ctype, CallbackInfo info)
     case SSHTunnel::CB_ERROR:
     {
       auto message = std::get<SSHTunnel::ErrorInfo>(info).error_message;
-      qCritical() << "ERROR: " << message;
+      qCritical() << "ERROR: " << message.c_str();
       emit tunnelError(QString::fromStdString(message));
       break;
     }
     case SSHTunnel::CB_WARNING:
     {
       auto message = std::get<SSHTunnel::ErrorInfo>(info).error_message;
-      qWarning() << "WARNING: " << message;
+      qWarning() << "WARNING: " << message.c_str();
       emit tunnelError(QString::fromStdString(message));
       break;
     }
@@ -79,7 +79,7 @@ SSHTunnelWorkerThread::callback(CallbackType ctype, CallbackInfo info)
     {
       auto ready_info = std::get<SSHTunnel::ReadyInfo>(info);
       emit tunnelReady(ready_info.local_port);
-      qInfo() << "TUNNEL RUNNING ON HOST " << ready_info.hostname << " PORT " << ready_info.local_port;
+      qInfo() << "TUNNEL RUNNING ON HOST " << ready_info.hostname.c_str() << " PORT " << ready_info.local_port;
       break;
     }
     case SSHTunnel::CB_PROMPT_PASSWORD:

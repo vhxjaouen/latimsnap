@@ -32,6 +32,10 @@
 #include <QDateTime>
 #include <QScrollBar>
 #include <QMessageBox>
+#include <QLineEdit>
+#include <QPushButton>
+#include <QComboBox>
+#include <QStringList>
 
 OllamaQAWidget::OllamaQAWidget(QWidget *parent)
   : QWidget(parent)
@@ -39,23 +43,27 @@ OllamaQAWidget::OllamaQAWidget(QWidget *parent)
 {
   ui->setupUi(this);
 
-  // Default models list. User can freely edit the combo since it is editable.
-  ui->comboModel->addItem("gemma4");
-  ui->comboModel->addItem("llava");
-  ui->comboModel->addItem("llama3.2-vision");
-  ui->comboModel->addItem("llama3");
-  ui->comboModel->setCurrentText("gemma4");
+  // Placeholder items shown until we successfully talk to the server.
+  ui->comboModel->addItem("(fetching models...)");
+  ui->comboModel->setCurrentIndex(0);
 
   m_Network = new QNetworkAccessManager(this);
 
   connect(ui->btnSend,  &QPushButton::clicked, this, &OllamaQAWidget::onSendClicked);
   connect(ui->btnStop,  &QPushButton::clicked, this, &OllamaQAWidget::onStopClicked);
   connect(ui->btnClear, &QPushButton::clicked, this, &OllamaQAWidget::onClearClicked);
+  connect(ui->btnRefreshModels, &QPushButton::clicked,
+          this, &OllamaQAWidget::onRefreshModelsClicked);
+  connect(ui->editServer, &QLineEdit::editingFinished,
+          this, &OllamaQAWidget::onServerUrlChanged);
 
   ui->chatDisplay->setHtml("<i style='color:gray'>AI Assistant ready. "
                            "Type a question and click Send. "
                            "Enable <b>Attach Current View</b> to send the "
                            "displayed view to a Vision-Language Model.</i>");
+
+  // Attempt an initial model list fetch from the default server.
+  fetchModels();
 }
 
 OllamaQAWidget::~OllamaQAWidget()
@@ -64,6 +72,11 @@ OllamaQAWidget::~OllamaQAWidget()
   {
     m_Reply->abort();
     m_Reply->deleteLater();
+  }
+  if (m_ModelsReply)
+  {
+    m_ModelsReply->abort();
+    m_ModelsReply->deleteLater();
   }
   delete ui;
 }
@@ -325,4 +338,127 @@ OllamaQAWidget::onClearClicked()
   m_CurrentAssistantText.clear();
   ui->chatDisplay->clear();
   ui->chatDisplay->setHtml("<i style='color:gray'>Chat history cleared.</i>");
+}
+
+void
+OllamaQAWidget::onRefreshModelsClicked()
+{
+  fetchModels();
+}
+
+void
+OllamaQAWidget::onServerUrlChanged()
+{
+  fetchModels();
+}
+
+void
+OllamaQAWidget::fetchModels()
+{
+  QString server = ui->editServer->text().trimmed();
+  if (server.isEmpty())
+  {
+    ui->labelStatus->setText("Error: server URL is empty.");
+    return;
+  }
+
+  // Cancel any in-flight model list request.
+  if (m_ModelsReply)
+  {
+    m_ModelsReply->disconnect(this);
+    m_ModelsReply->abort();
+    m_ModelsReply->deleteLater();
+    m_ModelsReply = nullptr;
+  }
+
+  ui->labelStatus->setText("Contacting Ollama server...");
+  ui->btnRefreshModels->setEnabled(false);
+
+  QUrl url(server + "/api/tags");
+  QNetworkRequest req(url);
+  m_ModelsReply = m_Network->get(req);
+
+  connect(m_ModelsReply, &QNetworkReply::finished,
+          this, &OllamaQAWidget::onModelsFetched);
+  connect(m_ModelsReply, &QNetworkReply::errorOccurred,
+          this, &OllamaQAWidget::onModelsFetchError);
+}
+
+void
+OllamaQAWidget::onModelsFetched()
+{
+  if (!m_ModelsReply)
+    return;
+
+  ui->btnRefreshModels->setEnabled(true);
+
+  // If the reply errored out, onModelsFetchError already reported it; but
+  // this finished() slot still fires. Bail out if there was an error.
+  if (m_ModelsReply->error() != QNetworkReply::NoError)
+  {
+    m_ModelsReply->deleteLater();
+    m_ModelsReply = nullptr;
+    return;
+  }
+
+  QByteArray data = m_ModelsReply->readAll();
+  m_ModelsReply->deleteLater();
+  m_ModelsReply = nullptr;
+
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson(data, &err);
+  if (err.error != QJsonParseError::NoError || !doc.isObject())
+  {
+    ui->labelStatus->setText("Error: invalid response from Ollama server.");
+    return;
+  }
+
+  QJsonArray models = doc.object().value("models").toArray();
+
+  // Preserve the currently selected/edited model name so we can restore it
+  // if it still exists on the server.
+  QString previous = ui->comboModel->currentText().trimmed();
+
+  ui->comboModel->clear();
+
+  QStringList names;
+  for (const QJsonValue &v : models)
+  {
+    QJsonObject o = v.toObject();
+    QString name = o.value("name").toString();
+    if (!name.isEmpty())
+      names << name;
+  }
+
+  if (names.isEmpty())
+  {
+    ui->comboModel->addItem("(no models installed)");
+    ui->labelStatus->setText(
+      "Connected, but no models are installed on the server.");
+    return;
+  }
+
+  ui->comboModel->addItems(names);
+
+  int idx = names.indexOf(previous);
+  if (idx >= 0)
+    ui->comboModel->setCurrentIndex(idx);
+  else
+    ui->comboModel->setCurrentIndex(0);
+
+  ui->labelStatus->setText(
+    QString("Connected. %1 model(s) available.").arg(names.size()));
+}
+
+void
+OllamaQAWidget::onModelsFetchError()
+{
+  if (!m_ModelsReply)
+    return;
+
+  QString err = m_ModelsReply->errorString();
+  ui->labelStatus->setText(QString("Error contacting Ollama: %1").arg(err));
+  ui->btnRefreshModels->setEnabled(true);
+
+  // finished() will still fire and take care of deleteLater.
 }

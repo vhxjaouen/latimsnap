@@ -16,6 +16,7 @@
 #include <QGraphicsScene>
 #include <QGraphicsDropShadowEffect>
 #include <QDateTime>
+#include <QTimeZone>
 #include <QToolButton>
 #include "SNAPQtCommonTranslations.h"
 

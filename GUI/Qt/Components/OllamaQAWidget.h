@@ -59,12 +59,17 @@ private slots:
   void onReadyRead();
   void onFinished();
   void onErrorOccurred();
+  void onRefreshModelsClicked();
+  void onServerUrlChanged();
+  void onModelsFetched();
+  void onModelsFetchError();
 
 private:
   Ui::OllamaQAWidget *ui;
 
   QNetworkAccessManager *m_Network = nullptr;
   QNetworkReply         *m_Reply = nullptr;
+  QNetworkReply         *m_ModelsReply = nullptr;
   MainImageWindow       *m_MainWindow = nullptr;
 
   // Conversation history stored as an array of {role, content, images?} objects.
@@ -81,6 +86,7 @@ private:
   QImage grabCurrentView() const;
   QString encodeImageBase64(const QImage &img) const;
   void setBusy(bool busy);
+  void fetchModels();
 };
 
 #endif // OLLAMAQAWIDGET_H

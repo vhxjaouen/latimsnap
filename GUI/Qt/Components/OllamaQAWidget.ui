@@ -48,6 +48,22 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="btnRefreshModels">
+       <property name="text">
+        <string>↻</string>
+       </property>
+       <property name="toolTip">
+        <string>Refresh model list from server</string>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>30</width>
+         <height>16777215</height>
+        </size>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>

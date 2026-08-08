@@ -10,6 +10,7 @@
 #include "GlobalUIModel.h"
 #include <QtConcurrent>
 #include <QtCore>
+#include <QDialogButtonBox>
 
 #include <QTcpSocket>
 #include <QTcpServer>
@@ -178,7 +179,7 @@ DeepLearningServerPanel::setupSSHTunnel()
   m_Model->SetTunnelStatus(dls_model::TunnelStatus(dls_model::TUNNEL_ESTABLISHING));
 
   // Start the thread - this means that the server will start connecting
-  qDebug() << "Starting SSH tunnel thread for " << p->GetHostname() << " port " << p->GetPort();
+  qDebug() << "Starting SSH tunnel thread for " << p->GetHostname().c_str() << " port " << p->GetPort();
   m_SSHTunnelWorkerThread->start();
 }
 
