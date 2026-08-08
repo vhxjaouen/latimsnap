@@ -767,6 +767,7 @@ SET(UI_QT_CXX
   GUI/Qt/Windows/MeshImportWizard/MeshImportWizard.cxx
   GUI/Qt/Windows/MeshImportWizard/MeshImportFileSelectionPage.cxx
   GUI/Qt/Windows/Registration/RegistrationDialog.cxx
+  GUI/Qt/Windows/Registration/PTVregSettingsDialog.cxx
   Testing/GUI/Qt/SNAPTestQt.cxx
 )
 
@@ -871,6 +872,7 @@ SET(UI_MOC_HEADERS
   GUI/Qt/Windows/MeshImportWizard/MeshImportWizard.h
   GUI/Qt/Windows/MeshImportWizard/MeshImportFileSelectionPage.h
   GUI/Qt/Windows/Registration/RegistrationDialog.h
+  GUI/Qt/Windows/Registration/PTVregSettingsDialog.h
   Testing/GUI/Qt/SNAPTestQt.h
 )
 
@@ -1276,7 +1278,7 @@ set_target_properties(${SNAP_BUNDLE_NAME} PROPERTIES INSTALL_RPATH_USE_LINK_PATH
 set(QT_I18N_TRANSLATED_LANGUAGES de es zh_CN)
 string(JOIN " " QT_I18N_TRANSLATED_LANGUAGES_STRING ${QT_I18N_TRANSLATED_LANGUAGES})
 qt_add_translations(
-  TARGETS ${SNAP_BUNDLE_NAME}
+  ${SNAP_BUNDLE_NAME}
   SOURCE_TARGETS itksnapui_qt ${SNAP_BUNDLE_NAME}
   TS_FILE_DIR GUI/Qt/Translations
   TS_FILE_BASE itksnap
@@ -1734,22 +1736,41 @@ ELSE()
   # Use Qt deployment script to take care of plugins
   set(executable_path "${SNAP_MAIN_INSTALL_DIR}/${SNAP_BUNDLE_NAME}")
 
-  qt_generate_deploy_script(
-      TARGET ${SNAP_BUNDLE_NAME}
-      OUTPUT_SCRIPT deploy_script
-      CONTENT "
-  qt_deploy_runtime_dependencies(
-      EXECUTABLE \"${executable_path}\"
-      GENERATE_QT_CONF
-      LIB_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
-      PLUGINS_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
-      VERBOSE
-  )
-  qt_deploy_translations(
-      CATALOGS qtbase
-      LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
-  )")
-  install(SCRIPT ${deploy_script})
+  if(COMMAND qt_generate_deploy_script)
+    qt_generate_deploy_script(
+        TARGET ${SNAP_BUNDLE_NAME}
+        OUTPUT_SCRIPT deploy_script
+        CONTENT "
+    qt_deploy_runtime_dependencies(
+        EXECUTABLE \"${executable_path}\"
+        GENERATE_QT_CONF
+        LIB_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
+        PLUGINS_DIR \"${SNAP_MAIN_INSTALL_DIR}\"
+        VERBOSE
+    )
+    qt_deploy_translations(
+        CATALOGS qtbase
+        LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
+    )
+    "
+    )
+    install(SCRIPT ${deploy_script})
+  endif()
+
+  # Install the pTVreg Python package alongside the ITK-SNAP binary so that
+  # the "Deformable (pTVreg)" workflow can locate ``cli_snap.py`` at runtime.
+  if(EXISTS "${CMAKE_SOURCE_DIR}/pTVreg")
+    install(DIRECTORY "${CMAKE_SOURCE_DIR}/pTVreg"
+            DESTINATION "${SNAP_MAIN_INSTALL_DIR}"
+            PATTERN "__pycache__" EXCLUDE
+            PATTERN "*.pyc" EXCLUDE
+            PATTERN ".venv" EXCLUDE
+            PATTERN "venv" EXCLUDE
+            PATTERN ".git" EXCLUDE
+            PATTERN "runs" EXCLUDE
+            PATTERN "playground" EXCLUDE
+            PATTERN "matlab" EXCLUDE)
+  endif()
 
 ENDIF()
 

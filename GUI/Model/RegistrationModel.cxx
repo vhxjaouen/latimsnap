@@ -98,6 +98,16 @@ RegistrationModel::RegistrationModel()
   m_Driver = NULL;
   m_Parent = NULL;
   m_GreedyAPI = NULL;
+
+  // Deformable pTVreg state
+  m_DeformableProcess          = NULL;
+  m_DeformableLogWidget        = NULL;
+  m_DeformableStatusLabel      = NULL;
+  m_DeformableProgressBar      = NULL;
+  m_DeformablePreviewWrapper   = NULL;
+  m_DeformableFixedWrapper     = NULL;
+  m_DeformableMovingWrapper    = NULL;
+  m_DeformableNumLevels        = 0;
 }
 
 RegistrationModel::~RegistrationModel()
@@ -1016,6 +1026,9 @@ void RegistrationModel::SetParentModel(GlobalUIModel *model)
   // Interactive mode tool model is just a wrapper around the toolbar mode
   m_InteractiveToolModel->RebroadcastFromSourceProperty(
         m_Driver->GetGlobalState()->GetToolbarModeModel());
+
+  // Load persisted pTVreg settings from SystemInterface.
+  this->LoadPTVregSettings();
 }
 
 void RegistrationModel::OnUpdate()
@@ -1373,3 +1386,761 @@ void RegistrationModel::IterationCallback(const itk::Object *object, const itk::
 
 
 
+
+
+// =====================================================================
+// Deformable registration (pTVreg) implementation
+// =====================================================================
+
+#include "ImageIODelegates.h"        // IRISWarningList
+
+#include <QCoreApplication>
+#include <QDir>
+#include <QFileInfo>
+#include <QLabel>
+#include <QProcess>
+#include <QProcessEnvironment>
+#include <QProgressBar>
+#include <QStringList>
+#include <QTextStream>
+#include <QDateTime>
+#include <QRegularExpression>
+
+#include "QProcessOutputTextWidget.h"
+
+namespace
+{
+constexpr const char *kPTVregPythonKey = "PTVreg.PythonInterpreter";
+constexpr const char *kPreviewNickname = "pTVreg preview";
+constexpr const char *kSettingsFolder  = "PTVreg.Settings";
+}
+
+// =====================================================================
+// PTVregSettings
+// =====================================================================
+
+PTVregSettings::PTVregSettings()
+{
+  this->ResetToDefaults();
+}
+
+void PTVregSettings::ResetToDefaults()
+{
+  gridSpacing         = 8;
+  scaleFactor         = 1.0;
+  iterations          = "100";
+  lambdaReg           = "0.15";
+
+  metric              = "lcc";
+  metricParam         = 2.1;
+
+  vfcRadius           = 15.0;
+  vfcBeta             = 2.0;
+  vfcSignInvariant    = false;
+  vfcNormalize        = false;
+
+  lambdaJac           = 0.0;
+  dvfEpsilon          = 0.1;
+  borderMask          = 5;
+  useClip             = false;
+  clipMin             = 0.0;
+  clipMax             = 1.0;
+
+  diceWeight          = 0.5;
+  fixedLabelsLayerId  = 0;
+  movingLabelsLayerId = 0;
+}
+
+static QStringList _split_number_list(const QString &s)
+{
+  QStringList out;
+  const QStringList tokens = s.split(
+    QRegularExpression("[\\s,;]+"), Qt::SkipEmptyParts);
+  for(const QString &t : tokens)
+    if(!t.isEmpty())
+      out << t;
+  return out;
+}
+
+QStringList PTVregSettings::ToCliArguments(
+    const LabelPathResolver &resolver) const
+{
+  QStringList args;
+
+  args << "--spacing"     << QString::number(gridSpacing);
+  args << "--scale_factor"<< QString::number(scaleFactor, 'g', 6);
+
+  QStringList iters = _split_number_list(iterations);
+  if(!iters.isEmpty())
+    {
+    args << "--iterations";
+    for(const QString &v : iters) args << v;
+    }
+
+  QStringList lambdas = _split_number_list(lambdaReg);
+  if(!lambdas.isEmpty())
+    {
+    args << "--lambda_reg";
+    for(const QString &v : lambdas) args << v;
+    }
+
+  args << "--metric"      << metric;
+  args << "--metric_param"<< QString::number(metricParam, 'g', 6);
+  args << "--border_mask" << QString::number(borderMask);
+  args << "--lambda_jac"  << QString::number(lambdaJac,  'g', 6);
+  args << "--dvf_epsilon" << QString::number(dvfEpsilon, 'g', 6);
+
+  if(useClip)
+    {
+    args << "--clip"
+         << QString::number(clipMin, 'g', 6)
+         << QString::number(clipMax, 'g', 6);
+    }
+
+  // VFC parameters — always passed. cli_snap.py ignores them for other
+  // metrics so it's safe.
+  args << "--vfc-radius" << QString::number(vfcRadius, 'g', 6);
+  args << "--vfc-beta"   << QString::number(vfcBeta,   'g', 6);
+  if(vfcSignInvariant) args << "--vfc-sign-invariant";
+  if(vfcNormalize)     args << "--vfc-normalize";
+
+  // Label-guided soft-Dice.
+  args << "--dice-weight" << QString::number(diceWeight, 'g', 6);
+  if(fixedLabelsLayerId && resolver)
+    {
+    QString path = resolver(fixedLabelsLayerId);
+    if(!path.isEmpty())
+      args << "--fixed-labels" << path;
+    }
+  if(movingLabelsLayerId && resolver)
+    {
+    QString path = resolver(movingLabelsLayerId);
+    if(!path.isEmpty())
+      args << "--moving-labels" << path;
+    }
+
+  return args;
+}
+
+void PTVregSettings::SaveToRegistry(Registry &out) const
+{
+  out["GridSpacing"]         << gridSpacing;
+  out["ScaleFactor"]         << scaleFactor;
+  out["Iterations"]          << iterations.toStdString();
+  out["LambdaReg"]           << lambdaReg.toStdString();
+
+  out["Metric"]              << metric.toStdString();
+  out["MetricParam"]         << metricParam;
+
+  out["VfcRadius"]           << vfcRadius;
+  out["VfcBeta"]             << vfcBeta;
+  out["VfcSignInvariant"]    << vfcSignInvariant;
+  out["VfcNormalize"]        << vfcNormalize;
+
+  out["LambdaJac"]           << lambdaJac;
+  out["DvfEpsilon"]          << dvfEpsilon;
+  out["BorderMask"]          << borderMask;
+  out["UseClip"]             << useClip;
+  out["ClipMin"]             << clipMin;
+  out["ClipMax"]             << clipMax;
+
+  out["DiceWeight"]          << diceWeight;
+  out["FixedLabelsLayerId"]  << (int)fixedLabelsLayerId;
+  out["MovingLabelsLayerId"] << (int)movingLabelsLayerId;
+}
+
+void PTVregSettings::LoadFromRegistry(Registry &in)
+{
+  gridSpacing         = in["GridSpacing"][gridSpacing];
+  scaleFactor         = in["ScaleFactor"][scaleFactor];
+  iterations          = QString::fromStdString(
+                          in["Iterations"][iterations.toStdString()]);
+  lambdaReg           = QString::fromStdString(
+                          in["LambdaReg"][lambdaReg.toStdString()]);
+
+  metric              = QString::fromStdString(
+                          in["Metric"][metric.toStdString()]);
+  metricParam         = in["MetricParam"][metricParam];
+
+  vfcRadius           = in["VfcRadius"][vfcRadius];
+  vfcBeta             = in["VfcBeta"][vfcBeta];
+  vfcSignInvariant    = in["VfcSignInvariant"][vfcSignInvariant];
+  vfcNormalize        = in["VfcNormalize"][vfcNormalize];
+
+  lambdaJac           = in["LambdaJac"][lambdaJac];
+  dvfEpsilon          = in["DvfEpsilon"][dvfEpsilon];
+  borderMask          = in["BorderMask"][borderMask];
+  useClip             = in["UseClip"][useClip];
+  clipMin             = in["ClipMin"][clipMin];
+  clipMax             = in["ClipMax"][clipMax];
+
+  diceWeight          = in["DiceWeight"][diceWeight];
+  fixedLabelsLayerId  = (unsigned long) in["FixedLabelsLayerId"][
+                          (int)fixedLabelsLayerId];
+  movingLabelsLayerId = (unsigned long) in["MovingLabelsLayerId"][
+                          (int)movingLabelsLayerId];
+}
+
+QString PTVregSettings::ToSummaryString() const
+{
+  return QString(
+    "Metric: %1 (param=%2) | Spacing: %3vx | Scale: %4 | λ=%5 | Iters: %6")
+    .arg(metric.toUpper())
+    .arg(metricParam, 0, 'g', 3)
+    .arg(gridSpacing)
+    .arg(scaleFactor, 0, 'g', 3)
+    .arg(lambdaReg)
+    .arg(iterations);
+}
+
+QString RegistrationModel::GetPythonInterpreterPath() const
+{
+  if(!m_PythonInterpreterPath.isEmpty())
+    return m_PythonInterpreterPath;
+  // Fall back to persisted preference.
+  if(m_Parent)
+    {
+    SystemInterface *si = m_Parent->GetSystemInterface();
+    if(si && si->HasEntry(Registry::Key(kPTVregPythonKey)))
+      return QString::fromStdString((*si)[kPTVregPythonKey][""]);
+    }
+  return QString();
+}
+
+void RegistrationModel::SetPythonInterpreterPath(const QString &path)
+{
+  m_PythonInterpreterPath = path;
+  if(m_Parent)
+    {
+    SystemInterface *si = m_Parent->GetSystemInterface();
+    if(si)
+      (*si)[kPTVregPythonKey] << path.toStdString();
+    }
+}
+
+PTVregSettings &RegistrationModel::GetPTVregSettings()
+{
+  return m_PTVregSettings;
+}
+
+const PTVregSettings &RegistrationModel::GetPTVregSettings() const
+{
+  return m_PTVregSettings;
+}
+
+void RegistrationModel::LoadPTVregSettings()
+{
+  if(!m_Parent) return;
+  SystemInterface *si = m_Parent->GetSystemInterface();
+  if(!si) return;
+  Registry &folder = si->Folder(kSettingsFolder);
+  m_PTVregSettings.LoadFromRegistry(folder);
+}
+
+void RegistrationModel::SavePTVregSettings()
+{
+  if(!m_Parent) return;
+  SystemInterface *si = m_Parent->GetSystemInterface();
+  if(!si) return;
+  Registry &folder = si->Folder(kSettingsFolder);
+  m_PTVregSettings.SaveToRegistry(folder);
+}
+
+QString RegistrationModel::ResolvePTVregScriptPath() const
+{
+  // 1. Environment override.
+  QByteArray envDir = qgetenv("SNAP_PTVREG_DIR");
+  if(!envDir.isEmpty())
+    {
+    QString candidate =
+      QDir(QString::fromLocal8Bit(envDir)).filePath("pTVreg/cli_snap.py");
+    if(QFileInfo::exists(candidate))
+      return candidate;
+    }
+
+  // 2. Alongside the executable (bundle layout).
+  QDir appDir(QCoreApplication::applicationDirPath());
+  QStringList relative = {
+    "pTVreg/pTVreg/cli_snap.py",
+    "../lib/snap-4.4.0/pTVreg/pTVreg/cli_snap.py",
+    "../share/pTVreg/pTVreg/cli_snap.py"
+  };
+  for(const QString &rel : relative)
+    {
+    QString c = appDir.filePath(rel);
+    if(QFileInfo::exists(c))
+      return QFileInfo(c).absoluteFilePath();
+    }
+
+  // 3. Source-tree path (development).
+  QDir src(QCoreApplication::applicationDirPath());
+  for(int i = 0; i < 5; ++i)
+    {
+    QString c = src.filePath("pTVreg/pTVreg/cli_snap.py");
+    if(QFileInfo::exists(c))
+      return QFileInfo(c).absoluteFilePath();
+    if(!src.cdUp()) break;
+    }
+
+  return QString();
+}
+
+bool RegistrationModel::VerifyPythonEnvironment(QString &errMsg) const
+{
+  QString py = this->GetPythonInterpreterPath();
+  if(py.isEmpty())
+    {
+    errMsg = "No Python interpreter configured for pTVreg.";
+    return false;
+    }
+  if(!QFileInfo::exists(py))
+    {
+    errMsg = QString("Interpreter not found: %1").arg(py);
+    return false;
+    }
+
+  QProcess check;
+  check.start(py, QStringList() << "-c" << "import pTVreg");
+  if(!check.waitForFinished(5000))
+    {
+    errMsg = "Interpreter probe timed out.";
+    return false;
+    }
+  if(check.exitStatus() != QProcess::NormalExit || check.exitCode() != 0)
+    {
+    errMsg = QString("pTVreg import failed: %1")
+               .arg(QString::fromLocal8Bit(check.readAllStandardError()).trimmed());
+    return false;
+    }
+  errMsg.clear();
+  return true;
+}
+
+QString RegistrationModel::GetDeformableMetricCliName() const
+{
+  switch(m_SimilarityMetricModel->GetValue())
+    {
+    case NCC: return "lcc";
+    case SSD: return "ssd";
+    case NMI: return "nuclear"; // closest analogue in pTVreg
+    default:  return "lcc";
+    }
+}
+
+bool RegistrationModel::ExportImagesForDeformable(const QString &tempDir,
+                                                  QString &fixedPath,
+                                                  QString &movingPath,
+                                                  QString &maskPath)
+{
+  ImageWrapperBase *fixed  = m_Driver->GetCurrentImageData()->GetMain();
+  ImageWrapperBase *moving = this->GetMovingLayerWrapper();
+  if(!fixed || !moving)
+    return false;
+
+  m_DeformableFixedWrapper  = fixed;
+  m_DeformableMovingWrapper = moving;
+
+  fixedPath  = QDir(tempDir).filePath("fixed.nii.gz");
+  movingPath = QDir(tempDir).filePath("moving.nii.gz");
+  maskPath.clear();
+
+  try
+    {
+    Registry writerHints;
+    fixed->WriteToFile(fixedPath.toLocal8Bit().constData(), writerHints);
+    moving->WriteToFile(movingPath.toLocal8Bit().constData(), writerHints);
+
+    if(this->GetUseSegmentationAsMask())
+      {
+      ImageWrapperBase *seg = m_Driver->GetSelectedSegmentationLayer();
+      if(seg)
+        {
+        maskPath = QDir(tempDir).filePath("mask.nii.gz");
+        seg->WriteToFile(maskPath.toLocal8Bit().constData(), writerHints);
+        }
+      }
+    }
+  catch(std::exception &exc)
+    {
+    if(m_DeformableLogWidget)
+      m_DeformableLogWidget->appendPlainText(
+        QString("[SNAP] Failed to write inputs: %1").arg(exc.what()));
+    return false;
+    }
+  return true;
+}
+
+void RegistrationModel::RunDeformableRegistration(QProcessOutputTextWidget *log,
+                                                   QLabel *statusLine,
+                                                   QProgressBar *bar,
+                                                   bool livePreviewPerIter,
+                                                   int  livePreviewIterStep)
+{
+  if(m_DeformableProcess && m_DeformableProcess->state() != QProcess::NotRunning)
+    return;
+
+  m_DeformableLogWidget   = log;
+  m_DeformableStatusLabel = statusLine;
+  m_DeformableProgressBar = bar;
+  m_DeformableStdoutBuffer.clear();
+  m_DeformableNumLevels = 0;
+
+  auto setStatus = [statusLine](const QString &t) {
+    if(statusLine) statusLine->setText(t);
+  };
+
+  setStatus("Preparing deformable registration...");
+  if(bar) { bar->setRange(0, 0); bar->setVisible(true); }
+
+  // Verify Python.
+  QString errMsg;
+  if(!this->VerifyPythonEnvironment(errMsg))
+    {
+    setStatus(QString("Python check failed: %1").arg(errMsg));
+    if(log) log->appendPlainText(QString("[SNAP] %1").arg(errMsg));
+    return;
+    }
+
+  // Locate the script.
+  QString script = this->ResolvePTVregScriptPath();
+  if(script.isEmpty())
+    {
+    setStatus("cli_snap.py not found (set SNAP_PTVREG_DIR or install pTVreg).");
+    if(log) log->appendPlainText("[SNAP] cli_snap.py could not be located.");
+    return;
+    }
+
+  // Build temp working dir.
+  m_DeformableTempDir = QDir(QDir::tempPath()).filePath(
+    QString("snap_ptvreg_%1_%2")
+      .arg(QCoreApplication::applicationPid())
+      .arg(QDateTime::currentSecsSinceEpoch()));
+  QDir().mkpath(m_DeformableTempDir);
+
+  QString fixedPath, movingPath, maskPath;
+  if(!this->ExportImagesForDeformable(m_DeformableTempDir, fixedPath, movingPath, maskPath))
+    {
+    setStatus("Failed to export images for pTVreg.");
+    return;
+    }
+
+  QString warpedOut = QDir(m_DeformableTempDir).filePath("warped.nii.gz");
+  QString warpOut   = QDir(m_DeformableTempDir).filePath("warpfield.nii.gz");
+  QString previewDir = QDir(m_DeformableTempDir).filePath("previews");
+  QDir().mkpath(previewDir);
+
+  QStringList args;
+  args << script;
+  args << "-f" << fixedPath;
+  args << "-m" << movingPath;
+  args << "-o" << warpedOut;
+  args << "-w" << warpOut;
+  args << "--snap-preview-dir" << previewDir;
+  if(!maskPath.isEmpty())
+    args << "--fixed_mask" << maskPath;
+  if(livePreviewPerIter && livePreviewIterStep > 0)
+    args << "--snap-every-iter" << QString::number(livePreviewIterStep);
+
+  // Resolver that exports a label wrapper (identified by unique id) to a
+  // NIfTI file inside the temp dir. Returns "" if the id could not be
+  // resolved.
+  auto labelResolver = [&](unsigned long uid) -> QString {
+    if(!uid || !m_Driver) return QString();
+    ImageWrapperBase *w =
+      m_Driver->GetCurrentImageData()->FindLayer(uid, false, ALL_ROLES);
+    if(!w) return QString();
+    QString out = QDir(m_DeformableTempDir).filePath(
+      QString("labels_%1.nii.gz").arg(uid));
+    try
+      {
+      Registry hints;
+      w->WriteToFile(out.toLocal8Bit().constData(), hints);
+      }
+    catch(std::exception &exc)
+      {
+      if(m_DeformableLogWidget)
+        m_DeformableLogWidget->appendPlainText(
+          QString("[SNAP] Failed to write label layer %1: %2")
+            .arg(uid).arg(exc.what()));
+      return QString();
+      }
+    return out;
+  };
+
+  // Append all user-configurable CLI arguments.
+  args += m_PTVregSettings.ToCliArguments(labelResolver);
+
+  QString py = this->GetPythonInterpreterPath();
+  if(log)
+    {
+    log->appendPlainText(QString("[SNAP] Working directory: %1").arg(m_DeformableTempDir));
+    log->appendPlainText(QString("[SNAP] %1 %2").arg(py, args.join(QChar(' '))));
+    }
+
+  m_DeformableProcess = new QProcess();
+  QProcessEnvironment env = QProcessEnvironment::systemEnvironment();
+  env.insert("PYTHONUNBUFFERED", "1");
+  m_DeformableProcess->setProcessEnvironment(env);
+  m_DeformableProcess->setProgram(py);
+  m_DeformableProcess->setArguments(args);
+  m_DeformableProcess->setProcessChannelMode(QProcess::SeparateChannels);
+
+  setStatus("Running deformable registration...");
+  m_DeformableProcess->start();
+}
+
+void RegistrationModel::CancelDeformableRegistration()
+{
+  if(!m_DeformableProcess) return;
+  if(m_DeformableProcess->state() == QProcess::NotRunning) return;
+
+  if(m_DeformableStatusLabel)
+    m_DeformableStatusLabel->setText("Terminating pTVreg...");
+  m_DeformableProcess->terminate();
+  if(!m_DeformableProcess->waitForFinished(3000))
+    m_DeformableProcess->kill();
+}
+
+bool RegistrationModel::IsDeformableRegistrationRunning() const
+{
+  return m_DeformableProcess &&
+         m_DeformableProcess->state() != QProcess::NotRunning;
+}
+
+QProcess *RegistrationModel::GetDeformableProcess() const
+{
+  return m_DeformableProcess;
+}
+
+bool RegistrationModel::HasDeformablePreview() const
+{
+  return m_DeformablePreviewWrapper != NULL;
+}
+
+void RegistrationModel::HandleDeformableStdout(const QByteArray &chunk)
+{
+  m_DeformableStdoutBuffer.append(chunk);
+
+  while(true)
+    {
+    int nl = m_DeformableStdoutBuffer.indexOf('\n');
+    if(nl < 0) break;
+    QByteArray raw = m_DeformableStdoutBuffer.left(nl);
+    m_DeformableStdoutBuffer.remove(0, nl + 1);
+
+    QString line = QString::fromUtf8(raw).trimmed();
+    if(line.isEmpty()) continue;
+
+    if(!this->ProcessDeformableMarkerLine(line))
+      {
+      if(m_DeformableLogWidget)
+        m_DeformableLogWidget->appendPlainText(line);
+      }
+    }
+}
+
+void RegistrationModel::HandleDeformableStderr(const QByteArray &chunk)
+{
+  if(m_DeformableLogWidget)
+    m_DeformableLogWidget->appendPlainText(
+      QString::fromUtf8(chunk));
+}
+
+void RegistrationModel::HandleDeformableFinished(int exitCode, int exitStatus)
+{
+  // Flush any remaining line-buffered stdout.
+  if(!m_DeformableStdoutBuffer.isEmpty())
+    {
+    QString line = QString::fromUtf8(m_DeformableStdoutBuffer).trimmed();
+    if(!line.isEmpty() && !this->ProcessDeformableMarkerLine(line))
+      {
+      if(m_DeformableLogWidget)
+        m_DeformableLogWidget->appendPlainText(line);
+      }
+    m_DeformableStdoutBuffer.clear();
+    }
+
+  if(m_DeformableStatusLabel)
+    {
+    if(exitStatus == QProcess::NormalExit && exitCode == 0)
+      m_DeformableStatusLabel->setText("Deformable registration finished.");
+    else
+      m_DeformableStatusLabel->setText(
+        QString("pTVreg exited with code %1. Working dir: %2")
+          .arg(exitCode).arg(m_DeformableTempDir));
+    }
+  if(m_DeformableProgressBar &&
+     m_DeformableNumLevels > 0 &&
+     exitStatus == QProcess::NormalExit && exitCode == 0)
+    m_DeformableProgressBar->setValue(m_DeformableNumLevels);
+
+  if(m_DeformableProcess)
+    {
+    m_DeformableProcess->deleteLater();
+    m_DeformableProcess = NULL;
+    }
+}
+
+bool RegistrationModel::ProcessDeformableMarkerLine(const QString &line)
+{
+  auto extract = [](const QString &s, const QString &key) -> QString
+  {
+    // Find ":key=" or first "key=" after the tag prefix.
+    QRegularExpression re(QString("(?:^|:)%1=([^:]*)").arg(QRegularExpression::escape(key)));
+    QRegularExpressionMatch m = re.match(s);
+    if(m.hasMatch()) return m.captured(1);
+    return QString();
+  };
+
+  if(line.startsWith("SNAP_META:"))
+    {
+    bool ok = false;
+    int n = extract(line, "n_levels").toInt(&ok);
+    if(ok && n > 0)
+      {
+      m_DeformableNumLevels = n;
+      if(m_DeformableProgressBar)
+        {
+        m_DeformableProgressBar->setRange(0, n);
+        m_DeformableProgressBar->setValue(0);
+        }
+      }
+    QString dev = extract(line, "device");
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText(
+        QString("pTVreg running (levels=%1, device=%2)").arg(n).arg(dev));
+    return true;
+    }
+
+  if(line.startsWith("SNAP_LEVEL_START:"))
+    {
+    int i = extract(line, "level").toInt();
+    int it = extract(line, "iters").toInt();
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText(
+        QString("Level %1/%2 — starting %3 iterations")
+          .arg(i + 1).arg(m_DeformableNumLevels).arg(it));
+    return true;
+    }
+
+  if(line.startsWith("SNAP_ITER:"))
+    {
+    int i = extract(line, "level").toInt();
+    int k = extract(line, "iter").toInt();
+    QString m = extract(line, "metric");
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText(
+        QString("Level %1/%2 — iter %3 — metric %4")
+          .arg(i + 1).arg(m_DeformableNumLevels).arg(k).arg(m));
+    return true;
+    }
+
+  if(line.startsWith("SNAP_LEVEL_END:"))
+    {
+    int i = extract(line, "level").toInt();
+    QString path = extract(line, "preview");
+    if(!path.isEmpty())
+      this->ApplyPreviewFromFile(path);
+    if(m_DeformableProgressBar && m_DeformableNumLevels > 0)
+      m_DeformableProgressBar->setValue(
+        std::min(i + 1, m_DeformableNumLevels));
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText(
+        QString("Level %1/%2 complete — preview refreshed")
+          .arg(i + 1).arg(m_DeformableNumLevels));
+    return true;
+    }
+
+  if(line.startsWith("SNAP_DONE:"))
+    {
+    QString path = extract(line, "warped");
+    if(!path.isEmpty())
+      this->ApplyPreviewFromFile(path);
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText("pTVreg finished. Preview is available.");
+    return true;
+    }
+
+  if(line.startsWith("SNAP_ERROR:"))
+    {
+    QString msg = line.mid(QStringLiteral("SNAP_ERROR:").length());
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText(QString("Error: %1").arg(msg));
+    if(m_DeformableLogWidget)
+      m_DeformableLogWidget->appendPlainText(QString("[pTVreg error] %1").arg(msg));
+    return true;
+    }
+
+  return false;
+}
+
+void RegistrationModel::ApplyPreviewFromFile(const QString &path)
+{
+  if(!QFileInfo::exists(path) || !m_Driver)
+    return;
+
+  m_DeformableLastPreviewPath = path;
+
+  // If a previous preview overlay is still around, unload it. This is
+  // simpler and safer than a low-level in-place buffer swap and keeps the
+  // layer-stack semantics clean.
+  if(m_DeformablePreviewWrapper)
+    {
+    try
+      {
+      m_Driver->UnloadOverlay(m_DeformablePreviewWrapper);
+      }
+    catch(...) {}
+    m_DeformablePreviewWrapper = NULL;
+    }
+
+  IRISWarningList wl;
+  try
+    {
+    m_Driver->OpenImage(path.toLocal8Bit().constData(), OVERLAY_ROLE, wl);
+    }
+  catch(std::exception &exc)
+    {
+    if(m_DeformableLogWidget)
+      m_DeformableLogWidget->appendPlainText(
+        QString("[SNAP] Failed to load preview: %1").arg(exc.what()));
+    return;
+    }
+
+  // The most recently added overlay is our preview.
+  GenericImageData *gid = m_Driver->GetCurrentImageData();
+  if(!gid) return;
+  for(LayerIterator it = gid->GetLayers(OVERLAY_ROLE); !it.IsAtEnd(); ++it)
+    {
+    // Rename the newest overlay so the user knows what it is.
+    ImageWrapperBase *w = it.GetLayer();
+    if(w)
+      m_DeformablePreviewWrapper = w;
+    }
+  if(m_DeformablePreviewWrapper)
+    m_DeformablePreviewWrapper->SetCustomNickname(kPreviewNickname);
+}
+
+void RegistrationModel::AdoptPreviewAsMovingImage()
+{
+  if(!m_DeformablePreviewWrapper || m_DeformableLastPreviewPath.isEmpty())
+    return;
+  if(!m_Driver) return;
+
+  // Re-open the preview file as an additional overlay that will *become* the
+  // moving layer. We do it by loading the file in place of the moving layer.
+  IRISWarningList wl;
+  try
+    {
+    // Simpler adopt: keep the preview overlay; user can drag it to the
+    // moving slot manually. Providing a first-class swap requires more
+    // plumbing than we should introduce here.
+    // For now, just rename it and unmark it as "preview" so the user can
+    // clearly see it as the definitive result.
+    m_DeformablePreviewWrapper->SetCustomNickname(
+      std::string("pTVreg warped (adopted)"));
+    }
+  catch(std::exception &) {}
+
+  m_DeformablePreviewWrapper = NULL;
+}

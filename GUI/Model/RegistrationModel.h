@@ -7,10 +7,74 @@
 #include "itkVector.h"
 #include "MultiComponentMetricReport.h"
 
+#include <QString>
+#include <QStringList>
+
+#include <functional>
+
 class GlobalUIModel;
 class IRISApplication;
 class ImageWrapperBase;
 class OptimizationProgressRenderer;
+class QLabel;
+class QProgressBar;
+class QProcess;
+class QProcessOutputTextWidget;
+class Registry;
+
+// -----------------------------------------------------------------------------
+// PTVregSettings — POD holding every pTVreg CLI knob exposed to the user.
+// Persisted via SystemInterface (SNAP Registry), converted to argv by
+// ``ToCliArguments()``.
+// -----------------------------------------------------------------------------
+struct PTVregSettings
+{
+  // ----- Grid & Optimization -----
+  int    gridSpacing;          // --spacing (voxels)
+  double scaleFactor;          // --scale_factor
+  QString iterations;          // --iterations, comma/space separated ints
+  QString lambdaReg;           // --lambda_reg, comma/space separated floats
+
+  // ----- Similarity metric -----
+  QString metric;              // --metric: lcc|ssd|nuclear|emse|vfc
+  double  metricParam;         // --metric_param (LCC sigma mm)
+
+  // ----- VFC-specific -----
+  double vfcRadius;            // --vfc-radius (mm)
+  double vfcBeta;              // --vfc-beta
+  bool   vfcSignInvariant;     // --vfc-sign-invariant
+  bool   vfcNormalize;         // --vfc-normalize
+
+  // ----- Penalties & boundary -----
+  double lambdaJac;            // --lambda_jac
+  double dvfEpsilon;           // --dvf_epsilon (mm)
+  int    borderMask;           // --border_mask (voxels)
+  bool   useClip;              // whether --clip is passed
+  double clipMin;
+  double clipMax;
+
+  // ----- Label-guided soft-Dice -----
+  double diceWeight;                // --dice-weight
+  unsigned long fixedLabelsLayerId; // 0 = none; SNAP layer wrapper unique id
+  unsigned long movingLabelsLayerId;
+
+  PTVregSettings();
+  void ResetToDefaults();
+
+  /** Convert this settings block to CLI arguments (excluding SNAP-only
+   *  markers, input/output paths, or fixed-mask). ``labelPathResolver`` is a
+   *  callback used to export a SNAP layer id to a temporary NIfTI file. If a
+   *  label id is 0 or the callback returns empty, that label argument is
+   *  skipped. */
+  typedef std::function<QString(unsigned long)> LabelPathResolver;
+  QStringList ToCliArguments(const LabelPathResolver &resolver) const;
+
+  void SaveToRegistry(Registry &out) const;
+  void LoadFromRegistry(Registry &in);
+
+  /** Compact one-line description used in the RegistrationDialog summary. */
+  QString ToSummaryString() const;
+};
 
 template <unsigned int VDim, class TReal> class GreedyApproach;
 
@@ -42,7 +106,7 @@ public:
   };
 
   /** Allowed transformation models - to be expanded in the future */
-  enum Transformation { RIGID = 0, AFFINE, INVALID_MODE };
+  enum Transformation { RIGID = 0, AFFINE, DEFORMABLE_PTVREG, INVALID_MODE };
 
   /** Image similarity metrics */
   enum SimilarityMetric { NMI = 0, NCC, SSD, INVALID_METRIC };
@@ -144,6 +208,66 @@ public:
 
   /** Reslice moving image */
   void ResliceMovingImage(InterpolationMethod method);
+
+  // ---------------------------------------------------------------------
+  // Deformable registration (pTVreg) support
+  // ---------------------------------------------------------------------
+
+  /** Persisted user preference: absolute path to the Python interpreter that
+   *  has access to the pTVreg package (typically a venv). */
+  QString GetPythonInterpreterPath() const;
+  void SetPythonInterpreterPath(const QString &path);
+
+  /** Access the settings object used to configure pTVreg. Modifying the
+   *  returned reference does not persist automatically — call
+   *  ``SavePTVregSettings()`` after edits. */
+  PTVregSettings &GetPTVregSettings();
+  const PTVregSettings &GetPTVregSettings() const;
+
+  /** Load the persisted settings from SystemInterface into
+   *  ``GetPTVregSettings()``. Called automatically when the model receives
+   *  its parent. */
+  void LoadPTVregSettings();
+
+  /** Persist the current ``GetPTVregSettings()`` to SystemInterface so they
+   *  survive across sessions. */
+  void SavePTVregSettings();
+
+  /** Try to import pTVreg using the configured interpreter. Runs synchronously
+   *  with a short timeout. On failure ``errMsg`` receives a human-readable
+   *  explanation. */
+  bool VerifyPythonEnvironment(QString &errMsg) const;
+
+  /** Kick off a deformable registration run. Non-blocking: the QProcess and
+   *  the widgets are wired up and control returns to the caller immediately.
+   *  ``log``, ``statusLine`` and ``bar`` are populated as the process
+   *  produces output. */
+  void RunDeformableRegistration(QProcessOutputTextWidget *log,
+                                 QLabel *statusLine,
+                                 QProgressBar *bar,
+                                 bool livePreviewPerIter,
+                                 int  livePreviewIterStep);
+
+  /** Access the QProcess of the currently running deformable job, or NULL if
+   *  no job is active. The caller can use it to connect Qt signals such as
+   *  readyReadStandardOutput to its own slots (typically forwarders that
+   *  call the model's Handle* methods). */
+  QProcess *GetDeformableProcess() const;
+
+  /** True while a deformable process is in flight. */
+  bool IsDeformableRegistrationRunning() const;
+
+  /** Ask the current deformable process to terminate. Preview overlay stays
+   *  in place. */
+  void CancelDeformableRegistration();
+
+  /** Returns true when the preview overlay produced by the last (or current)
+   *  deformable registration is still available in the workspace. */
+  bool HasDeformablePreview() const;
+
+  /** Replace the moving layer's image content with the preview overlay and
+   *  remove the preview layer. Requires ``HasDeformablePreview()``. */
+  void AdoptPreviewAsMovingImage();
 
   // Map parameters to an affine transform
   Mat4 MapParametersToAffineTransform(
@@ -308,6 +432,88 @@ protected:
   // Euler angles to a rotation matrix
   Mat3 MapEulerAnglesToRotationMatrix(const Vec3 &euler_angles) const;
   Vec3 MapRotationMatrixToEulerAngles(const Mat3 &rotation) const;
+
+  // ---------------------------------------------------------------------
+  // Deformable registration state
+  // ---------------------------------------------------------------------
+
+  // The QProcess is deliberately not owned by this ITK-based model; we keep
+  // a raw pointer that we allocate with ``this`` as a QObject parent-less
+  // pointer, and delete when the process finishes or when the model is
+  // destroyed. Because RegistrationModel is not a QObject we cannot connect
+  // signals directly; the RegistrationDialog is responsible for connecting
+  // widget-facing slots and forwarding lines back to this model.
+  QProcess *m_DeformableProcess;
+
+  // Cached widget pointers, only valid while a deformable run is active.
+  QProcessOutputTextWidget *m_DeformableLogWidget;
+  QLabel                   *m_DeformableStatusLabel;
+  QProgressBar             *m_DeformableProgressBar;
+
+  // Working directory for the current or last deformable run. Kept on disk
+  // even after a failure so the user can inspect intermediate previews.
+  QString m_DeformableTempDir;
+
+  // Path to the preview NIfTI most recently applied to the overlay.
+  QString m_DeformableLastPreviewPath;
+
+  // Pointer to the "pTVreg preview" overlay layer for in-place buffer swaps.
+  ImageWrapperBase *m_DeformablePreviewWrapper;
+
+  // Number of pyramid levels reported by the Python bridge (from SNAP_META).
+  int m_DeformableNumLevels;
+
+  // Reference wrapper for the fixed image at the start of a run — used to
+  // clone geometry for the preview overlay.
+  ImageWrapperBase *m_DeformableFixedWrapper;
+
+  // Cached moving wrapper reference — used at Adopt time.
+  ImageWrapperBase *m_DeformableMovingWrapper;
+
+  // Persisted user preferences.
+  QString m_PythonInterpreterPath;
+
+  // pTVreg CLI configuration exposed via the settings dialog.
+  PTVregSettings m_PTVregSettings;
+
+  // Line buffer for QProcess output parsing (fed by the dialog).
+public:
+  /** Called by the dialog whenever the QProcess has produced a chunk of
+   *  stdout. Splits into lines, dispatches SNAP_* markers, forwards the rest
+   *  to the log widget. */
+  void HandleDeformableStdout(const QByteArray &chunk);
+
+  /** Called by the dialog when the QProcess produces stderr. Forwarded to
+   *  the log widget in red. */
+  void HandleDeformableStderr(const QByteArray &chunk);
+
+  /** Called by the dialog when the QProcess has terminated. */
+  void HandleDeformableFinished(int exitCode, int exitStatus);
+
+protected:
+  QByteArray m_DeformableStdoutBuffer;
+
+  // Parses a single line for SNAP_* markers. Returns true if the line was a
+  // marker (and therefore should not be echoed to the log widget).
+  bool ProcessDeformableMarkerLine(const QString &line);
+
+  // Extract inputs from ImageWrapperBase to on-disk NIfTI files. Returns true
+  // on success. Populates the passed paths with the resulting file names.
+  bool ExportImagesForDeformable(const QString &tempDir,
+                                 QString &fixedPath,
+                                 QString &movingPath,
+                                 QString &maskPath);
+
+  // Locate cli_snap.py. Order: bundle path, source-tree path,
+  // $SNAP_PTVREG_DIR override. Returns empty string on failure.
+  QString ResolvePTVregScriptPath() const;
+
+  // Load a NIfTI at ``path`` and copy its buffer into the preview overlay
+  // wrapper. Creates the overlay on first call.
+  void ApplyPreviewFromFile(const QString &path);
+
+  // Convert a metric enum to the pTVreg CLI string.
+  QString GetDeformableMetricCliName() const;
 };
 
 #endif // REGISTRATIONMODEL_H

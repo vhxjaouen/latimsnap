@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pTVreg"
+version = "0.2.0"
+description = "PyTorch implementation of the pTVreg image registration algorithms."
+readme = "README.md"
+requires-python = ">=3.8"
+dependencies = [
+    "torch",
+    "numpy",
+    "scipy",
+    "nibabel",
+    "kornia",
+    "optuna"
+]
+
+[project.scripts]
+ptvreg = "pTVreg.cli:main"
+ptvwarp = "pTVreg.cli_warp:main"
+ptvreg-vec = "pTVreg.cli_vec:main"
+vfc = "pTVreg.cli_vfc:main"
+
+[tool.setuptools.packages.find]
+include = ["pTVreg", "pTVreg.*"]

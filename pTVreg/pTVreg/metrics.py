@@ -1,0 +1,523 @@
+import math
+import warnings
+
+import numpy as np
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from .deformation import warp_image
+
+class LocalCrossCorrelation(nn.Module):
+    """
+    Local Cross Correlation metric matching MATLAB's loc_cc_fftn behaviour.
+
+    sigma is the Gaussian window width in PIXELS per axis (z, y, x order for 3-D).
+    Pass a scalar for isotropic windows or a 3-element list for anisotropic ones.
+    The kernel size follows the MATLAB formula: max(2*ceil(2*sigma)+1, 5).
+    variance is stabilised with deps before the square-root (MATLAB default: 1e-5).
+    The returned metric map is (1 - r), where r is the Pearson local correlation
+    coefficient.  Optimum value is 0 (perfect positive correlation).
+    """
+
+    def __init__(self, sigma=2.1, dim=3, deps=1e-5):
+        super().__init__()
+        self.dim = dim
+        self.deps = deps
+
+        # Normalise sigma to a per-axis list; clip to minimum 0.8 px (MATLAB behaviour)
+        if isinstance(sigma, (list, tuple, np.ndarray)):
+            self.sigma = [max(0.8, float(s)) for s in list(sigma)[:dim]]
+            while len(self.sigma) < dim:
+                self.sigma.append(self.sigma[-1])
+        else:
+            self.sigma = [max(0.8, float(sigma))] * dim
+
+        # MATLAB kernel size formula per axis: max(2*ceil(2*sigma)+1, 5)
+        self.kernel_sizes = [
+            max(2 * int(np.ceil(2.0 * s)) + 1, 5) for s in self.sigma
+        ]
+
+        # Build per-axis 1-D Gaussian kernels stored as non-trainable parameters
+        self._kernels = nn.ParameterList()
+        for s, ks in zip(self.sigma, self.kernel_sizes):
+            coords = torch.arange(ks, dtype=torch.float32) - (ks - 1) / 2.0
+            k1d = torch.exp(-coords ** 2 / (2.0 * s ** 2))
+            k1d = k1d / k1d.sum()
+            self._kernels.append(nn.Parameter(k1d, requires_grad=False))
+
+    # ------------------------------------------------------------------
+    def _conv_axis(self, x, axis):
+        """Depthwise 1-D Gaussian convolution along the given spatial axis."""
+        k1d = self._kernels[axis].to(x.device)
+        ks = self.kernel_sizes[axis]
+        pad = ks // 2
+        C = x.shape[1]
+        if self.dim == 3:
+            if axis == 0:
+                ker = k1d.view(1, 1, ks, 1, 1).expand(C, 1, ks, 1, 1).contiguous()
+                return F.conv3d(x, ker, padding=(pad, 0, 0), groups=C)
+            elif axis == 1:
+                ker = k1d.view(1, 1, 1, ks, 1).expand(C, 1, 1, ks, 1).contiguous()
+                return F.conv3d(x, ker, padding=(0, pad, 0), groups=C)
+            else:
+                ker = k1d.view(1, 1, 1, 1, ks).expand(C, 1, 1, 1, ks).contiguous()
+                return F.conv3d(x, ker, padding=(0, 0, pad), groups=C)
+        else:  # dim == 2
+            if axis == 0:
+                ker = k1d.view(1, 1, ks, 1).expand(C, 1, ks, 1).contiguous()
+                return F.conv2d(x, ker, padding=(pad, 0), groups=C)
+            else:
+                ker = k1d.view(1, 1, 1, ks).expand(C, 1, 1, ks).contiguous()
+                return F.conv2d(x, ker, padding=(0, pad), groups=C)
+
+    def _smooth(self, x):
+        out = x
+        for ax in range(self.dim):
+            out = self._conv_axis(out, ax)
+        return out
+
+    # ------------------------------------------------------------------
+    def forward(self, fixed, moving, return_map=False):
+        """fixed, moving: (N, C, [D,] H, W)"""
+        I = fixed
+        J = moving
+
+        # Cache static terms for the fixed image
+        if not hasattr(self, '_cached_fixed') or self._cached_fixed is not I:
+            self._cached_fixed = I
+            self._mu_I  = self._smooth(I)
+            self._mu_I2 = self._smooth(I * I)
+
+        mu_I  = self._mu_I
+        mu_I2 = self._mu_I2
+
+        mu_J   = self._smooth(J)
+        mu_J2  = self._smooth(J * J)
+        mu_IJ  = self._smooth(I * J)
+
+        # Local std-devs with variance stabilisation before sqrt (matches MATLAB)
+        # sgm = sqrt(E[x^2] - E[x]^2 + deps)
+        sgm_I  = torch.sqrt(torch.clamp(mu_I2 - mu_I ** 2 + self.deps, min=1e-12))
+        sgm_J  = torch.sqrt(torch.clamp(mu_J2 - mu_J ** 2 + self.deps, min=1e-12))
+        cov_IJ = mu_IJ - mu_I * mu_J
+
+        # Pearson local correlation coefficient r  (not r^2)
+        r = cov_IJ / (sgm_I * sgm_J + 1e-10)
+
+        # Loss = 1 - r,  range [0, 2],  optimum = 0
+        cc_map = 1.0 - r
+
+        return cc_map if return_map else torch.mean(cc_map)
+
+def _grad_magnitude_3d(image_5d: torch.Tensor, eps: float = 1e-8) -> torch.Tensor:
+    """
+    Gradient magnitude of a (N, 1, D, H, W) image.
+    Tries kornia.filters.SpatialGradient3d first (preferred); falls back to
+    boundary-safe central differences.
+    Returns (N, 1, D, H, W).
+    """
+    try:
+        from kornia.filters import SpatialGradient3d
+        # kornia output: (N, C, 3, D, H, W) — gradients in voxel units
+        g = SpatialGradient3d()(image_5d)   # (N, 1, 3, D, H, W)
+        gd, gh, gw = g[:, :, 0], g[:, :, 1], g[:, :, 2]
+    except Exception:
+        x = image_5d
+        gd = F.pad(x, (0,0, 0,0, 1,1))[:, :, 2:, :, :] - F.pad(x, (0,0, 0,0, 1,1))[:, :, :-2, :, :]
+        gh = F.pad(x, (0,0, 1,1, 0,0))[:, :, :, 2:, :] - F.pad(x, (0,0, 1,1, 0,0))[:, :, :, :-2, :]
+        gw = F.pad(x, (1,1, 0,0, 0,0))[:, :, :, :, 2:] - F.pad(x, (1,1, 0,0, 0,0))[:, :, :, :, :-2]
+    return torch.sqrt(gd**2 + gh**2 + gw**2 + eps)
+
+
+class EdgeMSE(nn.Module):
+    """MSE on gradient-magnitude maps. Uses kornia when available."""
+
+    def __init__(self):
+        super().__init__()
+
+    def forward(self, img1, img2, return_map=False):
+        mag1 = _grad_magnitude_3d(img1)
+        mag2 = _grad_magnitude_3d(img2)
+        emse = (mag1 - mag2) ** 2
+        emse_norm = emse / (mag1.pow(2).mean() + 1e-8)
+        return emse_norm if return_map else torch.mean(emse_norm)
+
+
+# ---------------------------------------------------------------------------
+# VFC helper functions — inlined from Li & Acton (2007).
+# No ptvreg_vfc dependency; kornia is used for edge maps when available.
+# ---------------------------------------------------------------------------
+
+def _vfc_next_fft_size(n: int) -> int:
+    """Round up to next power of two for FFT efficiency."""
+    return 1 << max(1, (n - 1)).bit_length()
+
+
+def _vfc_build_kernel(
+    radius_mm: float,
+    pix_res: torch.Tensor,
+    beta: float = 2.0,
+    device=None,
+    eps_kernel: float = 1e-3,
+    eps: float = 1e-8,
+) -> torch.Tensor:
+    """
+    Build a 3-D inward-pointing VFC kernel with Weibull attenuation.
+
+    Each kernel voxel at distance r carries weight::
+
+        w(r) = exp(-(r / R)^β) / r          (r > 0)
+
+    where R = ``radius_mm`` is the **1/e characteristic length** (the weight
+    always equals exp(-1) ≈ 0.37 at r = R, regardless of β) and β controls
+    the **shape** of the decay profile:
+
+    * β → 0 : near-constant inside R, then heavy sub-exponential tail
+    * β = 1  : exponential decay — long-range influence
+    * β = 2  : Gaussian damping — compact, smooth (default)
+    * β = 4  : super-Gaussian — flat plateau inside R, rapid cutoff beyond
+    * β → ∞  : near-binary box kernel
+
+    There is **no hard cutoff at R**.  The kernel is instead truncated where
+    the Weibull weight drops below ``eps_kernel`` (default 0.1%), which
+    occurs at::
+
+        r_trunc = R · (ln(1 / eps_kernel))^(1 / β)
+
+    Examples (R = 15 mm, eps_kernel = 1e-3):
+
+    * β = 4 → r_trunc ≈ 24 mm  (1.6 R)
+    * β = 2 → r_trunc ≈ 39 mm  (2.6 R)
+    * β = 1 → r_trunc ≈ 104 mm (6.9 R, capped at 4 R = 60 mm)
+    * β = 0.5 → very long tail, capped at 4 R = 60 mm
+
+    For β < 1, r_trunc diverges; a safety cap of 4 R is applied.  Both R
+    and β are truly independent: R sets the *scale* and β sets the *shape*.
+
+    Parameters
+    ----------
+    radius_mm   : 1/e characteristic length in mm.
+    pix_res     : (3,) voxel spacing in mm, order (D, H, W).
+    beta        : Weibull shape exponent β > 0.  Default 2.0 (Gaussian).
+    device      : torch device for the returned tensor.
+    eps_kernel  : weight threshold below which voxels are excluded (default 1e-3).
+    eps         : singularity guard at r = 0.
+
+    Returns
+    -------
+    (3, Kd, Kh, Kw) float32 kernel, component order (vD, vH, vW),
+    normalised so the peak absolute value per component is 1.
+    """
+    dtype = torch.float32
+    pix_res = pix_res.to(device=device, dtype=dtype)
+
+    max_pix = float(pix_res.max().item())
+    eff_radius = float(radius_mm)
+    if eff_radius < 1.01 * max_pix:
+        warnings.warn(
+            f"VFC radius {eff_radius:.3g} mm < voxel spacing {max_pix:.3g} mm; "
+            f"clamping to {1.01*max_pix:.3g} mm so the kernel covers 6-neighbours."
+        )
+        eff_radius = 1.01 * max_pix
+
+    # Kernel support: extend until Weibull weight < eps_kernel, capped at 4 R.
+    safe_beta = max(float(beta), 0.1)
+    r_trunc_mm = eff_radius * min(4.0, (-math.log(eps_kernel)) ** (1.0 / safe_beta))
+    r_vox = [max(1, int(math.ceil(r_trunc_mm / float(pix_res[i].item())))) for i in range(3)]
+
+    def _ax(n, sp):
+        return torch.arange(-n, n + 1, device=device, dtype=dtype) * sp
+
+    gd, gh, gw = torch.meshgrid(
+        _ax(r_vox[0], float(pix_res[0])),
+        _ax(r_vox[1], float(pix_res[1])),
+        _ax(r_vox[2], float(pix_res[2])),
+        indexing="ij",
+    )  # each (Kd, Kh, Kw) in mm
+
+    r = torch.sqrt(gd**2 + gh**2 + gw**2)
+    safe_r = r.clamp(min=eps)
+
+    # No hard mask — Weibull itself defines the support.
+    attenuation = torch.exp(-((safe_r / eff_radius).pow(beta)))
+    attenuation = attenuation.masked_fill(r == 0, 0.0)  # no self-attraction at centre
+
+    kernel = torch.stack([
+        -gd / safe_r * attenuation,
+        -gh / safe_r * attenuation,
+        -gw / safe_r * attenuation,
+    ], dim=0)  # (3, Kd, Kh, Kw)
+
+    peak = kernel.abs().amax(dim=(1, 2, 3), keepdim=True).clamp(min=eps)
+    return kernel / peak
+
+
+def _vfc_fft_field(edge_map: torch.Tensor, kernel: torch.Tensor) -> torch.Tensor:
+    """
+    Apply VFC to a (D, H, W) scalar edge map.
+    kernel: (3, Kd, Kh, Kw) from _vfc_build_kernel.
+    Returns (3, D, H, W) vector field.
+    """
+    D, H, W = edge_map.shape
+    Kd, Kh, Kw = kernel.shape[1:]
+    fft_s = (
+        _vfc_next_fft_size(D + Kd - 1),
+        _vfc_next_fft_size(H + Kh - 1),
+        _vfc_next_fft_size(W + Kw - 1),
+    )
+    Fv = torch.fft.rfftn(edge_map, s=fft_s)
+    sd, sh, sw = Kd // 2, Kh // 2, Kw // 2
+    out = torch.empty(3, D, H, W, device=edge_map.device, dtype=edge_map.dtype)
+    for c in range(3):
+        Fk = torch.fft.rfftn(kernel[c], s=fft_s)
+        conv = torch.fft.irfftn(Fv * Fk, s=fft_s)
+        out[c] = conv[sd:sd + D, sh:sh + H, sw:sw + W]
+    return out
+
+
+def _vfc_image_edge_map(
+    image: torch.Tensor,
+    pix_res: torch.Tensor,
+    eps: float = 1e-8,
+) -> torch.Tensor:
+    """
+    Gradient-magnitude edge map of a (D, H, W) intensity volume, in mm-aware units.
+    Tries kornia.filters.SpatialGradient3d first (preferred); falls back to
+    central differences.
+    Returns (D, H, W).
+    """
+    pr = pix_res.to(image.device, dtype=image.dtype).view(3, 1, 1, 1)
+    try:
+        from kornia.filters import SpatialGradient3d
+        # kornia: input (N,C,D,H,W), output (N,C,3,D,H,W) in voxel units
+        g = SpatialGradient3d()(image[None, None])[0, 0]  # (3,D,H,W), voxel units
+        grad = g / pr                                       # convert to mm units
+    except Exception:
+        grad = torch.stack([
+            (F.pad(image, (0,0, 0,0, 1,1))[2:] - F.pad(image, (0,0, 0,0, 1,1))[:-2]) / (2.0 * pr[0]),
+            (F.pad(image, (0,0, 1,1, 0,0))[:, 2:] - F.pad(image, (0,0, 1,1, 0,0))[:, :-2]) / (2.0 * pr[1]),
+            (F.pad(image, (1,1, 0,0, 0,0))[:, :, 2:] - F.pad(image, (1,1, 0,0, 0,0))[:, :, :-2]) / (2.0 * pr[2]),
+        ], dim=0)
+    return (grad.pow(2).sum(dim=0) + eps).sqrt()
+
+class VFCMetric(nn.Module):
+    """
+    Vector Field Convolution similarity metric (Li & Acton 2007).
+
+    Fully self-contained — no ptvreg_vfc dependency.
+    Kornia is used for edge-map extraction when available (preferred), with a
+    central-difference fallback.
+
+    The VFC kernel is rebuilt once per pyramid level from the physical voxel
+    spacing.  At each level the fixed and moving VFC fields are pre-computed
+    once via FFT convolution; during optimisation the moving VFC is *warped*
+    (not recomputed), which is ~50× cheaper and introduces only second-order
+    geometric error for the smooth fields produced by large-radius kernels.
+
+    Loss = mean(1 − cos(vfc_fix, warp(vfc_mov, u)))
+    If sign_invariant=True: loss = mean(1 − cos²(…))  ← good for label maps.
+    """
+
+    def __init__(self, radius_mm: float = 15.0, beta: float = 2.0,
+                 sign_invariant: bool = False, normalize: bool = False):
+        super().__init__()
+        self.radius_mm = radius_mm
+        self.beta = beta
+        self.sign_invariant = sign_invariant
+        self.normalize = normalize
+        self._kernel = None
+        self._pix_res = None
+
+    # ------------------------------------------------------------------
+    def set_level(self, pix_res: list, device: str):
+        """Rebuild the VFC kernel for the current pyramid level.
+        pix_res: [pd, ph, pw] in mm (physical voxel spacing at this level).
+        """
+        pix_res_t = torch.tensor(pix_res, dtype=torch.float32, device=device)
+        self._kernel = _vfc_build_kernel(
+            self.radius_mm, pix_res_t, beta=self.beta, device=device
+        )
+        self._pix_res = pix_res_t
+
+    # ------------------------------------------------------------------
+    def _normalise_edge(self, edge: torch.Tensor) -> torch.Tensor:
+        """Percentile-clip and normalise an edge map to [0, 1]."""
+        flat = edge.flatten()
+        n = flat.numel()
+        k = max(1, min(n, int(round(0.999 * (n - 1))) + 1))
+        e_max = torch.kthvalue(flat, k).values.clamp(min=1e-8)
+        return (edge / e_max).clamp(0.0, 1.0)
+
+    def edge_to_vfc(self, edge_map: torch.Tensor) -> torch.Tensor:
+        """Convert a (D, H, W) edge-magnitude map to a (3, D, H, W) VFC field."""
+        assert self._kernel is not None, "Call set_level() before edge_to_vfc()"
+        field = _vfc_fft_field(self._normalise_edge(edge_map), self._kernel)
+        if self.normalize:
+            field = field / (field.norm(dim=0, keepdim=True) + 1e-8)
+        return field
+
+    def image_to_vfc(self, image_3d: torch.Tensor) -> torch.Tensor:
+        """Compute VFC field directly from a (D, H, W) intensity image."""
+        assert self._pix_res is not None, "Call set_level() before image_to_vfc()"
+        edge = _vfc_image_edge_map(image_3d, self._pix_res)
+        return self.edge_to_vfc(edge)
+
+    # ------------------------------------------------------------------
+    def alignment_loss(
+        self,
+        fix_vfc: torch.Tensor,      # (3, D, H, W)
+        warped_mov_vfc: torch.Tensor,  # (3, D, H, W)
+        eps: float = 1e-6,
+    ) -> torch.Tensor:
+        """
+        Returns (1, 1, D, H, W) per-voxel loss map = 1 - cos(fix, mov_warped).
+        Shape matches the masking convention in PTVRegistration.compute_loss.
+        """
+        n_fix = fix_vfc / (fix_vfc.norm(dim=0, keepdim=True) + eps)
+        n_mov = warped_mov_vfc / (warped_mov_vfc.norm(dim=0, keepdim=True) + eps)
+        dot = (n_fix * n_mov).sum(dim=0)  # (D, H, W)
+        if self.sign_invariant:
+            dot = dot.pow(2)
+        return (1.0 - dot).unsqueeze(0).unsqueeze(0)  # (1, 1, D, H, W)
+
+
+class VectorFieldSimilarity(nn.Module):
+    """
+    Vector Field Similarity (VFS) loss.
+
+    Measures the cosine distance between two multi-component vector fields,
+    analogous to the NGF (Normalised Gradient Field) loss in scalar image
+    registration but extended to arbitrary C-component fields:
+
+        L(x) = 1 - cos(v_fix(x), v_warp(x))
+             = 1 - <v_fix, v_warp> / (|v_fix| · |v_warp| + ε)
+
+    If ``sign_invariant=True``:
+
+        L(x) = 1 - cos²(v_fix, v_warp)
+             = 1 - [<v_fix, v_warp> / (|v_fix| · |v_warp| + ε)]²
+
+    which makes the loss invariant to a global sign flip of either field
+    (useful when VFC fields from boundary maps may be consistently inverted).
+
+    Inputs
+    ------
+    fixed   : (1, C, D, H, W) fixed vector field
+    warped  : (1, C, D, H, W) warped moving vector field
+    """
+
+    def __init__(self, sign_invariant: bool = False, eps: float = 1e-6):
+        super().__init__()
+        self.sign_invariant = sign_invariant
+        self.eps = eps
+
+    def forward(self, fixed: torch.Tensor, warped: torch.Tensor,
+                return_map: bool = False) -> torch.Tensor:
+        """
+        Parameters
+        ----------
+        fixed, warped : (1, C, D, H, W)
+        return_map    : if True return per-voxel (1, 1, D, H, W) map; else scalar.
+        """
+        # Normalise each field to unit vectors along the channel dimension.
+        nfix  = fixed  / (fixed.norm(dim=1, keepdim=True)  + self.eps)  # (1, C, D, H, W)
+        nwarp = warped / (warped.norm(dim=1, keepdim=True) + self.eps)
+
+        # Dot product over channels → (1, 1, D, H, W)
+        dot = (nfix * nwarp).sum(dim=1, keepdim=True)
+
+        if self.sign_invariant:
+            dot = dot.pow(2)
+
+        loss_map = 1.0 - dot   # (1, 1, D, H, W), in [0, 2] (or [0, 1] for sign_invariant)
+
+        if return_map:
+            return loss_map
+        return loss_map.mean()
+
+
+class MultiChannelLCC(nn.Module):
+    """
+    Mean of per-channel Local Cross-Correlation over a C-channel image pair.
+
+    Inputs are expected as (N, C, D, H, W).  Each channel is correlated
+    independently; the results are averaged.  This makes it suitable for
+    vector-valued images such as gradient fields, where each component
+    carries independent directional information.
+    """
+    def __init__(self, sigma=2.1, dim=3):
+        super().__init__()
+        self.sigma = sigma
+        self.dim = dim
+        self._lcc = LocalCrossCorrelation(sigma=sigma, dim=dim)
+
+    def forward(self, fixed, moving, return_map=False):
+        # fixed, moving: (N, C, D, H, W)
+        C = fixed.shape[1]
+        channel_losses = []
+        for c in range(C):
+            f_c = fixed[:, c:c+1, ...]   # (N, 1, D, H, W)
+            m_c = moving[:, c:c+1, ...]
+            # Invalidate the internal fixed-image cache when channel changes
+            if hasattr(self._lcc, '_cached_fixed'):
+                del self._lcc._cached_fixed
+            channel_losses.append(self._lcc(f_c, m_c, return_map=return_map))
+        if return_map:
+            return torch.mean(torch.stack(channel_losses, dim=0), dim=0)
+        return torch.mean(torch.stack(channel_losses))
+
+
+def compute_soft_dice_loss(
+    fixed_labels: torch.Tensor,
+    moving_labels: torch.Tensor,
+    flow: torch.Tensor,
+    eps: float = 1e-5,
+    label_filter: list = None,
+) -> torch.Tensor:
+    """Soft multi-label Dice loss for label-guided registration.
+
+    For each label in ``label_filter`` that is present in both fixed and moving
+    maps, the moving binary channel is bilinearly warped with ``flow`` and a
+    soft Dice score is computed against the fixed binary channel at the native
+    pyramid-level resolution.  The loss is the mean of ``(1 - dice_l)`` over
+    matched labels.  Background (label 0) is always excluded.
+
+    Args:
+        fixed_labels:  (1, 1, D, H, W) integer tensor — fixed label map.
+        moving_labels: (1, 1, D, H, W) integer tensor — moving label map
+                       at the same pyramid resolution.
+        flow:          (1, 3, D, H, W) float tensor — pixel displacements
+                       (z, y, x channel order), same spatial size as labels.
+        eps:           Numerical stability constant.
+        label_filter:  Explicit list of integer label IDs to evaluate.
+                       Labels absent from either map at the current level are
+                       silently skipped.  If None, all shared non-zero labels
+                       are used.
+
+    Returns:
+        Scalar tensor; 0.0 (detached) if no matching labels exist.
+    """
+    if label_filter:
+        candidates = set(int(l) for l in label_filter)
+        candidates.discard(0)
+        shared = candidates & set(fixed_labels.unique().tolist()) & set(moving_labels.unique().tolist())
+    else:
+        shared = set(fixed_labels.unique().tolist()) & set(moving_labels.unique().tolist())
+        shared.discard(0)
+
+    if not shared:
+        return flow.new_zeros(1).squeeze()
+
+    dice_loss = flow.new_zeros(1).squeeze()
+    for lbl in shared:
+        lbl = int(lbl)
+        fixed_bin = (fixed_labels == lbl).float()    # (1, 1, D, H, W)
+        moving_bin = (moving_labels == lbl).float()  # (1, 1, D, H, W)
+        # Bilinear warp of moving binary map into fixed space.
+        # padding_mode='zeros': out-of-bounds → label absent (0).
+        warped_moving_bin = warp_image(moving_bin, flow, mode='bilinear', padding_mode='zeros')
+        intersection = (fixed_bin * warped_moving_bin).sum()
+        denom = fixed_bin.sum() + warped_moving_bin.sum() + eps
+        dice_loss = dice_loss + (1.0 - 2.0 * intersection / denom)
+
+    return dice_loss / len(shared)

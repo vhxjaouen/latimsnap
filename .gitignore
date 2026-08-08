@@ -27,3 +27,11 @@ CLAUDE.local.md
 
 # clangd cache
 .cache/
+
+# pTVreg generated/output artefacts
+pTVreg/runs/
+pTVreg/playground/
+pTVreg/matlab/
+pTVreg/**/__pycache__/
+pTVreg/**/*.egg-info/
+pTVreg/Isotropic_Total_Variation_Regularization_of_Displacements_in_Parametric_Image_Registration/
