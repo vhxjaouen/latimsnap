@@ -24,11 +24,22 @@ import argparse
 import os
 import sys
 import traceback
+import warnings
+
+# Suppress the flood of non-actionable warnings that torch/monai emit at
+# import time; these otherwise pollute the SNAP log widget and make real
+# errors harder to spot. SNAP_ERROR markers are unaffected.
+warnings.filterwarnings("ignore")
+os.environ.setdefault("PYTHONWARNINGS", "ignore")
 
 import numpy as np
 import nibabel as nib
 import scipy.ndimage as ndimage
 import torch
+
+# Deterministic seeding so users can reproduce results across runs.
+torch.manual_seed(0)
+np.random.seed(0)
 
 from pTVreg.registration import PTVRegistration
 from pTVreg.utils import save_nifti
@@ -111,6 +122,27 @@ def main():
     try:
         os.makedirs(args.snap_preview_dir, exist_ok=True)
 
+        # Echo the resolved run configuration up front so users filing bug
+        # reports can copy-paste the exact parameters used.
+        cfg = {
+            "metric": args.metric,
+            "metric_param": args.metric_param,
+            "spacing": args.spacing,
+            "scale_factor": args.scale_factor,
+            "iterations": args.iterations,
+            "lambda_reg": args.lambda_reg,
+            "border_mask": args.border_mask,
+            "lambda_jac": args.lambda_jac,
+            "clip": args.clip,
+            "vfc_radius": args.vfc_radius if args.metric == "vfc" else None,
+            "vfc_beta": args.vfc_beta if args.metric == "vfc" else None,
+            "dice_weight": args.dice_weight if args.fixed_labels else None,
+        }
+        # Compact JSON, one line, no spaces.
+        import json
+        _emit("SNAP_CONFIG:" + json.dumps(cfg, separators=(",", ":")))
+
+        _emit("SNAP_STAGE:loading")
         print(f"Loading fixed: {args.fixed}")
         fixed_img = nib.load(args.fixed)
         fixed_data = fixed_img.get_fdata().astype(np.float32)
@@ -191,6 +223,7 @@ def main():
             if args.scale_factor != 1.0:
                 moving_labels_data = ndimage.zoom(moving_labels_data, args.scale_factor, order=0)
 
+        _emit("SNAP_STAGE:pyramid")
         reg = PTVRegistration(
             fixed_data,
             moving_data,
@@ -309,6 +342,7 @@ def main():
             f"Starting optimization (metric={args.metric}, "
             f"lambda={args.lambda_reg}, iterations={args.iterations})..."
         )
+        _emit("SNAP_STAGE:optimizing")
 
         warped, flow = reg.optimize(
             iterations=args.iterations,

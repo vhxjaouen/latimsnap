@@ -160,9 +160,17 @@ void RegistrationDialog::SetModel(RegistrationModel *model)
   m_Model->SetIterationCommand(cmdProcEvents);
 
   // Populate the persisted Python interpreter path into the deformable panel.
+  // First-run experience: if the user has never configured a path, try to
+  // auto-detect a venv with pTVreg importable so they can just click Run.
   if(m_DeformablePythonEdit)
     {
     QString stored = m_Model->GetPythonInterpreterPath();
+    if(stored.isEmpty())
+      {
+      stored = m_Model->AutodetectPythonInterpreter();
+      if(!stored.isEmpty())
+        m_Model->SetPythonInterpreterPath(stored);
+      }
     if(!stored.isEmpty())
       m_DeformablePythonEdit->setText(stored);
     this->UpdatePythonStatusIndicator();
@@ -535,9 +543,16 @@ void RegistrationDialog::BuildDeformableUi()
   QHBoxLayout *btnRow = new QHBoxLayout;
   m_DeformableCancelButton = new QPushButton(tr("Cancel"), m_DeformablePanel);
   m_DeformableCancelButton->setEnabled(false);
+  m_DeformableCancelButton->setToolTip(
+    tr("Send SIGINT to the pTVreg process. Frees GPU memory cleanly. "
+       "Falls back to terminate/kill if the process ignores it."));
   m_DeformableAdoptButton = new QPushButton(
-    tr("Adopt preview as moving image"), m_DeformablePanel);
+    tr("Keep warped as overlay"), m_DeformablePanel);
   m_DeformableAdoptButton->setEnabled(false);
+  m_DeformableAdoptButton->setToolTip(
+    tr("Rename the pTVreg preview overlay to 'pTVreg warped (adopted)' so "
+       "it survives the next run without being auto-replaced. You can then "
+       "save it from the layer inspector like any other overlay."));
   btnRow->addWidget(m_DeformableCancelButton);
   btnRow->addStretch(1);
   btnRow->addWidget(m_DeformableAdoptButton);
@@ -652,6 +667,19 @@ void RegistrationDialog::onDeformableRunClicked()
     return;
     }
 
+  // Preflight: warn the user about likely-bad configurations before we
+  // burn 10 minutes of GPU time.
+  QString preflight = m_Model->PreflightDeformableRun();
+  if(!preflight.isEmpty())
+    {
+    QMessageBox::StandardButton ret = QMessageBox::warning(
+      this, tr("Deformable registration — preflight warnings"),
+      preflight + tr("\n\nRun anyway?"),
+      QMessageBox::Yes | QMessageBox::No, QMessageBox::No);
+    if(ret != QMessageBox::Yes)
+      return;
+    }
+
   // Clear the log and start.
   if(m_DeformableLogWidget) m_DeformableLogWidget->clear();
   if(m_DeformableStatusLabel)
@@ -723,4 +751,21 @@ void RegistrationDialog::onDeformableProcessFinished(int exitCode,
   if(m_DeformableCancelButton) m_DeformableCancelButton->setEnabled(false);
   if(m_DeformableAdoptButton)
     m_DeformableAdoptButton->setEnabled(m_Model->HasDeformablePreview());
+
+  // Surface hard failures (non-zero exit, no SNAP_DONE) as a modal dialog
+  // with a copyable error message. Silent failures leave users staring
+  // at a red bullet with no explanation.
+  const bool succeeded = m_Model->DeformableRunSucceeded();
+  const bool clean = (status == QProcess::NormalExit && exitCode == 0);
+  if(!clean && !succeeded)
+    {
+    QString err = m_Model->GetDeformableLastError();
+    QString detail = err.isEmpty()
+      ? tr("The pTVreg process exited with code %1 without emitting "
+           "SNAP_DONE. Check the log widget for details — the most likely "
+           "cause is a Python import error or a torch/CUDA issue.")
+          .arg(exitCode)
+      : tr("pTVreg reported an error:\n\n%1").arg(err);
+    QMessageBox::critical(this, tr("Deformable registration failed"), detail);
+    }
 }

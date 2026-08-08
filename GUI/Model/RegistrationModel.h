@@ -7,10 +7,12 @@
 #include "itkVector.h"
 #include "MultiComponentMetricReport.h"
 
+#include <QPointer>
 #include <QString>
 #include <QStringList>
 
 #include <functional>
+#include <memory>
 
 class GlobalUIModel;
 class IRISApplication;
@@ -20,6 +22,7 @@ class QLabel;
 class QProgressBar;
 class QProcess;
 class QProcessOutputTextWidget;
+class QTemporaryDir;
 class Registry;
 
 // -----------------------------------------------------------------------------
@@ -269,6 +272,41 @@ public:
    *  remove the preview layer. Requires ``HasDeformablePreview()``. */
   void AdoptPreviewAsMovingImage();
 
+  /** Path to the final full-resolution warped moving image produced by the
+   *  most recent successful deformable run, or empty string if no such
+   *  file exists yet. */
+  QString GetDeformableWarpedImagePath() const { return m_DeformableFinalWarpedPath; }
+
+  /** Path to the saved warp field NIfTI (int16-quantised displacement field)
+   *  from the last successful run, or empty. */
+  QString GetDeformableWarpFieldPath() const { return m_DeformableWarpFieldPath; }
+
+  /** True if the last deformable run reached SNAP_DONE (as opposed to
+   *  SNAP_ERROR or a crash before completion). */
+  bool DeformableRunSucceeded() const { return m_DeformableSawDone; }
+
+  /** Error message reported by the last run (only set when
+   *  ``DeformableRunSucceeded()`` is false). */
+  QString GetDeformableLastError() const { return m_DeformableLastError; }
+
+  /** Try to auto-detect a Python interpreter that has pTVreg importable.
+   *  Order:
+   *    1. $SNAP_PTVREG_VENV/bin/python
+   *    2. ~/.venvs/ptvreg/bin/python
+   *    3. ~/.venvs/pTVreg/bin/python
+   *    4. python3 on PATH
+   *  Returns the first path that successfully imports pTVreg, or empty
+   *  string if none does. */
+  QString AutodetectPythonInterpreter() const;
+
+  /** Validate the current PTVregSettings against the currently-selected
+   *  moving/fixed images. Returns empty string if OK; otherwise a
+   *  human-readable warning explaining the potential issue (mismatched
+   *  metric for multi-modal images, too-fine grid spacing, too-small
+   *  coarsest pyramid level, missing labels layer when dice_weight > 0,
+   *  etc.). The dialog surfaces this to the user before starting a run. */
+  QString PreflightDeformableRun() const;
+
   // Map parameters to an affine transform
   Mat4 MapParametersToAffineTransform(
       const Vec3 &euler_angles, const Vec3 &translation,
@@ -446,29 +484,50 @@ protected:
   QProcess *m_DeformableProcess;
 
   // Cached widget pointers, only valid while a deformable run is active.
-  QProcessOutputTextWidget *m_DeformableLogWidget;
-  QLabel                   *m_DeformableStatusLabel;
-  QProgressBar             *m_DeformableProgressBar;
+  // QPointer null-clears itself when the widget is destroyed (e.g. dialog
+  // closed mid-run) so the marker parser never touches a dead widget.
+  QPointer<QProcessOutputTextWidget> m_DeformableLogWidget;
+  QPointer<QLabel>                   m_DeformableStatusLabel;
+  QPointer<QProgressBar>             m_DeformableProgressBar;
 
-  // Working directory for the current or last deformable run. Kept on disk
-  // even after a failure so the user can inspect intermediate previews.
+  // Working directory for the current or last deformable run. Owned by a
+  // QTemporaryDir so the tree is auto-removed at model destruction (or at
+  // the start of the next run). ``autoRemove(false)`` is toggled by the
+  // "retain working directory" advanced setting.
+  std::unique_ptr<QTemporaryDir> m_DeformableTempDirObj;
   QString m_DeformableTempDir;
 
   // Path to the preview NIfTI most recently applied to the overlay.
   QString m_DeformableLastPreviewPath;
 
-  // Pointer to the "pTVreg preview" overlay layer for in-place buffer swaps.
-  ImageWrapperBase *m_DeformablePreviewWrapper;
+  // Path to the final warped moving image (SNAP_DONE:warped=<abs>).
+  // Populated once the process reports success; used by the reslice button
+  // to add a persistent derived overlay to the workspace.
+  QString m_DeformableFinalWarpedPath;
+
+  // Path to the saved warp field (SNAP_DONE:warp=<abs>), if requested.
+  QString m_DeformableWarpFieldPath;
+
+  // Layer id of the fixed and moving wrappers at run start. Storing raw
+  // pointers is dangerous if the user closes the layer mid-run; a unique
+  // id is stable and resolved on demand.
+  unsigned long m_DeformableFixedLayerId  = 0;
+  unsigned long m_DeformableMovingLayerId = 0;
+
+  // Preview overlay layer id (was raw pointer). Nullptr-safe via id
+  // resolution rather than pointer chasing.
+  unsigned long m_DeformablePreviewLayerId = 0;
 
   // Number of pyramid levels reported by the Python bridge (from SNAP_META).
   int m_DeformableNumLevels;
 
-  // Reference wrapper for the fixed image at the start of a run — used to
-  // clone geometry for the preview overlay.
-  ImageWrapperBase *m_DeformableFixedWrapper;
+  // True if the Python bridge emitted SNAP_DONE (as opposed to SNAP_ERROR
+  // or an abrupt exit). Used by the finish handler to distinguish
+  // "genuine success" from "crashed early".
+  bool m_DeformableSawDone = false;
 
-  // Cached moving wrapper reference — used at Adopt time.
-  ImageWrapperBase *m_DeformableMovingWrapper;
+  // Last SNAP_ERROR message, if any. Cleared at each run.
+  QString m_DeformableLastError;
 
   // Persisted user preferences.
   QString m_PythonInterpreterPath;

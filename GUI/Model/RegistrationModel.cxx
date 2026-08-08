@@ -101,13 +101,14 @@ RegistrationModel::RegistrationModel()
 
   // Deformable pTVreg state
   m_DeformableProcess          = NULL;
-  m_DeformableLogWidget        = NULL;
-  m_DeformableStatusLabel      = NULL;
-  m_DeformableProgressBar      = NULL;
-  m_DeformablePreviewWrapper   = NULL;
-  m_DeformableFixedWrapper     = NULL;
-  m_DeformableMovingWrapper    = NULL;
+  m_DeformableLogWidget        = nullptr;
+  m_DeformableStatusLabel      = nullptr;
+  m_DeformableProgressBar      = nullptr;
+  m_DeformableFixedLayerId     = 0;
+  m_DeformableMovingLayerId    = 0;
+  m_DeformablePreviewLayerId   = 0;
   m_DeformableNumLevels        = 0;
+  m_DeformableSawDone          = false;
 }
 
 RegistrationModel::~RegistrationModel()
@@ -1401,17 +1402,25 @@ void RegistrationModel::IterationCallback(const itk::Object *object, const itk::
 #include <QProcess>
 #include <QProcessEnvironment>
 #include <QProgressBar>
+#include <QStandardPaths>
 #include <QStringList>
+#include <QTemporaryDir>
 #include <QTextStream>
 #include <QDateTime>
 #include <QRegularExpression>
 
 #include "QProcessOutputTextWidget.h"
 
+#ifdef Q_OS_UNIX
+#  include <signal.h>
+#  include <sys/types.h>
+#endif
+
 namespace
 {
 constexpr const char *kPTVregPythonKey = "PTVreg.PythonInterpreter";
 constexpr const char *kPreviewNickname = "pTVreg preview";
+constexpr const char *kAdoptedNickname = "pTVreg warped (adopted)";
 constexpr const char *kSettingsFolder  = "PTVreg.Settings";
 }
 
@@ -1625,6 +1634,102 @@ void RegistrationModel::SetPythonInterpreterPath(const QString &path)
     }
 }
 
+QString RegistrationModel::AutodetectPythonInterpreter() const
+{
+  // Build an ordered list of candidate interpreters; probe each with
+  // `python -c "import pTVreg"` and stop at the first that succeeds. This
+  // saves users the tedium of hunting down their venv on first launch.
+  QStringList candidates;
+
+  QByteArray envVenv = qgetenv("SNAP_PTVREG_VENV");
+  if(!envVenv.isEmpty())
+    candidates << QDir(QString::fromLocal8Bit(envVenv))
+                    .filePath("bin/python");
+
+  QString home = QDir::homePath();
+  candidates
+    << QDir(home).filePath(".venvs/ptvreg/bin/python")
+    << QDir(home).filePath(".venvs/pTVreg/bin/python")
+    << QDir(home).filePath("venv/bin/python")
+    << "python3"
+    << "python";
+
+  auto pTVregImports = [](const QString &py) {
+    if(py.isEmpty()) return false;
+    QProcess p;
+    p.start(py, QStringList() << "-c" << "import pTVreg");
+    if(!p.waitForFinished(3000)) return false;
+    return p.exitStatus() == QProcess::NormalExit && p.exitCode() == 0;
+  };
+
+  for(const QString &c : candidates)
+    {
+    if(c.contains('/') && !QFileInfo::exists(c))
+      continue;
+    if(pTVregImports(c))
+      return c;
+    }
+  return QString();
+}
+
+QString RegistrationModel::PreflightDeformableRun() const
+{
+  QStringList warnings;
+
+  ImageWrapperBase *fixed  = m_Driver ?
+    m_Driver->GetCurrentImageData()->GetMain() : NULL;
+  ImageWrapperBase *moving = const_cast<RegistrationModel*>(this)
+                               ->GetMovingLayerWrapper();
+
+  if(!fixed || !moving)
+    return QStringLiteral(
+      "No moving image selected, or no fixed image loaded.");
+
+  // Grid spacing sanity vs image size — coarsest pyramid level needs at
+  // least a handful of control points per axis for LBFGS to see any signal.
+  auto sz = fixed->GetSize();
+  const int gs = std::max(1, m_PTVregSettings.gridSpacing);
+  const double scale = std::max(1e-3, m_PTVregSettings.scaleFactor);
+  int minDim = std::min({(int)sz[0], (int)sz[1], (int)sz[2]});
+  int minScaled = std::max(1, int(minDim * scale));
+
+  if(minScaled < 32)
+    warnings << QString(
+      "After the --scale_factor=%1 downsample the shortest image axis has "
+      "only %2 voxels. Consider a larger scale factor.")
+      .arg(scale, 0, 'g', 3).arg(minScaled);
+
+  if(minDim / gs < 4)
+    warnings << QString(
+      "Grid spacing %1 is very fine for an image with shortest axis %2 "
+      "voxels (fewer than 4 control cells across). Consider a larger "
+      "grid spacing.").arg(gs).arg(minDim);
+
+  // Metric vs modality heuristic — if fixed and moving have very different
+  // intensity ranges, SSD is inappropriate. We do not know modalities
+  // directly, but if the intensity ranges disagree strongly, warn.
+  double fmin = fixed->GetImageMinAsDouble();
+  double fmax = fixed->GetImageMaxAsDouble();
+  double mmin = moving->GetImageMinAsDouble();
+  double mmax = moving->GetImageMaxAsDouble();
+  double frange = fmax - fmin, mrange = mmax - mmin;
+  if(m_PTVregSettings.metric == "ssd" &&
+     std::max(frange, mrange) > 3.0 * std::max(1e-3, std::min(frange, mrange)))
+    warnings << "SSD metric selected but fixed and moving intensity ranges "
+                "differ significantly. Consider LCC for multi-modal or "
+                "differently-normalised data.";
+
+  // Dice weight requested but no labels resolved.
+  if(m_PTVregSettings.diceWeight > 0.0 &&
+     (m_PTVregSettings.fixedLabelsLayerId == 0 ||
+      m_PTVregSettings.movingLabelsLayerId == 0))
+    warnings << "Dice weight is non-zero but fixed or moving label layer is "
+                "not selected in pTVreg Settings. The Dice term will be "
+                "silently ignored.";
+
+  return warnings.join("\n");
+}
+
 PTVregSettings &RegistrationModel::GetPTVregSettings()
 {
   return m_PTVregSettings;
@@ -1744,8 +1849,10 @@ bool RegistrationModel::ExportImagesForDeformable(const QString &tempDir,
   if(!fixed || !moving)
     return false;
 
-  m_DeformableFixedWrapper  = fixed;
-  m_DeformableMovingWrapper = moving;
+  // Store layer identifiers rather than raw pointers so we survive layer
+  // deletion mid-run.
+  m_DeformableFixedLayerId  = fixed->GetUniqueId();
+  m_DeformableMovingLayerId = moving->GetUniqueId();
 
   fixedPath  = QDir(tempDir).filePath("fixed.nii.gz");
   movingPath = QDir(tempDir).filePath("moving.nii.gz");
@@ -1791,6 +1898,10 @@ void RegistrationModel::RunDeformableRegistration(QProcessOutputTextWidget *log,
   m_DeformableProgressBar = bar;
   m_DeformableStdoutBuffer.clear();
   m_DeformableNumLevels = 0;
+  m_DeformableSawDone = false;
+  m_DeformableLastError.clear();
+  m_DeformableFinalWarpedPath.clear();
+  m_DeformableWarpFieldPath.clear();
 
   auto setStatus = [statusLine](const QString &t) {
     if(statusLine) statusLine->setText(t);
@@ -1817,12 +1928,18 @@ void RegistrationModel::RunDeformableRegistration(QProcessOutputTextWidget *log,
     return;
     }
 
-  // Build temp working dir.
-  m_DeformableTempDir = QDir(QDir::tempPath()).filePath(
-    QString("snap_ptvreg_%1_%2")
-      .arg(QCoreApplication::applicationPid())
-      .arg(QDateTime::currentSecsSinceEpoch()));
-  QDir().mkpath(m_DeformableTempDir);
+  // Build temp working dir via QTemporaryDir so it is removed automatically
+  // when this object goes away (or when a new run starts, since we reset
+  // the unique_ptr).
+  m_DeformableTempDirObj = std::make_unique<QTemporaryDir>(
+    QDir(QDir::tempPath()).filePath("snap_ptvreg_XXXXXX"));
+  if(!m_DeformableTempDirObj->isValid())
+    {
+    setStatus("Failed to create working directory.");
+    if(log) log->appendPlainText("[SNAP] Cannot create temp dir.");
+    return;
+    }
+  m_DeformableTempDir = m_DeformableTempDirObj->path();
 
   QString fixedPath, movingPath, maskPath;
   if(!this->ExportImagesForDeformable(m_DeformableTempDir, fixedPath, movingPath, maskPath))
@@ -1903,9 +2020,25 @@ void RegistrationModel::CancelDeformableRegistration()
 
   if(m_DeformableStatusLabel)
     m_DeformableStatusLabel->setText("Terminating pTVreg...");
+
+  // SIGINT gives Python a chance to clean up torch tensors & release the
+  // CUDA context so the next run does not OOM. Fall through to terminate()
+  // then kill() if the process ignores it.
+#ifdef Q_OS_UNIX
+  qint64 pid = m_DeformableProcess->processId();
+  if(pid > 0)
+    ::kill(static_cast<pid_t>(pid), SIGINT);
+  if(!m_DeformableProcess->waitForFinished(2000))
+    {
+    m_DeformableProcess->terminate();
+    if(!m_DeformableProcess->waitForFinished(2000))
+      m_DeformableProcess->kill();
+    }
+#else
   m_DeformableProcess->terminate();
   if(!m_DeformableProcess->waitForFinished(3000))
     m_DeformableProcess->kill();
+#endif
 }
 
 bool RegistrationModel::IsDeformableRegistrationRunning() const
@@ -1921,7 +2054,9 @@ QProcess *RegistrationModel::GetDeformableProcess() const
 
 bool RegistrationModel::HasDeformablePreview() const
 {
-  return m_DeformablePreviewWrapper != NULL;
+  if(m_DeformablePreviewLayerId == 0 || !m_Driver) return false;
+  return m_Driver->GetCurrentImageData()->FindLayer(
+    m_DeformablePreviewLayerId, false, ALL_ROLES) != NULL;
 }
 
 void RegistrationModel::HandleDeformableStdout(const QByteArray &chunk)
@@ -2060,17 +2195,44 @@ bool RegistrationModel::ProcessDeformableMarkerLine(const QString &line)
 
   if(line.startsWith("SNAP_DONE:"))
     {
-    QString path = extract(line, "warped");
-    if(!path.isEmpty())
-      this->ApplyPreviewFromFile(path);
+    QString warpedPath = extract(line, "warped");
+    QString warpPath   = extract(line, "warp");
+    if(!warpedPath.isEmpty())
+      {
+      m_DeformableFinalWarpedPath = warpedPath;
+      this->ApplyPreviewFromFile(warpedPath);
+      }
+    if(!warpPath.isEmpty())
+      m_DeformableWarpFieldPath = warpPath;
+    m_DeformableSawDone = true;
     if(m_DeformableStatusLabel)
       m_DeformableStatusLabel->setText("pTVreg finished. Preview is available.");
+    return true;
+    }
+
+  if(line.startsWith("SNAP_STAGE:"))
+    {
+    // e.g. SNAP_STAGE:loading | SNAP_STAGE:pyramid | SNAP_STAGE:optimizing
+    QString stage = line.mid(QStringLiteral("SNAP_STAGE:").length());
+    if(m_DeformableStatusLabel)
+      m_DeformableStatusLabel->setText(QString("pTVreg: %1").arg(stage));
+    return true;
+    }
+
+  if(line.startsWith("SNAP_CONFIG:"))
+    {
+    // Echo the resolved run configuration into the log for the record.
+    if(m_DeformableLogWidget)
+      m_DeformableLogWidget->appendPlainText(
+        QString("[pTVreg config] %1").arg(
+          line.mid(QStringLiteral("SNAP_CONFIG:").length())));
     return true;
     }
 
   if(line.startsWith("SNAP_ERROR:"))
     {
     QString msg = line.mid(QStringLiteral("SNAP_ERROR:").length());
+    m_DeformableLastError = msg;
     if(m_DeformableStatusLabel)
       m_DeformableStatusLabel->setText(QString("Error: %1").arg(msg));
     if(m_DeformableLogWidget)
@@ -2091,14 +2253,19 @@ void RegistrationModel::ApplyPreviewFromFile(const QString &path)
   // If a previous preview overlay is still around, unload it. This is
   // simpler and safer than a low-level in-place buffer swap and keeps the
   // layer-stack semantics clean.
-  if(m_DeformablePreviewWrapper)
+  if(m_DeformablePreviewLayerId != 0)
     {
-    try
+    ImageWrapperBase *w = m_Driver->GetCurrentImageData()->FindLayer(
+      m_DeformablePreviewLayerId, false, ALL_ROLES);
+    if(w)
       {
-      m_Driver->UnloadOverlay(m_DeformablePreviewWrapper);
+      try
+        {
+        m_Driver->UnloadOverlay(w);
+        }
+      catch(...) {}
       }
-    catch(...) {}
-    m_DeformablePreviewWrapper = NULL;
+    m_DeformablePreviewLayerId = 0;
     }
 
   IRISWarningList wl;
@@ -2117,37 +2284,34 @@ void RegistrationModel::ApplyPreviewFromFile(const QString &path)
   // The most recently added overlay is our preview.
   GenericImageData *gid = m_Driver->GetCurrentImageData();
   if(!gid) return;
+  ImageWrapperBase *newest = NULL;
   for(LayerIterator it = gid->GetLayers(OVERLAY_ROLE); !it.IsAtEnd(); ++it)
     {
-    // Rename the newest overlay so the user knows what it is.
     ImageWrapperBase *w = it.GetLayer();
-    if(w)
-      m_DeformablePreviewWrapper = w;
+    if(w) newest = w;
     }
-  if(m_DeformablePreviewWrapper)
-    m_DeformablePreviewWrapper->SetCustomNickname(kPreviewNickname);
+  if(newest)
+    {
+    m_DeformablePreviewLayerId = newest->GetUniqueId();
+    newest->SetCustomNickname(kPreviewNickname);
+    }
 }
 
 void RegistrationModel::AdoptPreviewAsMovingImage()
 {
-  if(!m_DeformablePreviewWrapper || m_DeformableLastPreviewPath.isEmpty())
+  if(m_DeformablePreviewLayerId == 0 || m_DeformableLastPreviewPath.isEmpty())
     return;
   if(!m_Driver) return;
 
-  // Re-open the preview file as an additional overlay that will *become* the
-  // moving layer. We do it by loading the file in place of the moving layer.
-  IRISWarningList wl;
-  try
-    {
-    // Simpler adopt: keep the preview overlay; user can drag it to the
-    // moving slot manually. Providing a first-class swap requires more
-    // plumbing than we should introduce here.
-    // For now, just rename it and unmark it as "preview" so the user can
-    // clearly see it as the definitive result.
-    m_DeformablePreviewWrapper->SetCustomNickname(
-      std::string("pTVreg warped (adopted)"));
-    }
-  catch(std::exception &) {}
+  ImageWrapperBase *w = m_Driver->GetCurrentImageData()->FindLayer(
+    m_DeformablePreviewLayerId, false, ALL_ROLES);
+  if(!w) return;
 
-  m_DeformablePreviewWrapper = NULL;
+  // Mark the preview as the definitive result. A full "replace-moving"
+  // swap requires more plumbing (layer role change + affine transform
+  // reset) than this dialog should introduce; leaving the wrapper as a
+  // permanent overlay preserves the standard SNAP save/context-menu flow.
+  w->SetCustomNickname(std::string(kAdoptedNickname));
+
+  m_DeformablePreviewLayerId = 0;
 }
