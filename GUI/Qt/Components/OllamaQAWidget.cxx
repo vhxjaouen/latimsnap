@@ -56,6 +56,8 @@ OllamaQAWidget::OllamaQAWidget(QWidget *parent)
           this, &OllamaQAWidget::onRefreshModelsClicked);
   connect(ui->btnFreeGpu, &QPushButton::clicked,
           this, &OllamaQAWidget::onFreeGpuClicked);
+  connect(ui->checkVisionOnly, &QCheckBox::toggled,
+          this, &OllamaQAWidget::onVisionFilterToggled);
   connect(ui->editServer, &QLineEdit::editingFinished,
           this, &OllamaQAWidget::onServerUrlChanged);
 
@@ -391,6 +393,11 @@ OllamaQAWidget::fetchModels()
     m_ModelsReply = nullptr;
   }
 
+  m_AllModels.clear();
+  m_VisionModels.clear();
+  m_PendingShowRequests = 0;
+  m_TotalShowRequests = 0;
+
   ui->labelStatus->setText("Contacting Ollama server...");
   ui->btnRefreshModels->setEnabled(false);
 
@@ -410,12 +417,11 @@ OllamaQAWidget::onModelsFetched()
   if (!m_ModelsReply)
     return;
 
-  ui->btnRefreshModels->setEnabled(true);
-
   // If the reply errored out, onModelsFetchError already reported it; but
   // this finished() slot still fires. Bail out if there was an error.
   if (m_ModelsReply->error() != QNetworkReply::NoError)
   {
+    ui->btnRefreshModels->setEnabled(true);
     m_ModelsReply->deleteLater();
     m_ModelsReply = nullptr;
     return;
@@ -429,45 +435,204 @@ OllamaQAWidget::onModelsFetched()
   QJsonDocument doc = QJsonDocument::fromJson(data, &err);
   if (err.error != QJsonParseError::NoError || !doc.isObject())
   {
+    ui->btnRefreshModels->setEnabled(true);
     ui->labelStatus->setText("Error: invalid response from Ollama server.");
     return;
   }
 
   QJsonArray models = doc.object().value("models").toArray();
 
-  // Preserve the currently selected/edited model name so we can restore it
-  // if it still exists on the server.
-  QString previous = ui->comboModel->currentText().trimmed();
-
-  ui->comboModel->clear();
-
-  QStringList names;
+  m_AllModels.clear();
   for (const QJsonValue &v : models)
   {
     QJsonObject o = v.toObject();
     QString name = o.value("name").toString();
     if (!name.isEmpty())
-      names << name;
+      m_AllModels << name;
   }
 
-  if (names.isEmpty())
+  if (m_AllModels.isEmpty())
   {
-    ui->comboModel->addItem("(no models installed)");
-    ui->labelStatus->setText(
-      "Connected, but no models are installed on the server.");
+    ui->btnRefreshModels->setEnabled(true);
+    updateModelCombo();
     return;
   }
 
-  ui->comboModel->addItems(names);
+  // Inspect each model's capacity via POST /api/show to check for vision support.
+  QString server = ui->editServer->text().trimmed();
+  m_TotalShowRequests = m_AllModels.size();
+  m_PendingShowRequests = m_AllModels.size();
 
-  int idx = names.indexOf(previous);
+  ui->labelStatus->setText(
+    QString("Checking model capabilities (0/%1)...").arg(m_TotalShowRequests));
+
+  for (const QString &modelName : m_AllModels)
+  {
+    QJsonObject body;
+    body["name"] = modelName;
+
+    QUrl showUrl(server + "/api/show");
+    QNetworkRequest showReq(showUrl);
+    showReq.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+    QNetworkReply *reply = m_Network->post(
+      showReq, QJsonDocument(body).toJson(QJsonDocument::Compact));
+    reply->setProperty("modelName", modelName);
+
+    connect(reply, &QNetworkReply::finished,
+            this, &OllamaQAWidget::onShowFetched);
+  }
+}
+
+void
+OllamaQAWidget::onShowFetched()
+{
+  QNetworkReply *reply = qobject_cast<QNetworkReply *>(sender());
+  if (!reply)
+    return;
+
+  QString modelName = reply->property("modelName").toString();
+  QByteArray data = reply->readAll();
+  reply->deleteLater();
+
+  QJsonParseError err;
+  QJsonDocument doc = QJsonDocument::fromJson(data, &err);
+  if (err.error == QJsonParseError::NoError && doc.isObject())
+  {
+    if (parseVisionCapability(doc.object()))
+    {
+      if (!m_VisionModels.contains(modelName))
+        m_VisionModels << modelName;
+    }
+  }
+
+  m_PendingShowRequests--;
+  if (m_PendingShowRequests <= 0)
+  {
+    m_PendingShowRequests = 0;
+    ui->btnRefreshModels->setEnabled(true);
+    updateModelCombo();
+  }
+  else
+  {
+    int done = m_TotalShowRequests - m_PendingShowRequests;
+    ui->labelStatus->setText(
+      QString("Checking model capabilities (%1/%2)...")
+        .arg(done).arg(m_TotalShowRequests));
+  }
+}
+
+bool
+OllamaQAWidget::parseVisionCapability(const QJsonObject &obj) const
+{
+  // 1. Primary check: Ollama's explicit "capabilities" array
+  if (obj.contains("capabilities"))
+  {
+    QJsonArray caps = obj.value("capabilities").toArray();
+    for (const QJsonValue &v : caps)
+    {
+      if (v.toString().trimmed().compare("vision", Qt::CaseInsensitive) == 0)
+        return true;
+    }
+  }
+
+  // 2. Fallback check: inspect details.family or details.families for known vision architectures
+  if (obj.contains("details"))
+  {
+    QJsonObject details = obj.value("details").toObject();
+    QString family = details.value("family").toString().toLower();
+    QJsonArray families = details.value("families").toArray();
+
+    QStringList visionFamilies = {
+      "clip", "mllama", "llava", "llava-llama", "llava_next",
+      "qwen2vl", "qwen2_vl", "minicpmv", "paligemma", "pixtral",
+      "glm4v", "moondream", "vision", "vlm"
+    };
+
+    for (const QString &vf : visionFamilies)
+    {
+      if (family.contains(vf))
+        return true;
+    }
+
+    for (const QJsonValue &fv : families)
+    {
+      QString fName = fv.toString().toLower();
+      for (const QString &vf : visionFamilies)
+      {
+        if (fName.contains(vf))
+          return true;
+      }
+    }
+  }
+
+  // 3. Fallback check: GGUF model_info tensor keys
+  if (obj.contains("model_info"))
+  {
+    QJsonObject info = obj.value("model_info").toObject();
+    for (auto it = info.begin(); it != info.end(); ++it)
+    {
+      if (it.key().contains(".vision.", Qt::CaseInsensitive) ||
+          it.key().contains("mm.mm_input_projection", Qt::CaseInsensitive))
+        return true;
+    }
+  }
+
+  return false;
+}
+
+void
+OllamaQAWidget::onVisionFilterToggled()
+{
+  updateModelCombo();
+}
+
+void
+OllamaQAWidget::updateModelCombo()
+{
+  bool visionOnly = ui->checkVisionOnly->isChecked();
+  const QStringList &list = visionOnly ? m_VisionModels : m_AllModels;
+
+  QString previous = ui->comboModel->currentText().trimmed();
+  ui->comboModel->clear();
+
+  if (list.isEmpty())
+  {
+    if (m_AllModels.isEmpty())
+    {
+      ui->comboModel->addItem("(no models installed)");
+      ui->labelStatus->setText(
+        "Connected, but no models are installed on the server.");
+    }
+    else if (visionOnly)
+    {
+      ui->comboModel->addItem("(no vision models found)");
+      ui->labelStatus->setText(
+        QString("Connected. %1 total model(s) installed, but none have vision capacity.")
+          .arg(m_AllModels.size()));
+    }
+    return;
+  }
+
+  ui->comboModel->addItems(list);
+
+  int idx = list.indexOf(previous);
   if (idx >= 0)
     ui->comboModel->setCurrentIndex(idx);
   else
     ui->comboModel->setCurrentIndex(0);
 
-  ui->labelStatus->setText(
-    QString("Connected. %1 model(s) available.").arg(names.size()));
+  if (visionOnly)
+  {
+    ui->labelStatus->setText(
+      QString("Connected. %1 vision model(s) available (%2 total installed).")
+        .arg(m_VisionModels.size()).arg(m_AllModels.size()));
+  }
+  else
+  {
+    ui->labelStatus->setText(
+      QString("Connected. %1 model(s) available.").arg(m_AllModels.size()));
+  }
 }
 
 void

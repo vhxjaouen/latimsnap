@@ -63,6 +63,8 @@ private slots:
   void onServerUrlChanged();
   void onModelsFetched();
   void onModelsFetchError();
+  void onShowFetched();
+  void onVisionFilterToggled();
   void onFreeGpuClicked();
   void onPsFetched();
   void onUnloadFinished();
@@ -75,6 +77,12 @@ private:
   QNetworkReply         *m_ModelsReply = nullptr;
   QNetworkReply         *m_PsReply = nullptr;
   MainImageWindow       *m_MainWindow = nullptr;
+
+  // List of all models returned by /api/tags, and subset verified to have vision capacity.
+  QStringList m_AllModels;
+  QStringList m_VisionModels;
+  int m_PendingShowRequests = 0;
+  int m_TotalShowRequests = 0;
 
   // Model name of the request currently in flight; used to force an unload
   // when the user aborts a stream so VRAM does not stay pinned until the
@@ -101,6 +109,8 @@ private:
   QString encodeImageBase64(const QImage &img) const;
   void setBusy(bool busy);
   void fetchModels();
+  void updateModelCombo();
+  bool parseVisionCapability(const QJsonObject &showObj) const;
 
   // Issue POST /api/generate {"model": <name>, "keep_alive": 0} to force
   // Ollama to release VRAM for a specific model. Fire-and-forget: the

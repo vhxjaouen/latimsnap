@@ -48,6 +48,19 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QCheckBox" name="checkVisionOnly">
+       <property name="text">
+        <string>Vision Only</string>
+       </property>
+       <property name="toolTip">
+        <string>When checked, filter the model list to show only models verified to have vision/multimodal capabilities via Ollama's model spec (/api/show). Uncheck to show all installed models.</string>
+       </property>
+       <property name="checked">
+        <bool>true</bool>
+       </property>
+      </widget>
+     </item>
       <item>
        <widget class="QPushButton" name="btnRefreshModels">
         <property name="text">
