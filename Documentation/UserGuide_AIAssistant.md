@@ -56,19 +56,25 @@ The panel can be:
 
 ---
 
-## 3. Panel Layout
+## 3. Panel Layout & Controls
 
 | Control | Purpose |
 |---------|---------|
 | **Server** | Ollama server URL. Defaults to `http://localhost:11434`. |
-| **Model** | Editable combo box. Type any locally-pulled model name (default `gemma4`). |
-| **Chat Display** | Scrollable conversation history with streaming responses. |
-| **Attach Current View** | When enabled, the currently displayed view is sent as an image with your prompt. |
-| **View Source** | Choose which panel to capture: Axial, Sagittal, Coronal, or 3D View. |
-| **Prompt Editor** | Multi-line text area to type your question. |
-| **Clear Chat** | Wipes the conversation memory (starts a fresh session). |
-| **Stop** | Aborts a response that is currently streaming. |
-| **Send** | Submits your prompt (and image, if attached) to the model. |
+| **Model** | Editable combo box containing vision models (or all models if *Vision Only* is unchecked). |
+| **Vision Only** | Filter model list to show only models verified to have vision capabilities via `POST /api/show`. |
+| **⚡ Load** | Pre-warm model into VRAM (`keep_alive: -1`). Auto-offloads any previously resident model. |
+| **🧹 Free GPU** | Unloads all resident models from GPU VRAM (`keep_alive: 0`). |
+| **Chat Tab** | Main conversation display with real-time text streaming. |
+| **🧠 Thinking Tab** | Real-time display for reasoning thoughts emitted by models (DeepSeek-R1, Qwen 3.6, Gemma 4, etc.). |
+| **📊 Diagnostics & Log Tab** | Performance telemetry: VRAM load times, prompt prefill speed (tok/s), generation speed (tok/s), payload size. |
+| **Attach Current View** | Captures the active viewport slice/3D rendering as a JPEG Base64 payload. |
+| **Auto-release GPU** | Asks Ollama to unload the model immediately after each response (`keep_alive: 0`). |
+| **Disable Thinking** | Injects `think: false` to force reasoning models to answer directly without internal thinking. |
+| **Export JSON...** | Saves the full chat session, attached view metadata, reasoning thoughts, and performance telemetry to `.json`. |
+| **Clear Chat** | Resets conversation history and performance metrics. |
+| **Stop** | Aborts an in-flight response and offloads the active model from VRAM. |
+| **Send** | Submits your prompt to the selected model. |
 
 ---
 

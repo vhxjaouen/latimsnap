@@ -36,6 +36,8 @@
 #include <QPushButton>
 #include <QComboBox>
 #include <QStringList>
+#include <QFileDialog>
+#include <QFile>
 
 OllamaQAWidget::OllamaQAWidget(QWidget *parent)
   : QWidget(parent)
@@ -52,10 +54,13 @@ OllamaQAWidget::OllamaQAWidget(QWidget *parent)
   connect(ui->btnSend,  &QPushButton::clicked, this, &OllamaQAWidget::onSendClicked);
   connect(ui->btnStop,  &QPushButton::clicked, this, &OllamaQAWidget::onStopClicked);
   connect(ui->btnClear, &QPushButton::clicked, this, &OllamaQAWidget::onClearClicked);
+  connect(ui->btnExportJson, &QPushButton::clicked, this, &OllamaQAWidget::onExportJsonClicked);
   connect(ui->btnRefreshModels, &QPushButton::clicked,
           this, &OllamaQAWidget::onRefreshModelsClicked);
   connect(ui->btnFreeGpu, &QPushButton::clicked,
           this, &OllamaQAWidget::onFreeGpuClicked);
+  connect(ui->btnLoadVram, &QPushButton::clicked,
+          this, &OllamaQAWidget::onLoadVramClicked);
   connect(ui->checkVisionOnly, &QCheckBox::toggled,
           this, &OllamaQAWidget::onVisionFilterToggled);
   connect(ui->editServer, &QLineEdit::editingFinished,
@@ -81,6 +86,16 @@ OllamaQAWidget::~OllamaQAWidget()
   {
     m_ModelsReply->abort();
     m_ModelsReply->deleteLater();
+  }
+  if (m_PsReply)
+  {
+    m_PsReply->abort();
+    m_PsReply->deleteLater();
+  }
+  if (m_PrewarmReply)
+  {
+    m_PrewarmReply->abort();
+    m_PrewarmReply->deleteLater();
   }
   delete ui;
 }
@@ -170,12 +185,32 @@ OllamaQAWidget::updateStreamingAssistantText(const QString &delta)
 {
   m_CurrentAssistantText += delta;
 
-  // Replace last assistant block if present; otherwise append.
-  // Simpler approach: append delta to end of display.
   QTextCursor cursor = ui->chatDisplay->textCursor();
   cursor.movePosition(QTextCursor::End);
   cursor.insertText(delta);
   QScrollBar *sb = ui->chatDisplay->verticalScrollBar();
+  if (sb) sb->setValue(sb->maximum());
+}
+
+void
+OllamaQAWidget::updateStreamingThinkingText(const QString &delta)
+{
+  m_CurrentThinkingText += delta;
+
+  QTextCursor cursor = ui->thinkingDisplay->textCursor();
+  cursor.movePosition(QTextCursor::End);
+  cursor.insertText(delta);
+  QScrollBar *sb = ui->thinkingDisplay->verticalScrollBar();
+  if (sb) sb->setValue(sb->maximum());
+
+  ui->tabWidgetMain->setTabText(1, QString("🧠 Thinking (%1 chars)").arg(m_CurrentThinkingText.length()));
+}
+
+void
+OllamaQAWidget::appendVerbosityLog(const QString &htmlOrText)
+{
+  ui->verbosityDisplay->append(htmlOrText);
+  QScrollBar *sb = ui->verbosityDisplay->verticalScrollBar();
   if (sb) sb->setValue(sb->maximum());
 }
 
@@ -203,15 +238,23 @@ OllamaQAWidget::onSendClicked()
   userMsg["role"]    = "user";
   userMsg["content"] = prompt;
 
+  int imgBytes = 0;
+  int imgMaxDim = 0;
+
   if (ui->checkAttachView->isChecked())
   {
     QImage img = grabCurrentView();
-    QString b64 = encodeImageBase64(img);
-    if (!b64.isEmpty())
+    if (!img.isNull())
     {
-      QJsonArray imgArr;
-      imgArr.append(b64);
-      userMsg["images"] = imgArr;
+      imgMaxDim = qMax(img.width(), img.height());
+      QString b64 = encodeImageBase64(img);
+      if (!b64.isEmpty())
+      {
+        imgBytes = b64.length() * 3 / 4; // approximate raw JPEG bytes
+        QJsonArray imgArr;
+        imgArr.append(b64);
+        userMsg["images"] = imgArr;
+      }
     }
   }
 
@@ -223,27 +266,68 @@ OllamaQAWidget::onSendClicked()
 
   // Prepare a placeholder for the assistant response
   m_CurrentAssistantText.clear();
+  m_CurrentThinkingText.clear();
+  ui->thinkingDisplay->clear();
+  ui->tabWidgetMain->setTabText(1, "🧠 Thinking");
+
   QString color = "#008040";
   QString html  = QString("<div style='margin:6px 0;'>"
                           "<b style='color:%1'>Assistant:</b><br></div>")
                     .arg(color);
   ui->chatDisplay->append(html);
 
-  // Build the request body
+  // Build request payload.
+  // Image History Pruning: strip heavy Base64 strings from PREVIOUS user turns
+  // when constructing the messages array for /api/chat. Retaining Base64 image
+  // arrays across multiple turns causes Ollama's vision prefill time to explode
+  // from milliseconds to 60+ seconds.
+  QJsonArray prunedMessages;
+  for (int i = 0; i < m_Messages.size(); ++i)
+  {
+    QJsonObject msg = m_Messages[i].toObject();
+    // Only keep images on the VERY LAST message (current turn)
+    if (i < m_Messages.size() - 1 && msg.contains("images"))
+    {
+      msg.remove("images");
+    }
+    prunedMessages.append(msg);
+  }
+
   QJsonObject body;
   body["model"]    = model;
-  body["messages"] = m_Messages;
+  body["messages"] = prunedMessages;
   body["stream"]   = true;
 
-  // Prevent the model from camping in VRAM once the reply is done. This is
-  // the primary mechanism to keep the GPU available for pTVreg and other
-  // GPU-heavy workflows. Users can disable via the checkbox for a snappier
-  // multi-turn UX at the cost of GPU residency.
-  if (ui->checkAutoRelease->isChecked())
+  bool autoRelease = ui->checkAutoRelease->isChecked();
+  if (autoRelease)
     body["keep_alive"] = 0;
+
+  bool disableThinking = ui->checkDisableThinking->isChecked();
+  if (disableThinking)
+  {
+    body["think"] = false;
+    QJsonObject opts;
+    opts["think"] = false;
+    body["options"] = opts;
+  }
 
   QJsonDocument doc(body);
   QByteArray payload = doc.toJson(QJsonDocument::Compact);
+
+  // Pre-flight verbosity logging
+  QString nowStr = QDateTime::currentDateTime().toString("hh:mm:ss");
+  QString reqLog = QString(
+    "<hr><b style='color:#0060c0;'>[%1 REQUEST]</b> <b>Model:</b> %2 | <b>Server:</b> %3<br>"
+    "<b>Options:</b> Auto-release GPU = %4 | Disable Thinking = %5 | Messages in context = %6<br>"
+    "<b>Payload size:</b> %7 KB %8")
+    .arg(nowStr, model, server)
+    .arg(autoRelease ? "ON (keep_alive=0)" : "OFF (resident)")
+    .arg(disableThinking ? "ON (think=false)" : "OFF (thinking allowed)")
+    .arg(prunedMessages.size())
+    .arg(payload.size() / 1024.0, 0, 'f', 1)
+    .arg(imgBytes > 0 ? QString(" (Attached view: %1 KB JPEG, max dim %2px)").arg(imgBytes / 1024).arg(imgMaxDim) : "");
+
+  appendVerbosityLog(reqLog);
 
   QUrl url(server + "/api/chat");
   QNetworkRequest req(url);
@@ -292,9 +376,40 @@ OllamaQAWidget::onReadyRead()
     if (obj.contains("message"))
     {
       QJsonObject msg = obj["message"].toObject();
+
+      // Check if thinking content is present in message.think (e.g. DeepSeek-R1 / Qwen 3.6 / Ollama reasoning)
+      if (msg.contains("think"))
+      {
+        QString thinkingDelta = msg["think"].toString();
+        if (!thinkingDelta.isEmpty())
+          updateStreamingThinkingText(thinkingDelta);
+      }
+
       QString delta = msg["content"].toString();
       if (!delta.isEmpty())
-        updateStreamingAssistantText(delta);
+      {
+        // Some models embed thinking tokens directly inside <think>...</think> tags in content
+        if (delta.contains("<think>"))
+        {
+          int startIdx = delta.indexOf("<think>");
+          if (startIdx > 0)
+            updateStreamingAssistantText(delta.left(startIdx));
+          QString thinkPart = delta.mid(startIdx + 7);
+          updateStreamingThinkingText(thinkPart);
+        }
+        else if (delta.contains("</think>"))
+        {
+          int endIdx = delta.indexOf("</think>");
+          updateStreamingThinkingText(delta.left(endIdx));
+          QString contentPart = delta.mid(endIdx + 8);
+          if (!contentPart.isEmpty())
+            updateStreamingAssistantText(contentPart);
+        }
+        else
+        {
+          updateStreamingAssistantText(delta);
+        }
+      }
     }
 
     if (obj["done"].toBool(false))
@@ -303,7 +418,66 @@ OllamaQAWidget::onReadyRead()
       QJsonObject assistantMsg;
       assistantMsg["role"]    = "assistant";
       assistantMsg["content"] = m_CurrentAssistantText;
+      if (!m_CurrentThinkingText.isEmpty())
+        assistantMsg["thinking"] = m_CurrentThinkingText;
       m_Messages.append(assistantMsg);
+
+      // Extract telemetry
+      double totalSec  = obj.value("total_duration").toDouble(0) / 1e9;
+      double loadSec   = obj.value("load_duration").toDouble(0) / 1e9;
+      qint64 promptTok = static_cast<qint64>(obj.value("prompt_eval_count").toDouble(0));
+      double promptSec = obj.value("prompt_eval_duration").toDouble(0) / 1e9;
+      qint64 genTok    = static_cast<qint64>(obj.value("eval_count").toDouble(0));
+      double genSec    = obj.value("eval_duration").toDouble(0) / 1e9;
+      QString doneReason = obj.value("done_reason").toString("stop");
+
+      double promptTokPerSec = (promptSec > 0.001) ? (promptTok / promptSec) : 0.0;
+      double genTokPerSec    = (genSec > 0.001)    ? (genTok / genSec)       : 0.0;
+
+      // Store in turn metrics history for JSON export
+      QJsonObject metricsObj;
+      metricsObj["total_duration_s"]      = totalSec;
+      metricsObj["load_duration_s"]       = loadSec;
+      metricsObj["prompt_eval_count"]     = promptTok;
+      metricsObj["prompt_eval_duration_s"] = promptSec;
+      metricsObj["prompt_eval_tok_s"]     = promptTokPerSec;
+      metricsObj["eval_count"]            = genTok;
+      metricsObj["eval_duration_s"]        = genSec;
+      metricsObj["eval_tok_s"]            = genTokPerSec;
+      metricsObj["done_reason"]           = doneReason;
+      m_TurnMetricsHistory.append(metricsObj);
+
+      QString loadNotice;
+      if (loadSec > 2.0)
+        loadNotice = QString(" <span style='color:#c00000;'>(Cold VRAM load: %1s)</span>").arg(loadSec, 0, 'f', 1);
+
+      QString perfLog = QString(
+        "<b style='color:#008040;'>[TELEMETRY]</b> <b>Total:</b> %1 s | "
+        "<b>Load VRAM:</b> %2 s%3 | "
+        "<b>Prefill:</b> %4 tok in %5 s (<b>%6 tok/s</b>) | "
+        "<b>Generation:</b> %7 tok in %8 s (<b>%9 tok/s</b>) | "
+        "<b>Reason:</b> %10")
+        .arg(totalSec, 0, 'f', 1)
+        .arg(loadSec, 0, 'f', 1)
+        .arg(loadNotice)
+        .arg(promptTok)
+        .arg(promptSec, 0, 'f', 1)
+        .arg(promptTokPerSec, 0, 'f', 1)
+        .arg(genTok)
+        .arg(genSec, 0, 'f', 1)
+        .arg(genTokPerSec, 0, 'f', 1)
+        .arg(doneReason);
+
+      appendVerbosityLog(perfLog);
+
+      ui->labelStatus->setText(
+        QString("Done in %1s | VRAM Load: %2s | Prefill: %3 tok (%4 t/s) | Gen: %5 tok (%6 t/s)")
+          .arg(totalSec, 0, 'f', 1)
+          .arg(loadSec, 0, 'f', 1)
+          .arg(promptTok)
+          .arg(promptTokPerSec, 0, 'f', 1)
+          .arg(genTok)
+          .arg(genTokPerSec, 0, 'f', 1));
     }
   }
 }
@@ -357,9 +531,14 @@ void
 OllamaQAWidget::onClearClicked()
 {
   m_Messages = QJsonArray();
+  m_TurnMetricsHistory = QJsonArray();
   m_CurrentAssistantText.clear();
+  m_CurrentThinkingText.clear();
   ui->chatDisplay->clear();
+  ui->thinkingDisplay->clear();
+  ui->tabWidgetMain->setTabText(1, "🧠 Thinking");
   ui->chatDisplay->setHtml("<i style='color:gray'>Chat history cleared.</i>");
+  appendVerbosityLog("<i style='color:gray'>Conversation history and metrics reset.</i>");
 }
 
 void
@@ -792,4 +971,150 @@ OllamaQAWidget::onUnloadFinished()
       m_UnloadedSummary.clear();
     }
   }
+}
+
+// ===========================================================================
+// Manual VRAM Load / Pre-warm with automatic previous model offload
+// ===========================================================================
+
+void
+OllamaQAWidget::onLoadVramClicked()
+{
+  QString model = ui->comboModel->currentText().trimmed();
+  QString server = ui->editServer->text().trimmed();
+
+  if (model.isEmpty() || server.isEmpty())
+  {
+    QMessageBox::warning(this, "AI Assistant",
+                         "Please select a model and server first.");
+    return;
+  }
+
+  // If a different model was previously loaded in VRAM, offload it first.
+  if (!m_LoadedVramModel.isEmpty() && m_LoadedVramModel != model)
+  {
+    appendVerbosityLog(
+      QString("<b style='color:#c00000;'>[VRAM]</b> Offloading previous model '%1'...")
+        .arg(m_LoadedVramModel));
+    requestModelUnload(m_LoadedVramModel);
+  }
+
+  ui->btnLoadVram->setEnabled(false);
+  ui->labelStatus->setText(QString("Pre-warming %1 into VRAM...").arg(model));
+
+  appendVerbosityLog(
+    QString("<b style='color:#0060c0;'>[VRAM]</b> Pre-warming model '%1' into GPU memory (keep_alive=-1)...")
+      .arg(model));
+
+  // POST /api/generate with keep_alive=-1 (or 10m) and empty prompt pre-loads the model.
+  QJsonObject body;
+  body["model"]      = model;
+  body["prompt"]     = "";
+  body["keep_alive"] = -1; // keep in VRAM until explicitly offloaded
+  body["stream"]     = false;
+
+  QUrl url(server + "/api/generate");
+  QNetworkRequest req(url);
+  req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
+
+  if (m_PrewarmReply)
+  {
+    m_PrewarmReply->abort();
+    m_PrewarmReply->deleteLater();
+  }
+
+  m_PrewarmReply = m_Network->post(
+    req, QJsonDocument(body).toJson(QJsonDocument::Compact));
+  m_PrewarmReply->setProperty("modelName", model);
+
+  connect(m_PrewarmReply, &QNetworkReply::finished,
+          this, &OllamaQAWidget::onPrewarmFinished);
+}
+
+void
+OllamaQAWidget::onPrewarmFinished()
+{
+  ui->btnLoadVram->setEnabled(true);
+
+  if (!m_PrewarmReply)
+    return;
+
+  QString modelName = m_PrewarmReply->property("modelName").toString();
+  QNetworkReply::NetworkError err = m_PrewarmReply->error();
+  QByteArray data = m_PrewarmReply->readAll();
+  m_PrewarmReply->deleteLater();
+  m_PrewarmReply = nullptr;
+
+  if (err != QNetworkReply::NoError)
+  {
+    ui->labelStatus->setText(QString("Failed to pre-warm %1.").arg(modelName));
+    appendVerbosityLog(
+      QString("<b style='color:#c00000;'>[VRAM Error]</b> Could not pre-warm %1.").arg(modelName));
+    return;
+  }
+
+  m_LoadedVramModel = modelName;
+
+  // Extract load duration if available
+  QJsonDocument doc = QJsonDocument::fromJson(data);
+  double loadSec = 0.0;
+  if (doc.isObject())
+    loadSec = doc.object().value("load_duration").toDouble(0) / 1e9;
+
+  ui->labelStatus->setText(
+    QString("Model %1 resident in VRAM (%2s load).").arg(modelName).arg(loadSec, 0, 'f', 1));
+
+  appendVerbosityLog(
+    QString("<b style='color:#008040;'>[VRAM Ready]</b> Model '%1' is now pre-warmed in GPU memory (Load time: %2s).")
+      .arg(modelName).arg(loadSec, 0, 'f', 1));
+}
+
+// ===========================================================================
+// JSON Conversation Export
+// ===========================================================================
+
+void
+OllamaQAWidget::onExportJsonClicked()
+{
+  if (m_Messages.isEmpty())
+  {
+    QMessageBox::information(this, "Export JSON",
+                            "There are no messages in the conversation to export.");
+    return;
+  }
+
+  QString defaultFileName = QString("ollama_chat_%1.json")
+    .arg(QDateTime::currentDateTime().toString("yyyyMMdd_hhmmss"));
+
+  QString filePath = QFileDialog::getSaveFileName(
+    this, tr("Export Conversation JSON"), defaultFileName, tr("JSON Files (*.json)"));
+
+  if (filePath.isEmpty())
+    return;
+
+  QJsonObject sessionObj;
+  sessionObj["export_timestamp"]  = QDateTime::currentDateTime().toString(Qt::ISODate);
+  sessionObj["server"]            = ui->editServer->text().trimmed();
+  sessionObj["model"]             = ui->comboModel->currentText().trimmed();
+  sessionObj["disable_thinking"]  = ui->checkDisableThinking->isChecked();
+  sessionObj["auto_release_gpu"]  = ui->checkAutoRelease->isChecked();
+  sessionObj["messages"]          = m_Messages;
+  sessionObj["thinking_log"]      = m_CurrentThinkingText;
+  sessionObj["turn_metrics"]      = m_TurnMetricsHistory;
+
+  QJsonDocument doc(sessionObj);
+  QFile file(filePath);
+  if (!file.open(QIODevice::WriteOnly))
+  {
+    QMessageBox::critical(this, "Export JSON Error",
+                          QString("Could not open file for writing: %1").arg(file.errorString()));
+    return;
+  }
+
+  file.write(doc.toJson(QJsonDocument::Indented));
+  file.close();
+
+  ui->labelStatus->setText(QString("Exported conversation to %1").arg(QFileInfo(filePath).fileName()));
+  appendVerbosityLog(
+    QString("<b style='color:#008040;'>[EXPORT]</b> Conversation exported to: %1").arg(filePath));
 }

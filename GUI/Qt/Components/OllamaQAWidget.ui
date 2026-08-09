@@ -61,8 +61,24 @@
        </property>
       </widget>
      </item>
-      <item>
-       <widget class="QPushButton" name="btnRefreshModels">
+       <item>
+        <widget class="QPushButton" name="btnLoadVram">
+         <property name="text">
+          <string>⚡ Load</string>
+         </property>
+         <property name="toolTip">
+          <string>Pre-warm model into VRAM: explicitly loads the selected model into GPU memory without generating text, so subsequent chat responses start instantly without model-load delay. Automatically offloads any previously loaded model.</string>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>55</width>
+           <height>16777215</height>
+          </size>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="btnRefreshModels">
         <property name="text">
          <string>↻</string>
         </property>
@@ -96,10 +112,94 @@
     </layout>
    </item>
    <item>
-    <widget class="QTextBrowser" name="chatDisplay">
-     <property name="openExternalLinks">
-      <bool>true</bool>
+    <widget class="QTabWidget" name="tabWidgetMain">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
+     <widget class="QWidget" name="tabChat">
+      <attribute name="title">
+       <string>Chat</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutChat">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTextBrowser" name="chatDisplay">
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabThinking">
+      <attribute name="title">
+       <string>🧠 Thinking</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutThinking">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTextBrowser" name="thinkingDisplay">
+         <property name="placeholderText">
+          <string>Internal reasoning / thinking thoughts from models (DeepSeek-R1, Qwen 3.6, Gemma 4, etc.) will stream here in real time when thinking mode is active...</string>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="tabVerbosity">
+      <attribute name="title">
+       <string>📊 Diagnostics &amp; Log</string>
+      </attribute>
+      <layout class="QVBoxLayout" name="verticalLayoutVerbosity">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <item>
+        <widget class="QTextBrowser" name="verbosityDisplay">
+         <property name="placeholderText">
+          <string>Detailed telemetry, payload statistics, VRAM load durations, prefill speeds (tok/s), and generation speeds (tok/s) will appear here...</string>
+         </property>
+         <property name="openExternalLinks">
+          <bool>true</bool>
+         </property>
+        </widget>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
    <item>
@@ -114,19 +214,32 @@
        </property>
       </widget>
      </item>
-     <item>
-      <widget class="QCheckBox" name="checkAutoRelease">
-       <property name="text">
-        <string>Auto-release GPU</string>
-       </property>
-       <property name="toolTip">
-        <string>When enabled, ask Ollama to unload the model from VRAM as soon as each reply is complete (keep_alive=0). Prevents the model from camping in GPU memory and blocking other GPU workloads such as pTVreg deformable registration. Disable to keep the model resident between turns for faster subsequent replies.</string>
-       </property>
-       <property name="checked">
-        <bool>true</bool>
-       </property>
-      </widget>
-     </item>
+      <item>
+       <widget class="QCheckBox" name="checkAutoRelease">
+        <property name="text">
+         <string>Auto-release GPU</string>
+        </property>
+        <property name="toolTip">
+         <string>When enabled, ask Ollama to unload the model from VRAM as soon as each reply is complete (keep_alive=0). Prevents the model from camping in GPU memory and blocking other GPU workloads such as pTVreg deformable registration. Disable to keep the model resident between turns for faster subsequent replies.</string>
+        </property>
+        <property name="checked">
+         <bool>true</bool>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QCheckBox" name="checkDisableThinking">
+        <property name="text">
+         <string>Disable Thinking</string>
+        </property>
+        <property name="toolTip">
+         <string>When enabled, instructs reasoning models (such as DeepSeek-R1, Qwen 3.6, Gemma 4) to skip the internal reasoning/thinking phase (think: false) and answer directly. Saves 30-120 seconds of thinking time per question.</string>
+        </property>
+        <property name="checked">
+         <bool>false</bool>
+        </property>
+       </widget>
+      </item>
      <item>
       <widget class="QComboBox" name="comboViewSource">
        <item>
@@ -172,6 +285,16 @@
       <widget class="QPushButton" name="btnClear">
        <property name="text">
         <string>Clear Chat</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="btnExportJson">
+       <property name="text">
+        <string>Export JSON...</string>
+       </property>
+       <property name="toolTip">
+        <string>Export full conversation session (prompts, answers, thinking logs, image metadata, and performance metrics) to a .json file.</string>
        </property>
       </widget>
      </item>

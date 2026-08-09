@@ -66,8 +66,11 @@ private slots:
   void onShowFetched();
   void onVisionFilterToggled();
   void onFreeGpuClicked();
+  void onLoadVramClicked();
+  void onExportJsonClicked();
   void onPsFetched();
   void onUnloadFinished();
+  void onPrewarmFinished();
 
 private:
   Ui::OllamaQAWidget *ui;
@@ -76,7 +79,11 @@ private:
   QNetworkReply         *m_Reply = nullptr;
   QNetworkReply         *m_ModelsReply = nullptr;
   QNetworkReply         *m_PsReply = nullptr;
+  QNetworkReply         *m_PrewarmReply = nullptr;
   MainImageWindow       *m_MainWindow = nullptr;
+
+  // Currently pre-warmed / loaded VRAM model name
+  QString m_LoadedVramModel;
 
   // List of all models returned by /api/tags, and subset verified to have vision capacity.
   QStringList m_AllModels;
@@ -103,8 +110,16 @@ private:
   // Current assistant response being streamed
   QString m_CurrentAssistantText;
 
+  // Current assistant thinking / reasoning text being streamed
+  QString m_CurrentThinkingText;
+
+  // History of performance metrics per assistant turn
+  QJsonArray m_TurnMetricsHistory;
+
   void appendMessageToDisplay(const QString &role, const QString &text);
   void updateStreamingAssistantText(const QString &delta);
+  void updateStreamingThinkingText(const QString &delta);
+  void appendVerbosityLog(const QString &htmlOrText);
   QImage grabCurrentView() const;
   QString encodeImageBase64(const QImage &img) const;
   void setBusy(bool busy);
