@@ -755,21 +755,15 @@ OllamaQAWidget::onModelsFetched()
       if (!id.isEmpty())
       {
         m_AllModels << id;
-
-        // Auto-detect vision capacity in model name for vLLM
-        QString lowerId = id.toLower();
-        if (lowerId.contains("vl") || lowerId.contains("vision") ||
-            lowerId.contains("llava") || lowerId.contains("pixtral") ||
-            lowerId.contains("minicpm") || lowerId.contains("paligemma") ||
-            lowerId.contains("gemma") || lowerId.contains("moondream"))
-        {
-          m_VisionModels << id;
-        }
       }
     }
 
-    if (m_VisionModels.isEmpty())
-      m_VisionModels = m_AllModels; // fallback: treat all served vLLM models as active
+    // vLLM / OpenAI backend: do NOT apply any heuristic filtering on model
+    // names. The /v1/models endpoint does not expose vision capabilities in
+    // a standardised way and any name-based guess is unreliable. All served
+    // models are considered "vision-capable" from the widget's point of view
+    // so that the "Vision Only" filter behaves identically to "show all".
+    m_VisionModels = m_AllModels;
 
     ui->btnRefreshModels->setEnabled(true);
     updateModelCombo();
