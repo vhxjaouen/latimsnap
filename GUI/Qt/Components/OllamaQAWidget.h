@@ -45,6 +45,8 @@ class OllamaQAWidget : public QWidget
   Q_OBJECT
 
 public:
+  enum BackendType { BACKEND_VLLM_OPENAI = 0, BACKEND_OLLAMA };
+
   explicit OllamaQAWidget(QWidget *parent = nullptr);
   ~OllamaQAWidget();
 
@@ -53,6 +55,7 @@ public:
   void SetMainImageWindow(MainImageWindow *win);
 
 private slots:
+  void onBackendChanged(int index);
   void onSendClicked();
   void onStopClicked();
   void onClearClicked();
@@ -113,9 +116,14 @@ private:
   // Current assistant thinking / reasoning text being streamed
   QString m_CurrentThinkingText;
 
+  // Start time of active chat request for TTFT / latency tracking
+  qint64 m_RequestStartMs = 0;
+  qint64 m_FirstTokenMs = 0;
+
   // History of performance metrics per assistant turn
   QJsonArray m_TurnMetricsHistory;
 
+  BackendType getBackendType() const;
   void appendMessageToDisplay(const QString &role, const QString &text);
   void updateStreamingAssistantText(const QString &delta);
   void updateStreamingThinkingText(const QString &delta);

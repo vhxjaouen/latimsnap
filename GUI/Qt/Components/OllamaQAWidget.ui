@@ -17,6 +17,30 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayoutSettings">
      <item>
+      <widget class="QLabel" name="labelBackend">
+       <property name="text">
+        <string>Backend:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBackend">
+       <item>
+        <property name="text">
+         <string>vLLM / OpenAI API</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>Ollama</string>
+        </property>
+       </item>
+       <property name="toolTip">
+        <string>Choose server API dialect: 'vLLM / OpenAI API' uses standard /v1/chat/completions (vLLM, LM Studio, LocalAI, OpenAI format). 'Ollama' uses native /api/chat.</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QLabel" name="labelServer">
        <property name="text">
         <string>Server:</string>
@@ -26,7 +50,7 @@
      <item>
       <widget class="QLineEdit" name="editServer">
        <property name="text">
-        <string>http://localhost:11434</string>
+        <string>http://localhost:8000</string>
        </property>
       </widget>
      </item>

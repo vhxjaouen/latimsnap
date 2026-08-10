@@ -51,6 +51,8 @@ OllamaQAWidget::OllamaQAWidget(QWidget *parent)
 
   m_Network = new QNetworkAccessManager(this);
 
+  connect(ui->comboBackend, QOverload<int>::of(&QComboBox::currentIndexChanged),
+          this, &OllamaQAWidget::onBackendChanged);
   connect(ui->btnSend,  &QPushButton::clicked, this, &OllamaQAWidget::onSendClicked);
   connect(ui->btnStop,  &QPushButton::clicked, this, &OllamaQAWidget::onStopClicked);
   connect(ui->btnClear, &QPushButton::clicked, this, &OllamaQAWidget::onClearClicked);
@@ -104,6 +106,29 @@ void
 OllamaQAWidget::SetMainImageWindow(MainImageWindow *win)
 {
   m_MainWindow = win;
+}
+
+OllamaQAWidget::BackendType
+OllamaQAWidget::getBackendType() const
+{
+  return (ui->comboBackend->currentIndex() == 0) ? BACKEND_VLLM_OPENAI : BACKEND_OLLAMA;
+}
+
+void
+OllamaQAWidget::onBackendChanged(int index)
+{
+  QString currServer = ui->editServer->text().trimmed();
+  if (index == 0) // vLLM / OpenAI API
+  {
+    if (currServer == "http://localhost:11434" || currServer.isEmpty())
+      ui->editServer->setText("http://localhost:8000");
+  }
+  else // Ollama
+  {
+    if (currServer == "http://localhost:8000" || currServer.isEmpty())
+      ui->editServer->setText("http://localhost:11434");
+  }
+  fetchModels();
 }
 
 void
@@ -276,39 +301,106 @@ OllamaQAWidget::onSendClicked()
                     .arg(color);
   ui->chatDisplay->append(html);
 
-  // Build request payload.
-  // Image History Pruning: strip heavy Base64 strings from PREVIOUS user turns
-  // when constructing the messages array for /api/chat. Retaining Base64 image
-  // arrays across multiple turns causes Ollama's vision prefill time to explode
-  // from milliseconds to 60+ seconds.
-  QJsonArray prunedMessages;
-  for (int i = 0; i < m_Messages.size(); ++i)
-  {
-    QJsonObject msg = m_Messages[i].toObject();
-    // Only keep images on the VERY LAST message (current turn)
-    if (i < m_Messages.size() - 1 && msg.contains("images"))
-    {
-      msg.remove("images");
-    }
-    prunedMessages.append(msg);
-  }
+  m_RequestStartMs = QDateTime::currentMSecsSinceEpoch();
+  m_FirstTokenMs = 0;
 
   QJsonObject body;
-  body["model"]    = model;
-  body["messages"] = prunedMessages;
-  body["stream"]   = true;
+  QUrl requestUrl;
+  QJsonArray prunedMessages;
 
-  bool autoRelease = ui->checkAutoRelease->isChecked();
-  if (autoRelease)
-    body["keep_alive"] = 0;
-
-  bool disableThinking = ui->checkDisableThinking->isChecked();
-  if (disableThinking)
+  if (getBackendType() == BACKEND_VLLM_OPENAI)
   {
-    body["think"] = false;
-    QJsonObject opts;
-    opts["think"] = false;
-    body["options"] = opts;
+    // OpenAI / vLLM chat completions schema
+    for (int i = 0; i < m_Messages.size(); ++i)
+    {
+      QJsonObject msg = m_Messages[i].toObject();
+      QString role = msg["role"].toString();
+      QString contentStr = msg["content"].toString();
+
+      QJsonObject openAiMsg;
+      openAiMsg["role"] = role;
+
+      // Only attach vision image array on the current user turn to avoid prefill latency explosion
+      if (role == "user" && i == m_Messages.size() - 1 && msg.contains("images"))
+      {
+        QJsonArray contentArr;
+        QJsonObject textObj;
+        textObj["type"] = "text";
+        textObj["text"] = contentStr;
+        contentArr.append(textObj);
+
+        QJsonArray imgArr = msg["images"].toArray();
+        for (const QJsonValue &iv : imgArr)
+        {
+          QJsonObject imgObj;
+          imgObj["type"] = "image_url";
+          QJsonObject urlObj;
+          urlObj["url"] = QString("data:image/jpeg;base64,%1").arg(iv.toString());
+          imgObj["image_url"] = urlObj;
+          contentArr.append(imgObj);
+        }
+        openAiMsg["content"] = contentArr;
+      }
+      else
+      {
+        openAiMsg["content"] = contentStr;
+      }
+      prunedMessages.append(openAiMsg);
+    }
+
+    body["model"]    = model;
+    body["messages"] = prunedMessages;
+    body["stream"]   = true;
+
+    QString chatUrlStr = server;
+    if (!chatUrlStr.endsWith("/v1") && !chatUrlStr.contains("/v1/"))
+    {
+      if (chatUrlStr.endsWith("/"))
+        chatUrlStr += "v1/chat/completions";
+      else
+        chatUrlStr += "/v1/chat/completions";
+    }
+    else if (!chatUrlStr.endsWith("/chat/completions"))
+    {
+      if (chatUrlStr.endsWith("/"))
+        chatUrlStr += "chat/completions";
+      else
+        chatUrlStr += "/chat/completions";
+    }
+    requestUrl = QUrl(chatUrlStr);
+  }
+  else
+  {
+    // Ollama native chat schema
+    for (int i = 0; i < m_Messages.size(); ++i)
+    {
+      QJsonObject msg = m_Messages[i].toObject();
+      // Only keep images on the VERY LAST message (current turn)
+      if (i < m_Messages.size() - 1 && msg.contains("images"))
+      {
+        msg.remove("images");
+      }
+      prunedMessages.append(msg);
+    }
+
+    body["model"]    = model;
+    body["messages"] = prunedMessages;
+    body["stream"]   = true;
+
+    bool autoRelease = ui->checkAutoRelease->isChecked();
+    if (autoRelease)
+      body["keep_alive"] = 0;
+
+    bool disableThinking = ui->checkDisableThinking->isChecked();
+    if (disableThinking)
+    {
+      body["think"] = false;
+      QJsonObject opts;
+      opts["think"] = false;
+      body["options"] = opts;
+    }
+
+    requestUrl = QUrl(server + "/api/chat");
   }
 
   QJsonDocument doc(body);
@@ -317,20 +409,18 @@ OllamaQAWidget::onSendClicked()
   // Pre-flight verbosity logging
   QString nowStr = QDateTime::currentDateTime().toString("hh:mm:ss");
   QString reqLog = QString(
-    "<hr><b style='color:#0060c0;'>[%1 REQUEST]</b> <b>Model:</b> %2 | <b>Server:</b> %3<br>"
-    "<b>Options:</b> Auto-release GPU = %4 | Disable Thinking = %5 | Messages in context = %6<br>"
-    "<b>Payload size:</b> %7 KB %8")
-    .arg(nowStr, model, server)
-    .arg(autoRelease ? "ON (keep_alive=0)" : "OFF (resident)")
-    .arg(disableThinking ? "ON (think=false)" : "OFF (thinking allowed)")
-    .arg(prunedMessages.size())
+    "<hr><b style='color:#0060c0;'>[%1 REQUEST - %2]</b> <b>Model:</b> %3 | <b>Server:</b> %4<br>"
+    "<b>Payload size:</b> %5 KB (%6 messages in context)%7")
+    .arg(nowStr)
+    .arg(getBackendType() == BACKEND_VLLM_OPENAI ? "vLLM / OpenAI API" : "Ollama Native API")
+    .arg(model, requestUrl.toString())
     .arg(payload.size() / 1024.0, 0, 'f', 1)
-    .arg(imgBytes > 0 ? QString(" (Attached view: %1 KB JPEG, max dim %2px)").arg(imgBytes / 1024).arg(imgMaxDim) : "");
+    .arg(prunedMessages.size())
+    .arg(imgBytes > 0 ? QString(" | Attached view: %1 KB JPEG, max dim %2px").arg(imgBytes / 1024).arg(imgMaxDim) : "");
 
   appendVerbosityLog(reqLog);
 
-  QUrl url(server + "/api/chat");
-  QNetworkRequest req(url);
+  QNetworkRequest req(requestUrl);
   req.setHeader(QNetworkRequest::ContentTypeHeader, "application/json");
 
   m_LineBuffer.clear();
@@ -577,17 +667,49 @@ OllamaQAWidget::fetchModels()
   m_PendingShowRequests = 0;
   m_TotalShowRequests = 0;
 
-  ui->labelStatus->setText("Contacting Ollama server...");
+  ui->labelStatus->setText("Contacting server...");
   ui->btnRefreshModels->setEnabled(false);
 
-  QUrl url(server + "/api/tags");
-  QNetworkRequest req(url);
-  m_ModelsReply = m_Network->get(req);
+  if (getBackendType() == BACKEND_VLLM_OPENAI)
+  {
+    // OpenAI / vLLM standard models endpoint: GET /v1/models
+    QString modelsUrl = server;
+    if (!modelsUrl.endsWith("/v1") && !modelsUrl.contains("/v1/"))
+    {
+      if (modelsUrl.endsWith("/"))
+        modelsUrl += "v1/models";
+      else
+        modelsUrl += "/v1/models";
+    }
+    else if (!modelsUrl.endsWith("/models"))
+    {
+      if (modelsUrl.endsWith("/"))
+        modelsUrl += "models";
+      else
+        modelsUrl += "/models";
+    }
 
-  connect(m_ModelsReply, &QNetworkReply::finished,
-          this, &OllamaQAWidget::onModelsFetched);
-  connect(m_ModelsReply, &QNetworkReply::errorOccurred,
-          this, &OllamaQAWidget::onModelsFetchError);
+    QUrl url(modelsUrl);
+    QNetworkRequest req(url);
+    m_ModelsReply = m_Network->get(req);
+
+    connect(m_ModelsReply, &QNetworkReply::finished,
+            this, &OllamaQAWidget::onModelsFetched);
+    connect(m_ModelsReply, &QNetworkReply::errorOccurred,
+            this, &OllamaQAWidget::onModelsFetchError);
+  }
+  else
+  {
+    // Ollama native tags endpoint: GET /api/tags
+    QUrl url(server + "/api/tags");
+    QNetworkRequest req(url);
+    m_ModelsReply = m_Network->get(req);
+
+    connect(m_ModelsReply, &QNetworkReply::finished,
+            this, &OllamaQAWidget::onModelsFetched);
+    connect(m_ModelsReply, &QNetworkReply::errorOccurred,
+            this, &OllamaQAWidget::onModelsFetchError);
+  }
 }
 
 void
@@ -615,13 +737,48 @@ OllamaQAWidget::onModelsFetched()
   if (err.error != QJsonParseError::NoError || !doc.isObject())
   {
     ui->btnRefreshModels->setEnabled(true);
-    ui->labelStatus->setText("Error: invalid response from Ollama server.");
+    ui->labelStatus->setText("Error: invalid response from server.");
     return;
   }
 
+  m_AllModels.clear();
+  m_VisionModels.clear();
+
+  if (getBackendType() == BACKEND_VLLM_OPENAI)
+  {
+    // OpenAI / vLLM response: {"object": "list", "data": [{"id": "model_id"}, ...]}
+    QJsonArray dataArr = doc.object().value("data").toArray();
+    for (const QJsonValue &v : dataArr)
+    {
+      QJsonObject o = v.toObject();
+      QString id = o.value("id").toString();
+      if (!id.isEmpty())
+      {
+        m_AllModels << id;
+
+        // Auto-detect vision capacity in model name for vLLM
+        QString lowerId = id.toLower();
+        if (lowerId.contains("vl") || lowerId.contains("vision") ||
+            lowerId.contains("llava") || lowerId.contains("pixtral") ||
+            lowerId.contains("minicpm") || lowerId.contains("paligemma") ||
+            lowerId.contains("gemma") || lowerId.contains("moondream"))
+        {
+          m_VisionModels << id;
+        }
+      }
+    }
+
+    if (m_VisionModels.isEmpty())
+      m_VisionModels = m_AllModels; // fallback: treat all served vLLM models as active
+
+    ui->btnRefreshModels->setEnabled(true);
+    updateModelCombo();
+    return;
+  }
+
+  // Ollama response: {"models": [{"name": "...", "details": ...}]}
   QJsonArray models = doc.object().value("models").toArray();
 
-  m_AllModels.clear();
   for (const QJsonValue &v : models)
   {
     QJsonObject o = v.toObject();
