@@ -1275,12 +1275,14 @@ set_target_properties(${SNAP_BUNDLE_NAME} PROPERTIES INSTALL_RPATH_USE_LINK_PATH
 
 set(QT_I18N_TRANSLATED_LANGUAGES de es zh_CN)
 string(JOIN " " QT_I18N_TRANSLATED_LANGUAGES_STRING ${QT_I18N_TRANSLATED_LANGUAGES})
+if(QT6_VERSION VERSION_GREATER_EQUAL 6.5)
 qt_add_translations(
   TARGETS ${SNAP_BUNDLE_NAME}
   SOURCE_TARGETS itksnapui_qt ${SNAP_BUNDLE_NAME}
   TS_FILE_DIR GUI/Qt/Translations
   TS_FILE_BASE itksnap
 )
+endif()
 
 #--------------------------------------------------------------------------------
 # Testing-related executables
@@ -1731,9 +1733,10 @@ ELSE()
   SET(CPACK_PACKAGE_EXECUTABLES "itksnap" "ITK-SNAP")
   INSTALL(TARGETS ${SNAP_BUNDLE_NAME} RUNTIME DESTINATION ${SNAP_MAIN_INSTALL_DIR})
 
-  # Use Qt deployment script to take care of plugins
+  # Use Qt deployment script to take care of plugins (Qt 6.5+)
   set(executable_path "${SNAP_MAIN_INSTALL_DIR}/${SNAP_BUNDLE_NAME}")
 
+  if(QT6_VERSION VERSION_GREATER_EQUAL 6.5)
   qt_generate_deploy_script(
       TARGET ${SNAP_BUNDLE_NAME}
       OUTPUT_SCRIPT deploy_script
@@ -1750,6 +1753,7 @@ ELSE()
       LOCALES ${QT_I18N_TRANSLATED_LANGUAGES_STRING}
   )")
   install(SCRIPT ${deploy_script})
+  endif()
 
 ENDIF()
 

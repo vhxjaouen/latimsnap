@@ -26,4 +26,8 @@ build/
 CLAUDE.local.md
 
 # clangd cache
-.cache/
+.cache/ITK-snap-current.tar.gz
+
+# Local packaged builds
+ITK-snap-current.tar.gz
+ITK-snap-current.zip

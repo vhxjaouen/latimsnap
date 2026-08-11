@@ -12,6 +12,7 @@
 #include <QComboBox>
 #include <QStandardItemModel>
 #include <QFileInfo>
+#include <QTimeZone>
 #include <QGraphicsItem>
 #include <QGraphicsScene>
 #include <QGraphicsDropShadowEffect>

@@ -6,14 +6,39 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>360</width>
-    <height>640</height>
+    <width>380</width>
+    <height>680</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>AI Assistant</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutBackend">
+     <item>
+      <widget class="QLabel" name="labelBackend">
+       <property name="text">
+        <string>Backend:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QComboBox" name="comboBackend">
+       <item>
+        <property name="text">
+         <string>Ollama</string>
+        </property>
+       </item>
+       <item>
+        <property name="text">
+         <string>llama.cpp</string>
+        </property>
+       </item>
+      </widget>
+     </item>
+    </layout>
+   </item>
    <item>
     <layout class="QHBoxLayout" name="horizontalLayoutSettings">
      <item>
@@ -48,6 +73,13 @@
        </property>
       </widget>
      </item>
+     <item>
+      <widget class="QPushButton" name="btnRefreshModels">
+       <property name="text">
+        <string>Refresh</string>
+       </property>
+      </widget>
+     </item>
     </layout>
    </item>
    <item>
@@ -58,40 +90,61 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayoutOptions">
+    <layout class="QHBoxLayout" name="horizontalLayoutAttach">
      <item>
-      <widget class="QCheckBox" name="checkAttachView">
+      <widget class="QCheckBox" name="checkAttachAll">
        <property name="text">
-        <string>Attach Current View</string>
+        <string>All 3</string>
        </property>
-       <property name="checked">
+       <property name="tristate">
         <bool>true</bool>
        </property>
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="comboViewSource">
-       <item>
-        <property name="text">
-         <string>Axial</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Sagittal</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>Coronal</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>3D View</string>
-        </property>
-       </item>
+      <widget class="QCheckBox" name="checkAxial">
+       <property name="text">
+        <string>Axial</string>
+       </property>
       </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkSagittal">
+       <property name="text">
+        <string>Sagittal</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QCheckBox" name="checkCoronal">
+       <property name="text">
+        <string>Coronal</string>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item>
+    <layout class="QHBoxLayout" name="horizontalLayoutAttach3d">
+     <item>
+      <widget class="QCheckBox" name="checkAttach3d">
+       <property name="text">
+        <string>3D View</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <spacer name="spacer3d">
+       <property name="orientation">
+        <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="sizeHint" stdset="0">
+        <size>
+         <width>40</width>
+         <height>20</height>
+        </size>
+       </property>
+      </spacer>
      </item>
     </layout>
    </item>
@@ -104,7 +157,7 @@
       </size>
      </property>
      <property name="placeholderText">
-      <string>Ask a question about the attached view...</string>
+      <string>Ask a question about the attached view(s)...</string>
      </property>
     </widget>
    </item>

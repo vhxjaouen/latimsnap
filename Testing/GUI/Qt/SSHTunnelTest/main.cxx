@@ -11,19 +11,19 @@ SSHTunnel::CallbackResponse tunnel_callback(SSHTunnel::CallbackType type, SSHTun
     case SSHTunnel::CB_ERROR:
     {
       auto message = std::get<SSHTunnel::ErrorInfo>(info).error_message;
-      qCritical() << "ERROR: " << message;
+      qCritical() << "ERROR: " << QString::fromStdString(message);
       break;
     }
     case SSHTunnel::CB_WARNING:
     {
       auto message = std::get<SSHTunnel::ErrorInfo>(info).error_message;
-      qWarning() << "WARNING: " << message;
+      qWarning() << "WARNING: " << QString::fromStdString(message);
       break;
     }
     case SSHTunnel::CB_READY:
     {
       auto ready_info = std::get<SSHTunnel::ReadyInfo>(info);
-      qInfo() << "TUNNEL RUNNING ON HOST " << ready_info.hostname << " PORT " << ready_info.local_port;
+      qInfo() << "TUNNEL RUNNING ON HOST " << QString::fromStdString(ready_info.hostname) << " PORT " << ready_info.local_port;
       break;
     }
     case SSHTunnel::CB_PROMPT_PASSWORD:

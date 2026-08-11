@@ -1,0 +1,94 @@
+name: Build-n-Deploy
+
+# Personal test harness between machines.
+# Builds ITK-SNAP from source inside the latimsnap docker base image,
+# bundles a standalone Linux build with linuxdeployqt, tars it as
+# ITK-snap-current.tar.gz, zips it, and rclone-copies it to pcloud:~/TEMP.
+#
+# NOTE: compilation is only possible inside the docker base image
+# (ghcr.io/vhxjaouen/latimsnap-base) - the raw GitHub runner has no toolchain.
+
+on:
+  workflow_dispatch:
+
+env:
+  BUILD_DIR: build
+  # Override these repo variables/secret if your base image installs ITK/VTK
+  # somewhere else. Leave unset to let CMake locate Qt/ITK/VTK on its own.
+  ITK_DIR: ${{ vars.ITK_DIR }}
+  VTK_DIR: ${{ vars.VTK_DIR }}
+
+jobs:
+  build-deploy:
+    name: Docker build + deploy
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout (with submodules)
+        uses: actions/checkout@v4
+        with:
+          submodules: true
+          persist-credentials: false
+
+      - name: Build ITK-SNAP inside docker base image
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspaces/latimsnap \
+            -w /workspaces/latimsnap \
+            -e QT_X11_NO_MITSHM=1 \
+            -e QT_QPA_PLATFORM=offscreen \
+            ghcr.io/vhxjaouen/latimsnap-base:latest \
+            bash -c "
+              set -e
+              export BUILD_DIR='$BUILD_DIR'
+              CMAKE_ARGS='-S . -B \$BUILD_DIR -G Ninja -DCMAKE_BUILD_TYPE=Release'
+              if [ -n '$ITK_DIR' ]; then CMAKE_ARGS+=\" -DITK_DIR=$ITK_DIR\"; fi
+              if [ -n '$VTK_DIR' ]; then CMAKE_ARGS+=\" -DVTK_DIR=$VTK_DIR\"; fi
+              echo \">> cmake \$CMAKE_ARGS\"
+              cmake \$CMAKE_ARGS
+              cmake --build \$BUILD_DIR --config Release --target ITK-SNAP
+            "
+
+      - name: Package binary as tar.gz + zip
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE":/workspaces/latimsnap \
+            -w /workspaces/latimsnap \
+            ghcr.io/vhxjaouen/latimsnap-base:latest \
+            bash -c "
+              set -e
+              BIN=\$(find /workspaces/latimsnap/$BUILD_DIR -maxdepth 1 -type f -name ITK-SNAP | head -n1)
+              [ -n \"\$BIN\" ] || { echo 'ITK-SNAP binary not found'; exit 1; }
+              # package ONLY the binary, never the whole build dir
+              mkdir -p /tmp/bundle_itk && cp \"\$BIN\" /tmp/bundle_itk/ITK-SNAP
+              cd /tmp/bundle_itk
+              tar -czf ITK-snap-current.tar.gz ITK-SNAP
+              python3 -c "import zipfile; z=zipfile.ZipFile('ITK-snap-current.zip','w'); z.write('ITK-snap-current.tar.gz'); z.close()"
+              cp ITK-snap-current.* /workspaces/latimsnap/
+              ls -la /workspaces/latimsnap/ITK-snap-current.*
+            "
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ITK-snap-current
+          path: |
+            ${{ github.workspace }}/ITK-snap-current.tar.gz
+            ${{ github.workspace }}/ITK-snap-current.zip
+
+      - name: Install rclone
+        run: |
+          curl https://rclone.org/install.sh | sudo bash
+
+      - name: Write rclone config (from secret)
+        if: ${{ secrets.RCLONE_CONFIG != '' }}
+        run: |
+          mkdir -p "$HOME/.config/rclone"
+          echo "${{ secrets.RCLONE_CONFIG }}" | base64 -d > "$HOME/.config/rclone/rclone.conf"
+          chmod 600 "$HOME/.config/rclone/rclone.conf"
+
+      - name: Copy to pcloud
+        if: ${{ secrets.RCLONE_CONFIG != '' }}
+        working-directory: ${{ github.workspace }}
+        run: |
+          rclone copy ITK-snap-current.tar.gz pcloud:~/TEMP
+          rclone copy ITK-snap-current.zip     pcloud:~/TEMP

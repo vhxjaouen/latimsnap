@@ -284,7 +284,7 @@ MainImageWindow::MainImageWindow(QWidget *parent) :
   if (ui->menuViews)
   {
     QAction *toggleOllama = m_DockOllama->toggleViewAction();
-    toggleOllama->setText(tr("AI Assistant (Ollama)"));
+    toggleOllama->setText(tr("AI Assistant"));
     ui->menuViews->addAction(toggleOllama);
   }
 
