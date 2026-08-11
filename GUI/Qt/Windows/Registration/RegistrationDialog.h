@@ -39,6 +39,8 @@ private slots:
 
   void on_btnSaveWarp_clicked();
 
+  void on_btnDeformHelp_clicked();
+
   void on_buttonBox_clicked(QAbstractButton *button);
 
   void on_tabAutoManual_currentChanged(int index);

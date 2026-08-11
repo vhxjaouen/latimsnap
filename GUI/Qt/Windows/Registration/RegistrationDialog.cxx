@@ -3,6 +3,7 @@
 
 #include <QMenu>
 #include <QVBoxLayout>
+#include <QMessageBox>
 #include "QtComboBoxCoupling.h"
 #include "QtCheckBoxCoupling.h"
 #include "QtLineEditCoupling.h"
@@ -11,6 +12,7 @@
 #include "QtAbstractButtonCoupling.h"
 #include "QtPagedWidgetCoupling.h"
 #include "QtWidgetArrayCoupling.h"
+#include "QtSpinBoxCoupling.h"
 #include "RegistrationModel.h"
 #include "QtWidgetActivator.h"
 #include "QtCursorOverride.h"
@@ -102,6 +104,7 @@ void RegistrationDialog::SetModel(RegistrationModel *model)
   makeCoupling(ui->inFineLevel, m_Model->GetFinestResolutionLevelModel());
 
   // Deformable settings couplings
+  makeCoupling(ui->inDeformIter, m_Model->GetDeformationIterationsModel());
   makeCoupling(ui->inSigmaPre, m_Model->GetDeformationSigmaPreModel());
   makeCoupling(ui->inSigmaPost, m_Model->GetDeformationSigmaPostModel());
   ui->inSigmaUnits->addItem(tr("voxels"), QVariant(RegistrationModel::VOXEL_UNITS));
@@ -295,6 +298,40 @@ void RegistrationDialog::on_btnSaveWarp_clicked()
           this, exc, tr("Warp IO Error"), tr("Failed to save warp field file"));
       }
     }
+}
+
+void RegistrationDialog::on_btnDeformHelp_clicked()
+{
+  QMessageBox::information(this, tr("Deformable registration parameters"),
+    tr("<html><head/><body><p>Greedy deformable registration matches the "
+       "moving image to the main (fixed) image by computing a deformation "
+       "field in the fixed image space. It first runs an affine registration "
+       "as initialization, then refines it with the deformable (warp) model.</p>"
+       "<p><b>Iterations/level</b> - Number of greedy iterations performed at "
+       "each &quot;multi-resolution level&quot; level. More iterations give a "
+       "better fit but take longer. The number of levels is controlled by the "
+       "Multi-resolution schedule above.</p>"
+       "<p><b>Gradient &sigma;</b> - Smoothing applied to the metric gradient "
+       "at each iteration. Larger values give smoother deformation fields.</p>"
+       "<p><b>Warp &sigma;</b> - Smoothing applied to the deformation field "
+       "after each iteration. Larger values dampen the deformation.</p>"
+       "<p><b>&sigma; units</b> - Voxels scale with the image resolution; mm "
+       "are physical units independent of the image spacing.</p>"
+       "<p><b>Step &epsilon;</b> - Time step for the greedy update. Larger "
+       "values speed up registration but may produce non-diffeomorphic "
+       "deformations. Typical range 0.25 - 0.5.</p>"
+       "<p><b>Stationary velocity (diffeomorphic)</b> - Uses the stationary "
+       "velocity (Log-Demons) model instead of the classic greedy update, "
+       "producing better-behaved Jacobians.</p>"
+       "<p><b>Warp moving image live</b> - Composes the computed displacement "
+       "field with the affine transform so the moving image warps live in all "
+       "slice views.</p>"
+       "<p><b>Show deformation grid</b> - Adds the displacement field as an "
+       "image layer displayed as a deformation grid overlay.</p>"
+       "<p>Hover over any control for a short explanation.</p>"
+       "<p><i>Similarity metric, mask and multi-resolution schedule apply to "
+       "both the affine and deformable stages. NMI is not recommended for "
+       "deformable registration.</i></p></body></html>"));
 }
 
 void RegistrationDialog::on_buttonBox_clicked(QAbstractButton *button)

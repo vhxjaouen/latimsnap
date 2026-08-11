@@ -127,6 +127,7 @@ public:
   irisSimplePropertyAccessMacro(FreeRotationMode, bool)
 
   // Deformable registration parameters
+  irisGenericPropertyAccessMacro(DeformationIterations, int, NumericValueRange<int>)
   irisGenericPropertyAccessMacro(DeformationSigmaPre, double, NumericValueRange<double>)
   irisGenericPropertyAccessMacro(DeformationSigmaPost, double, NumericValueRange<double>)
   irisSimplePropertyAccessMacro(DeformationSigmaUnits, SmoothingUnits)
@@ -273,6 +274,8 @@ protected:
   SmartPtr<ConcreteSimpleBooleanProperty> m_FreeRotationModeModel;
 
   // Deformable registration parameter models
+  typedef ConcretePropertyModel<int, NumericValueRange<int> > IterationsModel;
+  SmartPtr<IterationsModel> m_DeformationIterationsModel;
   typedef ConcretePropertyModel<double, NumericValueRange<double> > RangedDoubleModel;
   SmartPtr<RangedDoubleModel> m_DeformationSigmaPreModel;
   SmartPtr<RangedDoubleModel> m_DeformationSigmaPostModel;

@@ -73,6 +73,7 @@ RegistrationModel::RegistrationModel()
   m_SimilarityMetricModel = NewSimpleConcreteProperty(NMI);
 
   // Deformable registration parameters
+  m_DeformationIterationsModel = NewRangedConcreteProperty(100, 1, 2000, 50);
   m_DeformationSigmaPreModel = NewRangedConcreteProperty(1.732, 0.0, 20.0, 0.1);
   m_DeformationSigmaPostModel = NewRangedConcreteProperty(0.707, 0.0, 10.0, 0.1);
   m_DeformationSigmaUnitsModel = NewSimpleConcreteProperty(VOXEL_UNITS);
@@ -896,7 +897,7 @@ void RegistrationModel::RunDeformableRegistration()
   for(int k = m_CoarsestResolutionLevel; k >= 0; k--)
     {
     if(k >= m_FinestResolutionLevel)
-      param.iter_per_level.push_back(100);
+      param.iter_per_level.push_back(this->GetDeformationIterations());
     else
       param.iter_per_level.push_back(0);
     }
