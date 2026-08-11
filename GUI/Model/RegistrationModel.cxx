@@ -13,6 +13,11 @@
 #include "ImageFunctions.h"
 #include "itkEuler3DTransform.h"
 #include "vnl/algo/vnl_svd.h"
+#include "itkImageAlgorithm.h"
+#include "itkImageFileWriter.h"
+#include "DisplayMappingPolicy.h"
+#include "MultiChannelDisplayMode.h"
+#include "IRISException.h"
 
 #include "OptimizationProgressRenderer.h"
 
@@ -66,6 +71,15 @@ RegistrationModel::RegistrationModel()
 
   // Registration metric
   m_SimilarityMetricModel = NewSimpleConcreteProperty(NMI);
+
+  // Deformable registration parameters
+  m_DeformationSigmaPreModel = NewRangedConcreteProperty(1.732, 0.0, 20.0, 0.1);
+  m_DeformationSigmaPostModel = NewRangedConcreteProperty(0.707, 0.0, 10.0, 0.1);
+  m_DeformationSigmaUnitsModel = NewSimpleConcreteProperty(VOXEL_UNITS);
+  m_DeformationEpsilonModel = NewRangedConcreteProperty(0.5, 0.01, 5.0, 0.05);
+  m_DeformationStationaryVelocityModel = NewSimpleConcreteProperty(true);
+  m_ShowDeformationGridModel = NewSimpleConcreteProperty(true);
+  m_LiveWarpDisplayModel = NewSimpleConcreteProperty(true);
 
   // Mask model
   m_UseSegmentationAsMaskModel = NewSimpleConcreteProperty(false);
@@ -654,7 +668,26 @@ void RegistrationModel::SetIterationCommand(itk::Command *command)
 }
 
 #include "GreedyAPI.h"
+
 void RegistrationModel::RunAutoRegistration()
+{
+  if(this->GetTransformation() == DEFORMABLE)
+    {
+    // Deformable registration needs a good initialization. Run a full affine
+    // registration first, then refine it with the deformable warp model.
+    this->RunAffineRegistration(true);
+
+    // Now run the deformable step, using the affine result as the initial
+    // transform applied to the moving image
+    this->RunDeformableRegistration();
+    }
+  else
+    {
+    this->RunAffineRegistration();
+    }
+}
+
+void RegistrationModel::RunAffineRegistration(bool force_affine)
 {
   // Obtain the fixed and moving images.
   ImageWrapperBase *fixed = this->GetParent()->GetDriver()->GetCurrentImageData()->GetMain();
@@ -724,7 +757,7 @@ void RegistrationModel::RunAutoRegistration()
     };
 
   // Set up the degrees of freedom
-  if(m_TransformationModel->GetValue() == RIGID)
+  if(!force_affine && m_TransformationModel->GetValue() == RIGID)
     param.affine_dof = GreedyParameters::DOF_RIGID;
   else
     param.affine_dof = GreedyParameters::DOF_AFFINE;
@@ -792,6 +825,305 @@ void RegistrationModel::RunAutoRegistration()
   moving->GetDefaultScalarRepresentation()->ReleaseInternalPipeline("RegistrationModel");
   if(mask_cast)
     this->GetParent()->GetDriver()->GetSelectedSegmentationLayer()->ReleaseInternalPipeline("RegistrationModel");
+}
+
+void RegistrationModel::RunDeformableRegistration()
+{
+  // Clear any state left over from a previous deformable run
+  this->ClearDeformation();
+
+  // Obtain the fixed and moving images.
+  ImageWrapperBase *fixed = this->GetParent()->GetDriver()->GetCurrentImageData()->GetMain();
+  ImageWrapperBase *moving = this->GetMovingLayerWrapper();
+
+  ImageWrapperBase::FloatVectorImageType *fixed_cast =
+      fixed->GetDefaultScalarRepresentation()->CreateCastToFloatVectorPipeline("RegistrationModel");
+
+  ImageWrapperBase::FloatVectorImageType *moving_cast =
+      moving->GetDefaultScalarRepresentation()->CreateCastToFloatVectorPipeline("RegistrationModel");
+
+  // Update the cast filters so the buffers are loaded (see RunAffineRegistration)
+  if(fixed_cast->GetSource()) fixed_cast->GetSource()->Update();
+  if(moving_cast->GetSource()) moving_cast->GetSource()->Update();
+
+  // Caster for the mask image
+  ImageWrapperBase::FloatImageType *mask_cast = nullptr;
+
+  // Create an API object and configure the inputs
+  m_GreedyAPI = new GreedyAPI();
+
+  GreedyInputGroup ig;
+  ImagePairSpec ip;
+  ip.weight = 1.0;
+  ip.fixed = "FIXED_IMAGE";
+  ip.moving = "MOVING_IMAGE";
+  ig.inputs.push_back(ip);
+
+  // Pass the actual images to the cache
+  m_GreedyAPI->AddCachedInputObject(ip.fixed, fixed_cast);
+  m_GreedyAPI->AddCachedInputObject(ip.moving, moving_cast);
+
+  // Mask image
+  if(this->GetUseSegmentationAsMask())
+    {
+    ig.fixed_mask = "GRADIENT_MASK";
+    ImageWrapperBase *seg = this->GetParent()->GetDriver()->GetSelectedSegmentationLayer();
+    mask_cast = seg->GetDefaultScalarRepresentation()->CreateCastToFloatPipeline("RegistrationModel");
+    if(mask_cast->GetSource())
+      mask_cast->GetSource()->UpdateLargestPossibleRegion();
+    m_GreedyAPI->AddCachedInputObject(ig.fixed_mask, mask_cast);
+    }
+
+  GreedyParameters param;
+
+  // Set up the metric
+  switch(m_SimilarityMetricModel->GetValue())
+    {
+    case NCC:
+      param.metric = GreedyParameters::NCC;
+      param.metric_radius = std::vector<int>(3, 4);
+      break;
+    case NMI:
+      param.metric = GreedyParameters::NMI;
+      break;
+    default:
+      param.metric = GreedyParameters::SSD;
+      break;
+    };
+
+  // Set up the multi-resolution schedule (iterations per level)
+  param.iter_per_level.clear();
+  for(int k = m_CoarsestResolutionLevel; k >= 0; k--)
+    {
+    if(k >= m_FinestResolutionLevel)
+      param.iter_per_level.push_back(100);
+    else
+      param.iter_per_level.push_back(0);
+    }
+
+  // Deformable parameters
+  const int nlevels = param.iter_per_level.size();
+  param.epsilon_per_level = std::vector<double>(nlevels, this->GetDeformationEpsilon());
+  const bool physical_units = (this->GetDeformationSigmaUnits() == PHYSICAL_UNITS);
+  param.sigma_pre = SmoothingParameters(this->GetDeformationSigmaPre(), physical_units);
+  param.sigma_post = SmoothingParameters(this->GetDeformationSigmaPost(), physical_units);
+  param.warp_exponent = 6;
+  param.warp_precision = 0.1;
+  param.flag_stationary_velocity_mode = this->GetDeformationStationaryVelocity();
+  param.threads = 0;
+
+  // The affine result computed by the initialization step is passed as the
+  // moving pre-transform, so greedy computes the residual deformation in the
+  // fixed image space (analogous to the greedy CLI -it option).
+  ITKMatrixType matrix; ITKVectorType offset;
+  this->GetMovingTransform(matrix, offset);
+  typedef itk::MatrixOffsetTransformBase<double, 3, 3> TransformType;
+  TransformType::Pointer affine = TransformType::New();
+  affine->SetMatrix(matrix);
+  affine->SetOffset(offset);
+  m_GreedyAPI->AddCachedInputObject("INPUT_TRANSFORM", affine.GetPointer());
+  ig.moving_pre_transforms.push_back(TransformSpec("INPUT_TRANSFORM", 1.0));
+
+  // Clear the default input group and push ours
+  if(param.input_groups.size() > 0)
+    param.input_groups.clear();
+  param.input_groups.push_back(ig);
+
+  // Output the warp through the cache (never written to disk)
+  GreedyAPI::VectorImagePointer warp_out = GreedyAPI::VectorImageType::New();
+  m_GreedyAPI->AddCachedOutputObject("DEFORMABLE_OUTPUT", warp_out.GetPointer(), false);
+  param.output = "DEFORMABLE_OUTPUT";
+
+  // Run the deformable registration
+  m_GreedyAPI->RunDeformable(param);
+
+  // Extract the displacement field into a member image so it stays valid after
+  // the API object is destroyed
+  m_DeformationFieldImage = DeformationFieldImageType::New();
+  m_DeformationFieldImage->CopyInformation(warp_out);
+  m_DeformationFieldImage->SetRegions(warp_out->GetBufferedRegion());
+  m_DeformationFieldImage->SetNumberOfComponentsPerPixel(warp_out->GetNumberOfComponentsPerPixel());
+  m_DeformationFieldImage->Allocate();
+
+  typedef itk::ImageRegionConstIterator<GreedyAPI::VectorImageType> WarpSourceIter;
+  typedef itk::ImageRegionIterator<DeformationFieldImageType> WarpDestIter;
+  WarpSourceIter sit(warp_out, warp_out->GetBufferedRegion());
+  WarpDestIter dit(m_DeformationFieldImage, m_DeformationFieldImage->GetBufferedRegion());
+  for(sit.GoToBegin(), dit.GoToBegin(); !sit.IsAtEnd(); ++sit, ++dit)
+    {
+    DeformationFieldImageType::PixelType v(3);
+    for(unsigned int c = 0; c < 3; c++)
+      v[c] = static_cast<float>(sit.Get()[c]);
+    dit.Set(v);
+    }
+
+  // Apply the deformation to the moving layer (live display + optional grid)
+  this->ApplyDeformationToMovingLayer();
+
+  // Delete the API
+  delete(m_GreedyAPI); m_GreedyAPI = NULL;
+
+  // Release the pipelines
+  fixed->GetDefaultScalarRepresentation()->ReleaseInternalPipeline("RegistrationModel");
+  moving->GetDefaultScalarRepresentation()->ReleaseInternalPipeline("RegistrationModel");
+  if(mask_cast)
+    this->GetParent()->GetDriver()->GetSelectedSegmentationLayer()->ReleaseInternalPipeline("RegistrationModel");
+}
+
+void RegistrationModel::ApplyDeformationToMovingLayer()
+{
+  if(!m_DeformationFieldImage || m_DeformationFieldImage->GetBufferedRegion().GetNumberOfPixels() == 0)
+    return;
+
+  ImageWrapperBase *moving = this->GetMovingLayerWrapper();
+  if(!moving)
+    return;
+
+  // Build a displacement field transform from the (float) warp field. greedy
+  // computes warp in the fixed image space with physical (mm) displacements,
+  // so a DisplacementFieldTransform samples it directly.
+  typedef DeformationFieldTransformType::DisplacementFieldType DisplacementFieldType;
+  DisplacementFieldType::Pointer dfield = DisplacementFieldType::New();
+  dfield->CopyInformation(m_DeformationFieldImage);
+  dfield->SetRegions(m_DeformationFieldImage->GetBufferedRegion());
+  dfield->Allocate();
+
+  // Convert the float vector image to a double vector field
+  typedef itk::ImageRegionConstIterator<DeformationFieldImageType> SrcIterator;
+  typedef itk::ImageRegionIterator<DisplacementFieldType> DstIterator;
+  SrcIterator sit(m_DeformationFieldImage, m_DeformationFieldImage->GetBufferedRegion());
+  DstIterator dit(dfield, dfield->GetBufferedRegion());
+  for(sit.GoToBegin(), dit.GoToBegin(); !sit.IsAtEnd(); ++sit, ++dit)
+    {
+    typename DisplacementFieldType::PixelType v;
+    for(unsigned int c = 0; c < 3; c++)
+      v[c] = sit.Get()[c];
+    dit.Set(v);
+    }
+
+  m_DeformationFieldTransform = DeformationFieldTransformType::New();
+  m_DeformationFieldTransform->SetDisplacementField(dfield);
+
+  // Live warped display: compose the displacement field with the affine
+  // transform on the moving layer's slicers
+  if(this->GetLiveWarpDisplay())
+    moving->SetDeformationField(m_DeformationFieldTransform);
+
+  // Also expose the warp as a vector overlay, so it can be visualized with the
+  // deformation grid display mode (and saved / hidden at will)
+  if(this->GetShowDeformationGrid() || !this->GetLiveWarpDisplay())
+    this->CreateWarpOverlay(m_DeformationFieldImage);
+}
+
+void RegistrationModel::CreateWarpOverlay(const DeformationFieldImageType *field)
+{
+  // The warp overlay is a single-volume 4D vector image sharing the reference
+  // space of the main (fixed) image
+  typedef itk::VectorImage<float, 4> Field4DType;
+  Field4DType::Pointer field4d = Field4DType::New();
+
+  auto reg3 = field->GetBufferedRegion();
+  typename Field4DType::RegionType reg4;
+  for(int d = 0; d < 3; d++)
+    {
+    reg4.SetIndex(d, reg3.GetIndex(d));
+    reg4.SetSize(d, reg3.GetSize(d));
+    }
+  reg4.SetIndex(3, 0);
+  reg4.SetSize(3, 1);
+
+  field4d->SetRegions(reg4);
+  field4d->SetNumberOfComponentsPerPixel(field->GetNumberOfComponentsPerPixel());
+  field4d->Allocate();
+  memcpy(field4d->GetPixelContainer()->GetBufferPointer(),
+         field->GetPixelContainer()->GetBufferPointer(),
+         reg3.GetNumberOfPixels() * field->GetNumberOfComponentsPerPixel() * sizeof(float));
+
+  // The 4D image must have a size-1 time axis; CopyInformation does not handle
+  // the 4th dimension, so set spacing/origin explicitly from the 3D field
+  {
+  auto spc = field->GetSpacing();
+  auto org = field->GetOrigin();
+  auto dir = field->GetDirection();
+  typename Field4DType::SpacingType spc4;
+  typename Field4DType::PointType org4;
+  typename Field4DType::DirectionType dir4;
+  for(int i = 0; i < 4; i++)
+    {
+    for(int j = 0; j < 4; j++)
+      dir4(i,j) = i < 3 && j < 3 ? dir(i,j) : (i == j ? 1.0 : 0.0);
+    spc4[i] = i < 3 ? spc[i] : 1.0;
+    org4[i] = i < 3 ? org[i] : 0.0;
+    }
+  field4d->SetSpacing(spc4);
+  field4d->SetOrigin(org4);
+  field4d->SetDirection(dir4);
+  }
+
+  // Build the vector wrapper and add it as an overlay registered to the main
+  // (fixed) image space
+  auto *gid = m_Driver->GetCurrentImageData();
+  WarpOverlayWrapperType::Pointer warpWrap = WarpOverlayWrapperType::New();
+  warpWrap->SetImage4D(field4d);
+  warpWrap->SetReferenceSpace(gid->GetMain()->GetImageBase());
+  warpWrap->SetCustomNickname("greedy warp");
+
+  gid->AddOverlay(warpWrap.GetPointer());
+  m_WarpOverlay = warpWrap.GetPointer();
+
+  // Enable deformation grid display so the warp is immediately visible
+  AbstractMultiChannelDisplayMappingPolicy *dp =
+      dynamic_cast<AbstractMultiChannelDisplayMappingPolicy *>(warpWrap->GetDisplayMapping());
+  if(dp)
+    {
+    MultiChannelDisplayMode mode = dp->GetDisplayMode();
+    mode.SelectedScalarRep = SCALAR_REP_COMPONENT;
+    mode.SelectedComponent = 0;
+    mode.UseRGB = false;
+    mode.RenderAsGrid = true;
+    dp->SetDisplayMode(mode);
+    }
+}
+
+bool RegistrationModel::HasDeformationField() const
+{
+  return m_DeformationFieldTransform.IsNotNull();
+}
+
+void RegistrationModel::ClearDeformation()
+{
+  ImageWrapperBase *moving = this->GetMovingLayerWrapper();
+  if(moving)
+    moving->ClearDeformation();
+
+  // Remove the warp overlay layer, if one exists
+  if(m_WarpOverlay.IsNotNull())
+    {
+    auto *gid = m_Driver->GetCurrentImageData();
+    if(gid->FindLayer(m_WarpOverlay->GetUniqueId(), false, OVERLAY_ROLE))
+      gid->UnloadOverlay(m_WarpOverlay);
+    m_WarpOverlay = nullptr;
+    }
+
+  m_DeformationFieldImage = nullptr;
+  m_DeformationFieldTransform = nullptr;
+}
+
+void RegistrationModel::SaveWarp(const char *filename)
+{
+  if(!m_DeformationFieldImage)
+    {
+    throw IRISException("No deformation field has been computed. Run "
+                          "deformable registration first.");
+    }
+
+  // The warp field is a 3-component image in the fixed image space
+  typedef itk::ImageFileWriter<DeformationFieldImageType> WriterType;
+  WriterType::Pointer writer = WriterType::New();
+  writer->SetFileName(filename);
+  writer->SetInput(m_DeformationFieldImage);
+  writer->SetUseCompression(true);
+  writer->Update();
 }
 
 void RegistrationModel::MatchByMoments(int order)
@@ -1077,6 +1409,7 @@ void RegistrationModel::ResetTransformToIdentity()
 
   // Reset the flips
   this->m_ManualParam.Flip.fill(0);
+  this->ClearDeformation();
   this->SetMovingTransform(matrix, offset);
 }
 

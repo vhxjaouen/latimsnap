@@ -37,6 +37,8 @@ private slots:
 
   void on_btnSave_clicked();
 
+  void on_btnSaveWarp_clicked();
+
   void on_buttonBox_clicked(QAbstractButton *button);
 
   void on_tabAutoManual_currentChanged(int index);
@@ -50,6 +52,8 @@ private slots:
   void on_actionMoments_of_Inertia_triggered();
 
   void onFreeRotationModeChange(const EventBucket &);
+
+  void onTransformationChange(const EventBucket &);
 
 private:
   Ui::RegistrationDialog *ui;

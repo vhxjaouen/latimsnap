@@ -537,6 +537,15 @@ public:
   virtual void SetITKTransform(ImageBaseType *referenceSpace, ITKTransformType *transform) override;
 
   /**
+   * Set/clear an optional deformable displacement-field transform composed with
+   * the affine transform for display and resampling. See the base class docs.
+   */
+  virtual void SetDeformationField(const ITKTransformType *deformationField) override;
+  virtual void ClearDeformation() override;
+  virtual bool HasDeformationField() const override;
+  virtual const ITKTransformType *GetWarpedITKTransform() const override;
+
+  /**
    * Set the reference image without changing the transform
    */
   virtual void SetReferenceSpace(ImageBaseType *referenceSpace) override;
@@ -865,6 +874,33 @@ protected:
    * is manipulated during image registration
    */
   SmartPtr<ITKTransformType> m_AffineTransform;
+
+  /**
+   * Optional displacement-field transform (maps reference space to image space)
+   * composed with m_AffineTransform for live warped display and resampling.
+   */
+  SmartPtr<ITKTransformType> m_DeformationField;
+
+  /**
+   * Cache for the composed (affine + deformation) transform returned by
+   * GetWarpedITKTransform(). Rebuilt on every call while a deformation field
+   * is set; affine-only consumers never see it.
+   */
+  mutable SmartPtr<ITKTransformType> m_ComposedTransform;
+
+  /**
+   * Compute the effective transform used for displaying and resampling this
+   * image: m_AffineTransform composed with m_DeformationField (deformation
+   * applied first in reference space) when a field is set, or m_AffineTransform
+   * otherwise. The returned pointer is kept alive by m_ComposedTransform.
+   */
+  const ITKTransformType *GetEffectiveTransform() const;
+
+  /**
+   * Push the effective transform (affine, or affine-composed-with-deformation)
+   * to all slicers and recompute the orthogonal-slicing flag.
+   */
+  void ApplyTransformToSlicers();
 
   /** The current cursor position (slice index) in image dimensions */
   IndexType m_SliceIndex;

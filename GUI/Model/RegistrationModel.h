@@ -5,6 +5,10 @@
 #include "PropertyModel.h"
 #include "itkMatrix.h"
 #include "itkVector.h"
+#include "itkVectorImage.h"
+#include "itkDisplacementFieldTransform.h"
+#include "VectorImageWrapper.h"
+#include "ImageWrapperTraits.h"
 #include "MultiComponentMetricReport.h"
 
 class GlobalUIModel;
@@ -41,8 +45,11 @@ public:
     UIF_REGISTRATION_MODE
   };
 
-  /** Allowed transformation models - to be expanded in the future */
-  enum Transformation { RIGID = 0, AFFINE, INVALID_MODE };
+  /** Allowed transformation models */
+  enum Transformation { RIGID = 0, AFFINE, DEFORMABLE, INVALID_MODE };
+
+  /** Units for the deformable smoothing sigmas */
+  enum SmoothingUnits { VOXEL_UNITS = 0, PHYSICAL_UNITS };
 
   /** Image similarity metrics */
   enum SimilarityMetric { NMI = 0, NCC, SSD, INVALID_METRIC };
@@ -119,9 +126,35 @@ public:
   irisGenericPropertyAccessMacro(FinestResolutionLevel, int, ResolutionLevelDomain)
   irisSimplePropertyAccessMacro(FreeRotationMode, bool)
 
+  // Deformable registration parameters
+  irisGenericPropertyAccessMacro(DeformationSigmaPre, double, NumericValueRange<double>)
+  irisGenericPropertyAccessMacro(DeformationSigmaPost, double, NumericValueRange<double>)
+  irisSimplePropertyAccessMacro(DeformationSigmaUnits, SmoothingUnits)
+  irisGenericPropertyAccessMacro(DeformationEpsilon, double, NumericValueRange<double>)
+  irisSimplePropertyAccessMacro(DeformationStationaryVelocity, bool)
+  irisSimplePropertyAccessMacro(ShowDeformationGrid, bool)
+  irisSimplePropertyAccessMacro(LiveWarpDisplay, bool)
+
   void SetIterationCommand(itk::Command *command);
 
   void RunAutoRegistration();
+
+  /**
+   * Save the computed deformation field (warp) to a NIfTI image file. Only
+   * meaningful after a deformable registration has been run.
+   */
+  void SaveWarp(const char *filename);
+
+  /**
+   * Whether a deformation field is currently associated with the moving layer
+   */
+  bool HasDeformationField() const;
+
+  /**
+   * Remove the deformation field from the moving layer and unload the warp
+   * overlay layer, restoring affine-only behavior
+   */
+  void ClearDeformation();
 
   void LoadTransform(const char *filename, TransformFormat format,
                      bool compose = false, bool inverse = false);
@@ -160,6 +193,13 @@ protected:
   typedef itk::Vector<double, 3> ITKVectorType;
   typedef GreedyApproach<3, float> GreedyAPI;
   typedef itk::MatrixOffsetTransformBase<double, 3, 3> AffineTransform;
+
+  // Types for the deformable (warp field) result
+  typedef itk::VectorImage<float, 3> DeformationFieldImageType;
+  typedef itk::DisplacementFieldTransform<double, 3> DeformationFieldTransformType;
+
+  // Shorthand for a vector wrapper that can hold the warp field as an overlay
+  typedef VectorImageWrapper<AnatomicImageWrapperTraits<float> > WarpOverlayWrapperType;
 
   // A little function to make homogeneous matrices from matrix/offset
   static Mat4 make_homog(const Mat3 &A, const Vec3 &b) ;
@@ -231,6 +271,17 @@ protected:
   SmartPtr<ConcreteSimpleDoubleProperty> m_LastMetricValueModel;
 
   SmartPtr<ConcreteSimpleBooleanProperty> m_FreeRotationModeModel;
+
+  // Deformable registration parameter models
+  typedef ConcretePropertyModel<double, NumericValueRange<double> > RangedDoubleModel;
+  SmartPtr<RangedDoubleModel> m_DeformationSigmaPreModel;
+  SmartPtr<RangedDoubleModel> m_DeformationSigmaPostModel;
+  typedef ConcretePropertyModel<SmoothingUnits, TrivialDomain> SmoothingUnitsModel;
+  SmartPtr<SmoothingUnitsModel> m_DeformationSigmaUnitsModel;
+  SmartPtr<RangedDoubleModel> m_DeformationEpsilonModel;
+  SmartPtr<ConcreteSimpleBooleanProperty> m_DeformationStationaryVelocityModel;
+  SmartPtr<ConcreteSimpleBooleanProperty> m_ShowDeformationGridModel;
+  SmartPtr<ConcreteSimpleBooleanProperty> m_LiveWarpDisplayModel;
 
   // Multi-resolution schedule - coarsest and finest levels
   int m_CoarsestResolutionLevel, m_FinestResolutionLevel;
@@ -304,6 +355,32 @@ protected:
 
   // Renderer used to plot the metric
   SmartPtr<OptimizationProgressRenderer> m_RegistrationProgressRenderer;
+
+  // The deformation field computed by deformable registration, in the fixed
+  // (main) image space, with physical (mm) displacement values
+  SmartPtr<DeformationFieldImageType> m_DeformationFieldImage;
+
+  // Displacement field transform built from the warp, applied to the moving
+  // layer for live warped display and resampling
+  SmartPtr<DeformationFieldTransformType> m_DeformationFieldTransform;
+
+  // Overlay layer that holds the warp field, enabling deformation grid display
+  SmartPtr<ImageWrapperBase> m_WarpOverlay;
+
+  // Run the affine/rigid registration. When force_affine is true, the full
+  // affine model is used regardless of the transformation model - this is how
+  // the deformable registration initializes itself.
+  void RunAffineRegistration(bool force_affine = false);
+
+  // Run greedy deformable registration assuming an affine pre-transform already
+  // applied to the moving layer
+  void RunDeformableRegistration();
+
+  // Build and apply the displacement field transform + optional warp overlay
+  void ApplyDeformationToMovingLayer();
+
+  // Create a vector overlay layer holding the warp field (for grid display)
+  void CreateWarpOverlay(const DeformationFieldImageType *field);
 
   // Euler angles to a rotation matrix
   Mat3 MapEulerAnglesToRotationMatrix(const Vec3 &euler_angles) const;

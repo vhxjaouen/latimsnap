@@ -228,19 +228,195 @@ color: dimgray;</string>
        <item>
         <widget class="QComboBox" name="inSimilarityMetric"/>
        </item>
-       <item>
-        <widget class="QCheckBox" name="inUseMask">
-         <property name="toolTip">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this is checked, the current segmentation in ITK-SNAP will be used as a mask  for the registration. This means that the similarity between the main image and the moving image layer will only be computed at the voxels assigned a segmentation label.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
-         </property>
-         <property name="styleSheet">
-          <string notr="true">font-size:11px;</string>
-         </property>
-         <property name="text">
-          <string>Use segmentation as mask</string>
-         </property>
-        </widget>
-       </item>
+<item>
+         <widget class="QCheckBox" name="inUseMask">
+          <property name="toolTip">
+           <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this is checked, the current segmentation in ITK-SNAP will be used as a mask  for the registration. This means that the similarity between the main image and the moving image layer will only be computed at the voxels assigned a segmentation label.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          </property>
+          <property name="styleSheet">
+           <string notr="true">font-size:11px;</string>
+          </property>
+          <property name="text">
+           <string>Use segmentation as mask</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QGroupBox" name="inDeformableGroup">
+          <property name="styleSheet">
+           <string notr="true">QLabel {
+  font-size:11px;
+}
+
+QComboBox {
+  font-size:11px;
+}
+
+QDoubleSpinBox {
+  font-size:11px;
+}
+
+QCheckBox {
+  font-size:11px;
+}</string>
+          </property>
+          <property name="title">
+           <string>Deformable settings:</string>
+          </property>
+          <layout class="QFormLayout" name="formLayoutDeformable">
+           <property name="fieldGrowthPolicy">
+            <enum>QFormLayout::FieldsStayAtSizeHint</enum>
+           </property>
+           <property name="horizontalSpacing">
+            <number>4</number>
+           </property>
+           <property name="verticalSpacing">
+            <number>2</number>
+           </property>
+           <property name="leftMargin">
+            <number>16</number>
+           </property>
+           <property name="topMargin">
+            <number>4</number>
+           </property>
+           <property name="rightMargin">
+            <number>2</number>
+           </property>
+           <property name="bottomMargin">
+            <number>4</number>
+           </property>
+           <item row="0" column="0">
+            <widget class="QLabel" name="labelSigmaPre">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Smoothing applied to the metric gradient at each iteration. Larger values give smoother deformation fields.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Gradient σ:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QDoubleSpinBox" name="inSigmaPre">
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>20.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+             <property name="value">
+              <double>1.732000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="0">
+            <widget class="QLabel" name="labelSigmaPost">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Smoothing applied to the deformation field after each iteration. Larger values dampen the deformation.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Warp σ:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QDoubleSpinBox" name="inSigmaPost">
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>10.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.100000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.707000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="0">
+            <widget class="QLabel" name="labelSigmaUnits">
+             <property name="text">
+              <string>σ units:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QComboBox" name="inSigmaUnits">
+             <item>
+              <property name="text">
+               <string>voxels</string>
+              </property>
+             </item>
+             <item>
+              <property name="text">
+               <string>mm</string>
+              </property>
+             </item>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="labelEpsilon">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Time step (epsilon) for the greedy update. Larger values speed up registration but may produce non-diffeomorphic deformations. Typical range 0.25 - 0.5.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Step ε:</string>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QDoubleSpinBox" name="inEpsilon">
+             <property name="decimals">
+              <number>3</number>
+             </property>
+             <property name="maximum">
+              <double>5.000000000000000</double>
+             </property>
+             <property name="singleStep">
+              <double>0.050000000000000</double>
+             </property>
+             <property name="value">
+              <double>0.500000000000000</double>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0" colspan="2">
+            <widget class="QCheckBox" name="inSvMode">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Use the stationary velocity field (diffeomorphic Demons) model instead of the classic greedy update. Produces better-behaved Jacobians.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Stationary velocity (diffeomorphic)</string>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0" colspan="2">
+            <widget class="QCheckBox" name="inLiveWarp">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Warps the moving image live in all slice views using the computed displacement field (composed with the affine transform).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Warp moving image live</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0" colspan="2">
+            <widget class="QCheckBox" name="inShowGrid">
+             <property name="toolTip">
+              <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Adds the displacement field as a new image layer and displays it as a deformation grid overlay.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+             </property>
+             <property name="text">
+              <string>Show deformation grid</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
+        </item>
        <item>
         <spacer name="verticalSpacer_4">
          <property name="orientation">
@@ -1002,6 +1178,16 @@ QComboBox {
         <property name="icon">
          <iconset resource="../../Resources/SNAPResources.qrc">
           <normaloff>:/root/save_22.png</normaloff>:/root/save_22.png</iconset>
+        </property>
+       </widget>
+      </item>
+      <item>
+       <widget class="QToolButton" name="btnSaveWarp">
+        <property name="toolTip">
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Save the deformation field (warp) computed by deformable registration to a NIfTI image file&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+        </property>
+        <property name="text">
+         <string>W</string>
         </property>
        </widget>
       </item>

@@ -51,6 +51,8 @@
 #include <itkImageFileWriter.h>
 #include <itkResampleImageFilter.h>
 #include <itkIdentityTransform.h>
+#include <itkDisplacementFieldTransform.h>
+#include <itkCompositeTransform.h>
 #include <itkFlipImageFilter.h>
 #include <itkUnaryFunctorImageFilter.h>
 #include "UnaryFunctorVectorImageFilter.h"
@@ -1627,16 +1629,9 @@ ImageWrapper<TTraits>
   m_ImageSpaceMatchesReferenceSpace =
       CanOrthogonalSlicingBeUsed(m_Image, m_ReferenceSpace, m_AffineTransform);
 
-  // Update the transform
-  for (auto index : DisplaySliceIndices)
-  {
-    m_Slicers[index]->SetObliqueTransform(m_AffineTransform);
-    m_Slicers[index]->SetUseOrthogonalSlicing(m_ImageSpaceMatchesReferenceSpace);
-    m_Slicers[index]->SetOrthogonalTransform(m_ImageGeometry->GetImageToDisplayTransform(index.slice));
-  }
-
-  // Fire an update event
-  this->InvokeEvent(WrapperDisplayMappingChangeEvent());
+  // Push the effective transform (affine, or affine composed with any
+  // deformation field) to all slicers
+  ApplyTransformToSlicers();
 }
 
 template<class TTraits>
@@ -1650,9 +1645,104 @@ ImageWrapper<TTraits>
 template<class TTraits>
 const typename ImageWrapper<TTraits>::ITKTransformType *
 ImageWrapper<TTraits>
+::GetEffectiveTransform() const
+{
+  // Deformation field is applied first (in reference space), then the affine
+  // transform maps into image space. This matches the greedy convention
+  // ras(B) = affine(ras(A) + warp[A]).
+  typedef itk::DisplacementFieldTransform<double, 3> DisplacementFieldTransformType;
+  const DisplacementFieldTransformType *dfield =
+      dynamic_cast<const DisplacementFieldTransformType *>(m_DeformationField.GetPointer());
+
+  if(!dfield)
+    {
+    return m_AffineTransform;
+    }
+
+  typedef itk::CompositeTransform<double, 3> CompositeTransformType;
+  CompositeTransformType::Pointer comp = CompositeTransformType::New();
+  comp->AddTransform(const_cast<DisplacementFieldTransformType *>(dfield));
+  comp->AddTransform(const_cast<ITKTransformType *>(m_AffineTransform.GetPointer()));
+  m_ComposedTransform = comp.GetPointer();
+  return m_ComposedTransform.GetPointer();
+}
+
+template<class TTraits>
+void
+ImageWrapper<TTraits>
+::ApplyTransformToSlicers()
+{
+  // A deformation field forces the non-orthogonal slicing path, since
+  // CanOrthogonalSlicingBeUsed() inspects only the affine part (which may be
+  // identity) and would otherwise silently skip the warp.
+  bool warp_present = m_DeformationField.IsNotNull();
+  if(warp_present)
+    m_ImageSpaceMatchesReferenceSpace = false;
+  else
+    m_ImageSpaceMatchesReferenceSpace =
+        CanOrthogonalSlicingBeUsed(m_Image, m_ReferenceSpace, m_AffineTransform);
+
+  const ITKTransformType *effective = this->GetEffectiveTransform();
+
+  // Update the transform
+  for (auto index : DisplaySliceIndices)
+    {
+    m_Slicers[index]->SetObliqueTransform(effective);
+    m_Slicers[index]->SetUseOrthogonalSlicing(m_ImageSpaceMatchesReferenceSpace);
+    m_Slicers[index]->SetOrthogonalTransform(m_ImageGeometry->GetImageToDisplayTransform(index.slice));
+    }
+
+  // Fire an update event
+  this->InvokeEvent(WrapperDisplayMappingChangeEvent());
+}
+
+template<class TTraits>
+void
+ImageWrapper<TTraits>
+::SetDeformationField(const ITKTransformType *deformationField)
+{
+  m_DeformationField = deformationField;
+  this->ApplyTransformToSlicers();
+}
+
+template<class TTraits>
+void
+ImageWrapper<TTraits>
+::ClearDeformation()
+{
+  if(m_DeformationField.IsNull())
+    return;
+  m_DeformationField = nullptr;
+  m_ComposedTransform = nullptr;
+  this->ApplyTransformToSlicers();
+}
+
+template<class TTraits>
+bool
+ImageWrapper<TTraits>
+::HasDeformationField() const
+{
+  return m_DeformationField.IsNotNull();
+}
+
+template<class TTraits>
+const typename ImageWrapper<TTraits>::ITKTransformType *
+ImageWrapper<TTraits>
+::GetWarpedITKTransform() const
+{
+  return this->GetEffectiveTransform();
+}
+
+template<class TTraits>
+const typename ImageWrapper<TTraits>::ITKTransformType *
+ImageWrapper<TTraits>
 ::GetITKTransform() const
 {
-  return m_Slicers.front()->GetObliqueTransform();
+  // Always return the affine transform, even when a deformation field is also
+  // set. Affine-only consumers (registration model, serialization, 3D
+  // rendering) rely on this; use GetWarpedITKTransform() to get the composed
+  // transform for resampling.
+  return m_AffineTransform;
 }
 
 template<class TTraits>
@@ -2817,7 +2907,7 @@ ImageWrapper<TTraits>
   typedef ImageWrapperPartialSpecializationTraits<ImageType, Image4DType> Specialization;
   return Specialization::CopyRegion(
         m_Image, m_ReferenceSpace,
-        this->GetITKTransform(), roi,
+        this->GetWarpedITKTransform(), roi,
         force_resampling, progressCommand);
 }
 
@@ -2869,7 +2959,7 @@ ImageWrapper<TTraits>
   for (unsigned int t = 0u; t < nT; ++t)
     {
     tpImg = this->GetImageByTimePoint(t);
-    tpResliced = Specialization::CopyRegion(tpImg, m_ReferenceSpace, this->GetITKTransform(),
+    tpResliced = Specialization::CopyRegion(tpImg, m_ReferenceSpace, this->GetWarpedITKTransform(),
                                          roi, force_resampling, TPCommand[t]);
 
     auto buffer3d = tpResliced->GetPixelContainer()->GetBufferPointer();

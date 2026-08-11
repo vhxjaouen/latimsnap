@@ -542,6 +542,34 @@ public:
   virtual void SetITKTransform(ImageBaseType *referenceSpace, ITKTransformType *transform) = 0;
 
   /**
+   * Set an optional deformable (displacement field) transform that is composed
+   * with the affine transform for display and resampling purposes. The field
+   * must map points in the reference space to points in the image space (the
+   * same convention as the affine transform). Passing nullptr clears the field.
+   */
+  virtual void SetDeformationField(const ITKTransformType *deformationField) = 0;
+
+  /**
+   * Clear any deformation field set via SetDeformationField().
+   */
+  virtual void ClearDeformation() = 0;
+
+  /**
+   * Whether a deformation field is currently set on this wrapper.
+   */
+  virtual bool HasDeformationField() const = 0;
+
+  /**
+   * Get the transform that should be used for resampling this image into its
+   * reference space. This returns the affine transform composed with the
+   * deformation field, or the affine transform alone if no deformation field
+   * is set. It differs from GetITKTransform(), which always returns the affine
+   * part so that affine-only consumers (manual registration, serialization,
+   * 3D rendering) are unaffected.
+   */
+  virtual const ITKTransformType *GetWarpedITKTransform() const = 0;
+
+  /**
    * Set the reference image without changing the transform
    */
   virtual void SetReferenceSpace(ImageBaseType *referenceSpace) = 0;

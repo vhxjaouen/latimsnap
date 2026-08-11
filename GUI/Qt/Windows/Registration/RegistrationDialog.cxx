@@ -89,6 +89,7 @@ void RegistrationDialog::SetModel(RegistrationModel *model)
   // Automatic page couplings
   ui->inTransformation->addItem(tr("Rigid"), QVariant(RegistrationModel::RIGID));
   ui->inTransformation->addItem(tr("Affine"), QVariant(RegistrationModel::AFFINE));
+  ui->inTransformation->addItem(tr("Greedy Deformable"), QVariant(RegistrationModel::DEFORMABLE));
   makeCoupling(ui->inTransformation, m_Model->GetTransformationModel());
 
   ui->inSimilarityMetric->addItem(tr("Mutual information"), QVariant(RegistrationModel::NMI));
@@ -99,6 +100,23 @@ void RegistrationDialog::SetModel(RegistrationModel *model)
 
   makeCoupling(ui->inCoarseLevel, m_Model->GetCoarsestResolutionLevelModel());
   makeCoupling(ui->inFineLevel, m_Model->GetFinestResolutionLevelModel());
+
+  // Deformable settings couplings
+  makeCoupling(ui->inSigmaPre, m_Model->GetDeformationSigmaPreModel());
+  makeCoupling(ui->inSigmaPost, m_Model->GetDeformationSigmaPostModel());
+  ui->inSigmaUnits->addItem(tr("voxels"), QVariant(RegistrationModel::VOXEL_UNITS));
+  ui->inSigmaUnits->addItem(tr("mm"), QVariant(RegistrationModel::PHYSICAL_UNITS));
+  makeCoupling(ui->inSigmaUnits, m_Model->GetDeformationSigmaUnitsModel());
+  makeCoupling(ui->inEpsilon, m_Model->GetDeformationEpsilonModel());
+  makeCoupling(ui->inSvMode, m_Model->GetDeformationStationaryVelocityModel());
+  makeCoupling(ui->inLiveWarp, m_Model->GetLiveWarpDisplayModel());
+  makeCoupling(ui->inShowGrid, m_Model->GetShowDeformationGridModel());
+
+  // Enable/disable the deformable settings block based on the active
+  // transformation model
+  connectITK(m_Model->GetTransformationModel(), ValueChangedEvent(),
+             SLOT(onTransformationChange(const EventBucket &)));
+  this->onTransformationChange(EventBucket());
 
   activateOnFlag(ui->inMovingLayer, m_Model,
                  RegistrationModel::UIF_MOVING_SELECTION_AVAILABLE);
@@ -180,6 +198,9 @@ void RegistrationDialog::on_btnRunRegistration_clicked()
   ui->scrollPlots->setVisible(true);
 
   m_Model->RunAutoRegistration();
+
+  // Refresh the state of warp-related buttons (a deformation field may now exist)
+  this->onTransformationChange(EventBucket());
 }
 
 int RegistrationDialog::GetTransformFormat(QString &format)
@@ -245,6 +266,33 @@ void RegistrationDialog::on_btnSave_clicked()
       {
         ReportNonLethalException(
           this, exc, tr("Transform IO Error"), tr("Failed to save transform file"));
+      }
+    }
+}
+
+void RegistrationDialog::on_btnSaveWarp_clicked()
+{
+  // Ask for a filename
+  SimpleFileDialogWithHistory::QueryResult result = SimpleFileDialogWithHistory::showSaveDialog(
+    this,
+    m_Model->GetParent(),
+    tr("Save Warp Field - ITK-SNAP"),
+    tr("Warp File"),
+    "GreedyWarp",
+    tr("NIfTI Image File (%1)").arg("*.nii *.nii.gz"),
+    true);
+
+  if(result.filename.length())
+    {
+    try
+      {
+      std::string utf = to_utf8(result.filename);
+      m_Model->SaveWarp(utf.c_str());
+      }
+    catch(std::exception &exc)
+      {
+        ReportNonLethalException(
+          this, exc, tr("Warp IO Error"), tr("Failed to save warp field file"));
       }
     }
 }
@@ -357,4 +405,13 @@ void RegistrationDialog::onFreeRotationModeChange(const EventBucket &)
     ui->grpScaling->setVisible(true);
     ui->btnMatchCenters->setVisible(true);
     }
+}
+
+void RegistrationDialog::onTransformationChange(const EventBucket &)
+{
+  bool deformable = m_Model && m_Model->GetTransformation() == RegistrationModel::DEFORMABLE;
+  if(ui->inDeformableGroup)
+    ui->inDeformableGroup->setEnabled(deformable);
+  if(ui->btnSaveWarp)
+    ui->btnSaveWarp->setEnabled(m_Model && m_Model->HasDeformationField());
 }
