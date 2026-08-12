@@ -36,18 +36,23 @@ def train_once(model, batch, optimizer, cfg, losses, device):
 
 def train(cfg: CBCTDenoiseConfig, weights_dir: str, device: Optional[str] = None,
           resume: Optional[str] = None):
-    import torch.nn as nn  # noqa: PLC0415
-    from cbctdenoise.export import _build_full_model  # noqa: PLC0415
+    # NOTE: this builds the lean generator only. For the full GAN training
+    # (generator + discriminator + NGF/MSSSIM) use the vendored vjnetworks
+    # package and the [train] extra - see README.
+    from cbctdenoise.models.rrdb import RRDBGenerator  # noqa: PLC0415
 
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     torch.manual_seed(0)
 
-    model = _build_full_model(cfg, torch.device(device))
+    model = RRDBGenerator(
+        in_channels=cfg.in_channels, out_channels=cfg.out_channels,
+        num_rrdb=cfg.num_rrdb_G, num_dense_layers=cfg.num_dense_layers_G,
+        growth_rate=cfg.growth_rate_G, feature_channels=cfg.feature_channels_G).to(device)
     if resume:
         cp = torch.load(resume, map_location=device)
         model.load_state_dict(cp["model"], strict=False)
 
-    opt_g = torch.optim.Adam(model.generator_A_to_B.parameters(), lr=cfg.learning_rate)
+    opt_g = torch.optim.Adam(model.parameters(), lr=cfg.learning_rate)
     losses = {"ngf": NGF(alpha=cfg.alpha_ngf), "content": l1_loss}
 
     os.makedirs(weights_dir, exist_ok=True)

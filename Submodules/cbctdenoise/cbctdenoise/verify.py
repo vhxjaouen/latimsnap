@@ -42,11 +42,13 @@ def make_torch_runner(generator, device="cpu"):
 
 
 def verify_artifact(runner: Callable, output_channels: int = 1,
-                    in_channels: int = 1, volume_shape=(64, 96, 128),
+                    in_channels: int = 1, volume_shape=(16, 24, 32),
                     config: Optional[dict] = None,
                     hu_clip=(-1000.0, 3000.0)) -> dict:
-    config = config or {"plane": "axial", "patch_size": (256, 256),
-                        "overlap": 0.66, "ensemble_planes": ["axial"]}
+    # Small patch/volume => a fast sanity check (shape + finiteness), not a
+    # full-speed benchmark. The ONNX graph has dynamic H/W so any patch works.
+    config = config or {"plane": "axial", "patch_size": (32, 32),
+                        "overlap": 0.5, "ensemble_planes": ["axial"]}
     rng = np.random.default_rng(0)
     vol = rng.standard_normal((in_channels,) + volume_shape).astype(np.float32)
     fwd, inv = preprocess.make_scaler(*hu_clip)

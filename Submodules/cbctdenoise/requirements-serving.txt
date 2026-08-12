@@ -1,0 +1,13 @@
+# Minimal requirements for exporting a CBCT->CT model to ONNX and serving it
+# in LaTIM-SNAP (latimsnap-i2i). No MONAI/generative/kornia needed.
+#
+# torch: choose the wheel matching your machine (CPU vs CUDA). For a CPU-only
+# export/serving box:
+#   uv pip install torch --index-url https://download.pytorch.org/whl/cpu
+# On a GPU machine, drop `--index-url` and uv picks the CUDA build for 3.12.
+torch>=2.1
+onnx>=1.14
+onnxscript>=0.1
+onnxruntime>=1.14
+numpy>=1.24
+nibabel>=3.0

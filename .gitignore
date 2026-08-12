@@ -44,6 +44,13 @@ __pycache__/
 
 # cbctdenoise serving artifacts (produced by cbctdenoise-export)
 Submodules/cbctdenoise/specs/*.onnx
+Submodules/cbctdenoise/specs/*.onnx.data
 Submodules/cbctdenoise/specs/*.pt
 Submodules/cbctdenoise/specs/*.h5
+
+# research weights (user-provided, never committed)
+LaTIM-weights/
+
+# python venv
+.venv/
 

@@ -37,28 +37,48 @@ def _report(checkpoint_keys, model_keys, strict) -> None:
             f"{len(missing)} missing key(s)")
 
 
-def _build_full_model(cfg: CBCTDenoiseConfig, torch_device):
-    """Build the full Pix2PixRRDB from the vendored vjnetworks package."""
-    import os  # noqa: PLC0415
-    import sys  # noqa: PLC0415
-    # Make the vendored research package importable (self-contained).
-    _research = os.path.join(os.path.dirname(os.path.abspath(__file__)), "research")
-    if _research not in sys.path:
-        sys.path.insert(0, _research)
-    import vjnetworks  # noqa: PLC0415 (research extra)
-    if not torch.cuda.is_available():
-        # The vendored network builds on a module-level 'cuda:0' device; fall
-        # back to CPU so export works on machines without a GPU.
-        vjnetworks.gpu_device = torch.device("cpu")
-    return vjnetworks.Pix2PixRRDB(
-        in_channels=cfg.in_channels,
-        out_channels=cfg.out_channels,
-        num_rrdb_G=cfg.num_rrdb_G,
-        num_dense_layers_G=cfg.num_dense_layers_G,
-        growth_rate_G=cfg.growth_rate_G,
-        feature_channels_G=cfg.feature_channels_G,
-        use_se=cfg.use_se,
-    ).to(torch_device)
+def _infer_arch(state):
+    """Infer generator architecture from the checkpoint's state_dict keys.
+
+    Returns kwargs for :class:`~cbctdenoise.models.rrdb.RRDBGenerator`, so a
+    `.h5` is exported without relying on the (heavy) research stack and without
+    assuming the architecture dimensions.
+    """
+    arch = {"in_channels": 1, "out_channels": 1, "num_rrdb": 9,
+            "num_dense_layers": 2, "growth_rate": 32, "feature_channels": 64,
+            "use_se": False}
+    for k, v in state.items():
+        p = k.split(".")
+        if v.dim() < 2:
+            continue  # skip bias/running stats (1-D)
+        if p[0] == "conv_in":
+            arch["in_channels"] = v.shape[1]
+            arch["feature_channels"] = v.shape[0]
+        elif p[0] == "conv_out":
+            arch["out_channels"] = v.shape[0]
+        elif p[0] == "rrdb_trunk":
+            arch["num_rrdb"] = max(arch["num_rrdb"], int(p[1]) + 1)
+            if "dense_layers" in p and "conv2" in p:
+                arch["growth_rate"] = v.shape[0]
+                arch["num_dense_layers"] = max(arch["num_dense_layers"],
+                                               int(p[p.index("dense_layers") + 1]) + 1)
+        if p[0].startswith("se_"):
+            arch["use_se"] = True
+    print(f"[export] inferred architecture: {arch}")
+    return arch
+
+
+def _build_lean_generator(arch):
+    from cbctdenoise.models.rrdb import RRDBGenerator  # noqa: PLC0415
+    return RRDBGenerator(
+        in_channels=arch["in_channels"],
+        out_channels=arch["out_channels"],
+        num_rrdb=arch["num_rrdb"],
+        num_dense_layers=arch["num_dense_layers"],
+        growth_rate=arch["growth_rate"],
+        feature_channels=arch["feature_channels"],
+        use_se=arch["use_se"],
+    )
 
 
 def load_generator(checkpoint_path: str, cfg: CBCTDenoiseConfig):
@@ -94,25 +114,28 @@ def export_onnx(checkpoint_path: str, onnx_path: str,
                 cfg: Optional[CBCTDenoiseConfig] = None, opset: int = 17) -> None:
     cfg = cfg or CBCTDenoiseConfig()
     state = load_generator(checkpoint_path, cfg)
+    arch = _infer_arch(state)
 
-    model = _build_full_model(cfg, torch.device("cpu"))
-    gen_keys = set(model.generator_A_to_B.state_dict().keys())
-    _report(set(state.keys()), gen_keys, strict=False)
-    missing = [k for k in gen_keys if k not in state]
+    gen = _build_lean_generator(arch)
+    model_keys = set(gen.state_dict().keys())
+    _report(set(state.keys()), model_keys, strict=False)
+    missing = [k for k in model_keys if k not in state]
     if missing:
         raise RuntimeError(
             "checkpoint is missing generator weights required by the "
             f"architecture: {missing[:8]}")
 
-    model.generator_A_to_B.load_state_dict(state, strict=True)
-    model.eval()
+    gen.load_state_dict(state, strict=True)
+    gen.eval()
 
-    dummy = torch.zeros(1, cfg.in_channels, cfg.patch_size[0], cfg.patch_size[1])
+    dummy = torch.zeros(1, arch["in_channels"], cfg.patch_size[0], cfg.patch_size[1])
     torch.onnx.export(
-        model.generator_A_to_B, dummy, onnx_path,
+        gen, dummy, onnx_path,
         input_names=["input"], output_names=["output"],
         dynamic_axes={"input": {2: "H", 3: "W"}, "output": {2: "H", 3: "W"}},
         opset_version=opset,
+        # Legacy exporter keeps weights inline (single self-contained .onnx).
+        dynamo=False,
     )
     print(f"[export] wrote ONNX: {onnx_path}")
 
@@ -121,19 +144,20 @@ def export_pt(checkpoint_path: str, pt_path: str,
               cfg: Optional[CBCTDenoiseConfig] = None) -> None:
     cfg = cfg or CBCTDenoiseConfig()
     state = load_generator(checkpoint_path, cfg)
+    arch = _infer_arch(state)
 
     # Save the state dict of the serving wrapper (keys prefixed 'generator.')
     # so the latimsnap-i2i torch loader can load it directly.
     from cbctdenoise.models.serving import MRToCTGenerator  # noqa: PLC0415
     serving = MRToCTGenerator(
-        in_channels=cfg.in_channels, out_channels=cfg.out_channels,
-        num_rrdb_G=cfg.num_rrdb_G, num_dense_layers_G=cfg.num_dense_layers_G,
-        growth_rate_G=cfg.growth_rate_G, feature_channels_G=cfg.feature_channels_G)
+        in_channels=arch["in_channels"], out_channels=arch["out_channels"],
+        num_rrdb_G=arch["num_rrdb"], num_dense_layers_G=arch["num_dense_layers"],
+        growth_rate_G=arch["growth_rate"], feature_channels_G=arch["feature_channels"])
     bare = {k[len("generator."):]: v for k, v in serving.state_dict().items()
             if k.startswith("generator.")}
     _report(set(state.keys()), set(bare.keys()), strict=False)
     serving.generator.load_state_dict(
-        {k: v for k, v in state.items()}, strict=False)
+        {k: v for k, v in state.items()}, strict=True)
     torch.save(serving.state_dict(), pt_path)
     print(f"[export] wrote serving state_dict: {pt_path}")
 
