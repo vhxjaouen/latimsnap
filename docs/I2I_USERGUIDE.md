@@ -91,7 +91,7 @@ recipe):
 
 ```bash
 uv venv .venv --python 3.12
-uv pip install --python .venv torch --index-url https://download.pytorch.org/whl/cpu   # CPU box
+uv pip install --python .venv torch torchvision --index-url https://download.pytorch.org/whl/cpu   # CPU box
 uv pip install --python .venv -r Submodules/cbctdenoise/requirements-serving.txt
 uv pip install --python .venv -e Python/latimsnap_i2i
 uv pip install --python .venv -e Submodules/cbctdenoise[serving]

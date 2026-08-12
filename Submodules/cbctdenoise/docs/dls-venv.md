@@ -35,11 +35,14 @@ Two requirement files are provided in `Submodules/cbctdenoise/`:
 
 ### CPU-only box (recommended to start)
 ```bash
-uv pip install --python .venv torch --index-url https://download.pytorch.org/whl/cpu
+uv pip install --python .venv torch torchvision --index-url https://download.pytorch.org/whl/cpu
 uv pip install --python .venv -r Submodules/cbctdenoise/requirements-serving.txt
 ```
-(Installing `torch` first from the CPU index avoids pulling the huge CUDA
-wheel; the subsequent `-r` resolves the rest from PyPI.)
+(Install `torch` **and** `torchvision` together from the CPU index first so
+their ABIs match — the research `[train]`/notebook path pulls `torchvision`
+via `lpips`, and mixing a CPU-index `torch` with a PyPI `torchvision` causes a
+`torchvision::nms does not exist` ABI error. The subsequent `-r` resolves the
+rest from PyPI.)
 
 ### GPU box / full research environment
 ```bash

@@ -2,6 +2,9 @@
 # (NECSRv3_RRDB_SynthRAD2025_Task2_VJ016_AB_TH.ipynb), Python 3.12.
 #
 # torch: CPU vs CUDA is machine/GPU-specific (see requirements-serving.txt).
+# If you install torch from the CPU index, also install torchvision from the
+# SAME index to avoid an ABI mismatch (lpips -> torchvision):
+#   uv pip install torch torchvision --index-url https://download.pytorch.org/whl/cpu
 -r requirements-serving.txt
 
 # Image I/O + science
@@ -17,6 +20,7 @@ tqdm>=4.66
 
 # MONAI + generative (imported by the vendored vjnetworks at training time)
 monai>=1.3
-monai-generative>=0.7
+monai-generative>=0.2.3
+lpips>=0.1.4
 kornia>=0.7
 opencv-python-headless>=4.8
