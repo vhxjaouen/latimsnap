@@ -48,6 +48,11 @@ Submodules/cbctdenoise/specs/*.onnx.data
 Submodules/cbctdenoise/specs/*.pt
 Submodules/cbctdenoise/specs/*.h5
 
+# i2i server package model copies (user-provided) - keep out of git
+Python/latimsnap_i2i/latimsnap_i2i/models/*.onnx
+Python/latimsnap_i2i/latimsnap_i2i/models/*.pt
+Python/latimsnap_i2i/latimsnap_i2i/models/*.h5
+
 # research weights (user-provided, never committed)
 LaTIM-weights/
 

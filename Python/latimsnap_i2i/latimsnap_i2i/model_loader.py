@@ -58,7 +58,10 @@ def _apply_postprocess(name, cfg, vol):
     if name == "denorm_minmax":
         lo = float(cfg.get("min", 0.0))
         hi = float(cfg.get("max", 1.0))
-        return (vol * (hi - lo) + lo).astype(np.float32)
+        # Faithful to ScaleIntensityRanged(..., clip=True): clip the model
+        # output to the normalized [-1,1] range before mapping back to
+        # physical units (prevents OOD blow-ups on noisy inputs).
+        return (np.clip(vol, -1.0, 1.0) * (hi - lo) + lo).astype(np.float32)
     raise ValueError("unknown postprocessing type %r" % name)
 
 
