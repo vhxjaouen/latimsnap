@@ -42,3 +42,8 @@ __pycache__/
 *.pyc
 *.egg-info/
 
+# cbctdenoise serving artifacts (produced by cbctdenoise-export)
+Submodules/cbctdenoise/specs/*.onnx
+Submodules/cbctdenoise/specs/*.pt
+Submodules/cbctdenoise/specs/*.h5
+

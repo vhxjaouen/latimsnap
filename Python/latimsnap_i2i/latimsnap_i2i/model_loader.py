@@ -113,26 +113,52 @@ def _load_onnx(spec):
 
 
 def _load_torch(spec, progress):
-    import torch
+    import sys  # noqa: PLC0415
+    import torch  # noqa: PLC0415
     module_name = spec.model.get("module")
     class_name = spec.model.get("class")
     if not module_name or not class_name:
         raise ValueError("torch framework requires model.module and model.class")
+
+    # Make the model's directory importable so vendored sibling modules
+    # (e.g. ``vjnetworks``) resolve next to the declared module.
+    if spec.base_dir and spec.base_dir not in sys.path:
+        sys.path.insert(0, spec.base_dir)
+
     mod = importlib.import_module(module_name)
     cls = getattr(mod, class_name)
     kwargs = spec.model.get("kwargs") or {}
     net = cls(**kwargs)
     net.eval()
+
     weights = _resolve_path(spec, "weights")
     if weights:
-        if os.path.exists(weights):
-            state = torch.load(weights, map_location="cpu")
-            if isinstance(state, dict) and "state_dict" in state:
-                state = state["state_dict"]
-            net.load_state_dict(state)
+        if not os.path.exists(weights):
+            raise FileNotFoundError("weights not found: %r" % weights)
+        state = torch.load(weights, map_location="cpu")
+        if isinstance(state, dict) and "model" in state:
+            log.info("checkpoint top-level keys: %s", list(state.keys()))
+            state = state["model"]
+        elif isinstance(state, dict) and "state_dict" in state:
+            state = state["state_dict"]
+        if isinstance(state, dict) and any(k.startswith("module.") for k in state):
+            log.info("stripping 'module.' prefix (DDP checkpoint)")
+            state = {k[len("module."):]: v for k, v in state.items()}
+
+        # Verbose diagnostics: surface a checkpoint/architecture mismatch
+        # (surfaces in the LaTIM-SNAP server log / dialog).
+        if isinstance(state, dict):
+            model_keys = set(net.state_dict().keys())
+            missing = sorted(model_keys - set(state.keys()))
+            unexpected = sorted(set(state.keys()) - model_keys)
+            if missing:
+                log.warning("missing keys (%d), e.g. %s", len(missing), missing[:6])
+            if unexpected:
+                log.warning("unexpected keys (%d), e.g. %s", len(unexpected), unexpected[:6])
+        net.load_state_dict(state, strict=True)
 
     def _run(x):
-        # x: (1, C, Z, Y, X) torch
+        # x: (1, C, [H, W] | Z, Y, X) torch
         with torch.no_grad():
             return net(x)
 
@@ -147,6 +173,9 @@ def _run_inference(runner, input_name, vol, output_channels, progress,
                    spatial):
     """vol: (1, C, Z, Y, X) float32. Returns (1, OC, Z, Y, X)."""
     mode = spatial.get("mode", "whole")
+    if mode == "slice":
+        return _run_slice(runner, input_name, vol, output_channels,
+                          progress, spatial)
     if mode == "whole":
         progress(0.35)
         out = _run_once(runner, input_name, vol, output_channels)
@@ -215,6 +244,109 @@ def _run_patches(runner, input_name, vol, output_channels, progress, spatial):
         progress(0.35 + 0.5 * (i + 1) / total)
     wsum = np.maximum(wsum, 1e-8)
     return acc / wsum
+
+
+# ---------------------------------------------------------------------------
+# 2D models applied per-slice to a 3D volume (spatial.mode == "slice")
+# ---------------------------------------------------------------------------
+
+def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap):
+    """2D sliding-window inference with gaussian blending + replicate padding.
+
+    ``im``: (1, C, H, W). Returns (1, OC, H, W).
+    """
+    c = im.shape[1]
+    h, w = im.shape[2], im.shape[3]
+    acc = np.zeros((1, output_channels, h, w), dtype=np.float32)
+    wgt = np.zeros((1, 1, h, w), dtype=np.float32)
+
+    w2 = _gauss2d(ph, pw)
+    step_h = max(1, int(ph * (1.0 - overlap)))
+    step_w = max(1, int(pw * (1.0 - overlap)))
+
+    for yy in range(0, h, step_h):
+        for xx in range(0, w, step_w):
+            sy = np.clip(np.arange(yy, yy + ph), 0, h - 1)
+            sx = np.clip(np.arange(xx, xx + pw), 0, w - 1)
+            patch = im[:, :, sy][:, :, :, sx]      # (1, C, ph, pw) replicate pad
+            out = _run_once(runner, input_name, patch, output_channels)
+            hh = min(ph, h - yy)
+            ww = min(pw, w - xx)
+            wpart = w2[:hh, :ww][None, None]
+            acc[:, :, yy:yy + hh, xx:xx + ww] += out[:, :, :hh, :ww] * wpart
+            wgt[:, :, yy:yy + hh, xx:xx + ww] += wpart
+    return acc / np.maximum(1e-8, wgt)
+
+
+def _gauss2d(ph, pw):
+    if ph <= 1 or pw <= 1:
+        return np.ones((ph, pw), dtype=np.float32)
+    gy = np.exp(-((np.arange(ph) - (ph - 1) / 2.0) ** 2) / (2 * ((ph / 4.0) ** 2)))
+    gx = np.exp(-((np.arange(pw) - (pw - 1) / 2.0) ** 2) / (2 * ((pw / 4.0) ** 2)))
+    return np.outer(gy, gx).astype(np.float32)
+
+
+def _run_plane(runner, input_name, vol, output, output_channels, spatial, plane,
+               progress, pstart, pend):
+    """Fill ``output`` (1, OC, X, Y, Z) by running the 2D model per slice."""
+    ph, pw = spatial.get("patch_size", [256, 256])[:2]
+    overlap = float(spatial.get("overlap", 0.0))
+    c = vol.shape[1]
+    if plane == "axial":
+        n = vol.shape[4]
+        for i in range(n):
+            out = _sw2d(runner, input_name, vol[:, :, :, :, i], output_channels, ph, pw, overlap)
+            output[:, :, :, :, i] = out
+            progress(pstart + (pend - pstart) * (i + 1) / n)
+    elif plane == "coronal":
+        n = vol.shape[3]
+        for i in range(n):
+            out = _sw2d(runner, input_name, vol[:, :, :, i, :], output_channels, ph, pw, overlap)
+            output[:, :, :, i, :] = out
+            progress(pstart + (pend - pstart) * (i + 1) / n)
+    elif plane == "sagittal":
+        n = vol.shape[2]
+        for i in range(n):
+            out = _sw2d(runner, input_name, vol[:, :, i, :, :], output_channels, ph, pw, overlap)
+            output[:, :, i, :, :] = out
+            progress(pstart + (pend - pstart) * (i + 1) / n)
+    else:
+        raise ValueError("unknown plane %r" % plane)
+
+
+def _run_slice(runner, input_name, vol, output_channels, progress, spatial):
+    """Apply a 2D model to a 3D volume, optionally ensembling multiple planes."""
+    planes = spatial.get("ensemble_planes") or [spatial.get("plane", "axial")]
+    n_planes = len(planes)
+    results = []
+    for k, plane in enumerate(planes):
+        out = np.zeros((1, output_channels) + vol.shape[2:], dtype=np.float32)
+        p0 = 0.15 + k * (0.7 / n_planes)
+        p1 = p0 + 0.7 / n_planes
+        _run_plane(runner, input_name, vol, out, output_channels, spatial, plane,
+                   progress, p0, p1)
+        results.append(out)
+
+    if n_planes == 1:
+        return results[0]
+
+    mode = spatial.get("ensemble", "fourier_burst")
+    stacked = np.concatenate(results, axis=0)  # (n, OC, X, Y, Z)
+    if mode == "mean":
+        return stacked.mean(axis=0, keepdims=True)
+    if mode == "fourier_burst":
+        fba = _fourier_burst(stacked, float(spatial.get("ensemble_p", 5.0)))
+        return fba[None]
+    raise ValueError("unknown ensemble mode %r" % mode)
+
+
+def _fourier_burst(stacked, p):
+    vs = [np.fft.rfftn(v) for v in np.moveaxis(stacked, 0, 0)]
+    power = [np.abs(v) ** p for v in vs]
+    denom = np.sum(power, axis=0)
+    ws = [pw / denom for pw in power]
+    out_hat = sum(w * v for w, v in zip(ws, vs))
+    return np.fft.irfftn(out_hat, s=stacked.shape[1:]).astype(np.float32)
 
 
 # ---------------------------------------------------------------------------

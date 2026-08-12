@@ -1,0 +1,39 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "cbctdenoise"
+version = "0.1.0"
+description = "CBCT -> CT denoising: RRDB generator (pix2pix-style), factorized from the NEC SynthRAD notebook for serving in LaTIM-SNAP"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.9"
+dependencies = [
+    "torch>=2.0",
+    "numpy>=1.20",
+    "nibabel>=3.0",
+]
+
+# Optional heavy / research-only extras
+[project.optional-dependencies]
+serving = [
+    "onnxruntime>=1.14",
+]
+train = [
+    "monai>=1.1",
+    "monai-generative",
+    "kornia>=0.6",
+    "onnx>=1.14",
+]
+all = ["cbctdenoise[serving,train]"]
+
+[project.scripts]
+cbctdenoise-export = "cbctdenoise.cli:export_main"
+cbctdenoise-infer = "cbctdenoise.cli:infer_main"
+cbctdenoise-verify = "cbctdenoise.cli:verify_main"
+cbctdenoise-evaluate = "cbctdenoise.cli:evaluate_main"
+cbctdenoise-train = "cbctdenoise.cli:train_main"
+
+[tool.setuptools]
+packages = ["cbctdenoise", "cbctdenoise.models"]

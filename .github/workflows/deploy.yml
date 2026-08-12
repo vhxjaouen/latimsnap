@@ -65,6 +65,9 @@ jobs:
               bundle_py=build/bundle/usr/local/lib/snap-4.4.0/share/latimsnap-i2i
               mkdir -p "$bundle_py"
               cp -r Python/latimsnap_i2i/. "$bundle_py/"
+              # Bundle the CBCT denoising model package (self-contained)
+              cp -r Submodules/cbctdenoise \
+                 build/bundle/usr/local/lib/snap-4.4.0/share/cbctdenoise
 
               # 2. Download + extract linuxdeployqt once (cached, gitignored)
               if [ ! -f linuxdeployqt ]; then
