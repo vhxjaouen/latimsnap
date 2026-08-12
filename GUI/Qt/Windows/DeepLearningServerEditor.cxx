@@ -225,6 +225,7 @@ void
 DeepLearningServerEditor::SetModel(DeepLearningServerPropertiesModel *model)
 {
   m_Model = model;
+  makeCoupling((QComboBox *) ui->inServerType, m_Model->GetTaskTypeModel());
   makeRadioGroupCoupling(ui->radioConnRemote, ui->radioConnLocal, m_Model->GetRemoteConnectionModel());
   makeCoupling(ui->inNickname, m_Model->GetNicknameModel());
   makeCoupling(ui->inHostname, m_Model->GetHostnameModel());

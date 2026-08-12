@@ -502,8 +502,8 @@ SET(UI_GENERIC_CXX
   GUI/Model/ColorMapModel.cxx
   GUI/Model/CursorInspectionModel.cxx
   GUI/Model/DeepLearningSegmentationModel.cxx
-  GUI/Model/DeformationGridModel.cxx
-  GUI/Model/DisplayLayoutModel.cxx
+  GUI/Model/ImageToImageModel.cxx
+  GUI/Model/DeformationGridModel.cxx  GUI/Model/DisplayLayoutModel.cxx
   GUI/Model/DistributedSegmentationModel.cxx
   GUI/Model/Generic3DModel.cxx
   GUI/Model/GenericSliceModel.cxx
@@ -582,6 +582,7 @@ SET(UI_GENERIC_HEADERS
   GUI/Model/ColorMapModel.h
   GUI/Model/ColorLabelQuickListModel.h
   GUI/Model/CursorInspectionModel.h
+  GUI/Model/ImageToImageModel.h
   GUI/Model/DeepLearningSegmentationModel.h
   GUI/Model/DeformationGridModel.h
   GUI/Model/DisplayLayoutModel.h
@@ -735,6 +736,7 @@ SET(UI_QT_CXX
   GUI/Qt/Windows/DeepLearningInfoDialog.cxx
   GUI/Qt/Windows/DeepLearningServerEditor.cxx
   GUI/Qt/Windows/DeepLearningServerPanel.cxx
+  GUI/Qt/Windows/I2IRunDialog.cxx
   GUI/Qt/Windows/DropActionDialog.cxx
   GUI/Qt/Windows/ImageIODialog.cxx
   GUI/Qt/Windows/ImageIOWizard.cxx
@@ -840,6 +842,7 @@ SET(UI_MOC_HEADERS
   GUI/Qt/Windows/DeepLearningInfoDialog.h
   GUI/Qt/Windows/DeepLearningServerEditor.h
   GUI/Qt/Windows/DeepLearningServerPanel.h
+  GUI/Qt/Windows/I2IRunDialog.h
   GUI/Qt/Windows/DropActionDialog.h
   GUI/Qt/Windows/ImageIODialog.h
   GUI/Qt/Windows/ImageIOWizard.h
@@ -937,6 +940,7 @@ SET(UI_FORMS
   GUI/Qt/Windows/DeepLearningInfoDialog.ui
   GUI/Qt/Windows/DeepLearningServerEditor.ui
   GUI/Qt/Windows/DeepLearningServerPanel.ui
+  GUI/Qt/Windows/I2IRunDialog.ui
   GUI/Qt/Windows/DropActionDialog.ui
   GUI/Qt/Windows/ImageIODialog.ui
   GUI/Qt/Windows/ImageIOWizard/OverlayRolePage.ui

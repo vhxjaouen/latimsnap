@@ -323,6 +323,8 @@ private slots:
 
   void on_actionRegistration_triggered();
 
+  void on_actionImageToImage_triggered();
+
   void on_actionClose_Window_triggered();
 
   void onRightDockCurrentChanged(int);

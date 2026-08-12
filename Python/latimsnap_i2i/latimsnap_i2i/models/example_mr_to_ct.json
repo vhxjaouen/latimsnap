@@ -1,0 +1,14 @@
+{
+  "id": "mr_to_ct",
+  "name": "MR to CT synthesis (example)",
+  "framework": "onnx",
+  "model": {
+    "onnx_path": "mr_to_ct.onnx"
+  },
+  "input_channels": 1,
+  "output_channels": 1,
+  "preprocessing": { "type": "percentile", "pmin": 0.5, "pmax": 99.5 },
+  "postprocessing": { "type": "clip", "min": 0.0, "max": 1.0 },
+  "spatial": { "mode": "whole" },
+  "output_dtype": "float32"
+}

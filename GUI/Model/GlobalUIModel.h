@@ -80,6 +80,7 @@ class DistributedSegmentationModel;
 class SmoothLabelsModel;
 class VoxelChangeReportModel;
 class DeepLearningSegmentationModel;
+class ImageToImageModel;
 
 namespace itk
 {
@@ -259,6 +260,9 @@ public:
 
   /** Model for external deep learning segmentation */
   irisGetMacro(DeepLearningSegmentationModel, DeepLearningSegmentationModel *)
+
+  /** Model for image-to-image deep learning tasks */
+  irisGetMacro(ImageToImageModel, ImageToImageModel *)
 
   // issue #24
   /** Model for label smoothing dialog */
@@ -463,6 +467,9 @@ protected:
 
          // Model for DSS
   SmartPtr<DeepLearningSegmentationModel> m_DeepLearningSegmentationModel;
+
+  // Model for image-to-image deep learning tasks
+  SmartPtr<ImageToImageModel> m_ImageToImageModel;
 
   // Issue #24: Model for Label Smoothing
   SmartPtr<SmoothLabelsModel> m_SmoothLabelsModel;

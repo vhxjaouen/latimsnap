@@ -1,0 +1,31 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "latimsnap-i2i"
+version = "0.1.0"
+description = "Image-to-image deep learning server for LaTIM-SNAP (e.g. MR->CT synthesis)"
+readme = "README.md"
+license = { text = "GPL-3.0-or-later" }
+requires-python = ">=3.8"
+dependencies = [
+    "fastapi>=0.100",
+    "uvicorn>=0.23",
+    "pydantic>=2.0",
+    "python-multipart>=0.0.6",
+    "numpy>=1.20",
+    # Optional heavy backends - installed as extras so the base install stays light.
+    # "onnxruntime>=1.14",
+    # "torch>=2.0",
+]
+
+[project.optional-dependencies]
+onnx = ["onnxruntime>=1.14"]
+torch = ["torch>=2.0"]
+
+[tool.setuptools]
+packages = ["latimsnap_i2i"]
+
+[tool.setuptools.package-data]
+latimsnap_i2i = ["py.typed", "models/*.json"]

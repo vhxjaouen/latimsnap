@@ -78,6 +78,7 @@
 #include <InterpolateLabelsDialog.h>
 #include <SmoothLabelsDialog.h>
 #include "RegistrationDialog.h"
+#include "I2IRunDialog.h"
 #include "DistributedSegmentationDialog.h"
 
 #include <QAbstractListModel>
@@ -2600,6 +2601,12 @@ void MainImageWindow::on_actionRegistration_triggered()
   m_Model->GetRegistrationModel()->SetFreeRotationMode(false);
   m_RightDockStack->setCurrentWidget(m_RegistrationDialog);
   m_DockRight->setVisible(true);
+}
+
+void MainImageWindow::on_actionImageToImage_triggered()
+{
+  I2IRunDialog dlg(m_Model->GetImageToImageModel(), m_Model, this);
+  dlg.exec();
 }
 
 

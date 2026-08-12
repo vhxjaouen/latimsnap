@@ -619,6 +619,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <addaction name="actionReorient_Image"/>
     <addaction name="actionFree_Rotation_Mode"/>
     <addaction name="actionRegistration"/>
+    <addaction name="actionImageToImage"/>
     <addaction name="separator"/>
     <addaction name="actionDSS"/>
     <addaction name="separator"/>
@@ -1622,17 +1623,25 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <string>Interpolate Labels...</string>
    </property>
   </action>
-  <action name="actionRegistration">
-   <property name="text">
-    <string>Image Registration...</string>
-   </property>
-   <property name="toolTip">
-    <string>Perform image registration</string>
-   </property>
-   <property name="shortcut">
-    <string>Ctrl+R</string>
-   </property>
-  </action>
+   <action name="actionRegistration">
+    <property name="text">
+     <string>Image Registration...</string>
+    </property>
+    <property name="toolTip">
+     <string>Perform image registration</string>
+    </property>
+    <property name="shortcut">
+     <string>Ctrl+R</string>
+    </property>
+   </action>
+   <action name="actionImageToImage">
+    <property name="text">
+     <string>Image-to-Image...</string>
+    </property>
+    <property name="toolTip">
+     <string>Run an image-to-image deep learning transfer (e.g. MR to CT synthesis)</string>
+    </property>
+   </action>
   <action name="actionClose_Window">
    <property name="text">
     <string>Close Window</string>

@@ -36,3 +36,9 @@ LaTIM-SNAP-current.tar.gz
 # linuxdeployqt cache (downloaded AppImage + extracted bundle)
 linuxdeployqt
 squashfs-root/
+
+# python (vendored i2i server)
+__pycache__/
+*.pyc
+*.egg-info/
+

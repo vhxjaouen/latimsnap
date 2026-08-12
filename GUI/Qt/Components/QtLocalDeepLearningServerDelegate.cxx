@@ -83,7 +83,10 @@ QtLocalDeepLearningServerDelegate::StartServerIfNeeded(DeepLearningServerPropert
     // Configure the arguments to run
     auto port = findAvailablePort();
     QStringList args;
-    args << "-m" << "itksnap_dls" << "--port" << QString("%1").arg(port) << "--use-colors";
+    if(properties->GetTaskType() == DeepLearningServerPropertiesModel::TASK_IMAGE_TO_IMAGE)
+      args << "-m" << "latimsnap_i2i" << "--port" << QString("%1").arg(port) << "--use-colors";
+    else
+      args << "-m" << "itksnap_dls" << "--port" << QString("%1").arg(port) << "--use-colors";
     if(properties->GetNoSSLVerify())
       args << "-k";
     m_Process->start(venvPython, args);

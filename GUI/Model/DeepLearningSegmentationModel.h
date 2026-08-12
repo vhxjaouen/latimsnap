@@ -89,6 +89,14 @@ class DeepLearningServerPropertiesModel : public AbstractPropertyContainerModel
 public:
   irisITKObjectMacro(DeepLearningServerPropertiesModel, AbstractPropertyContainerModel)
 
+  /** What task a server performs - determines the python module and UI. */
+  enum TaskType
+  {
+    TASK_SEGMENTATION = 0,
+    TASK_IMAGE_TO_IMAGE
+  };
+
+  irisSimplePropertyAccessMacro(TaskType, int)
   irisSimplePropertyAccessMacro(Nickname, std::string)
   irisSimplePropertyAccessMacro(RemoteConnection, bool)
   irisSimplePropertyAccessMacro(Hostname, std::string)
@@ -112,6 +120,7 @@ public:
   std::string GetHash() const;
 
 protected:
+  SmartPtr<ConcreteSimpleIntProperty> m_TaskTypeModel;
   SmartPtr<ConcreteSimpleStringProperty> m_NicknameModel;
   SmartPtr<ConcreteSimpleBooleanProperty> m_RemoteConnectionModel;
   SmartPtr<ConcreteSimpleStringProperty> m_HostnameModel;
@@ -174,6 +183,9 @@ public:
   void SetLocalServerDelegate(AbstractLocalDeepLearningServerDelegate *delegate);
 
   void SetParentModel(GlobalUIModel *parent);
+
+  /** Actual URL of the currently selected server (proxy/tunnel aware). */
+  std::string GetActiveServerURL() { return GetActualServerURL(); }
 
   /** Property model referring to the currently selected server */
   irisGenericPropertyAccessMacro(Server, int, ServerDomain)

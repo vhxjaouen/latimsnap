@@ -1,0 +1,11 @@
+{
+  "id": "identity",
+  "name": "Identity (contract smoke test)",
+  "framework": "identity",
+  "input_channels": 1,
+  "output_channels": 1,
+  "preprocessing": { "type": "identity" },
+  "postprocessing": { "type": "identity" },
+  "spatial": { "mode": "whole" },
+  "output_dtype": "float32"
+}

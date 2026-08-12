@@ -61,6 +61,11 @@ jobs:
               rm -rf build/bundle
               DESTDIR=/workspaces/latimsnap/build/bundle cmake --install build
 
+              # Bundle the vendored python I2I server (GPL, ships with the app)
+              bundle_py=build/bundle/usr/local/lib/snap-4.4.0/share/latimsnap-i2i
+              mkdir -p "$bundle_py"
+              cp -r Python/latimsnap_i2i/. "$bundle_py/"
+
               # 2. Download + extract linuxdeployqt once (cached, gitignored)
               if [ ! -f linuxdeployqt ]; then
                 wget -c -nv \

@@ -75,6 +75,7 @@
 #include "InteractiveRegistrationModel.h"
 #include "DistributedSegmentationModel.h"
 #include "DeepLearningSegmentationModel.h"
+#include "ImageToImageModel.h"
 #include "ImageMeshLayers.h"
 
 #include <itksys/SystemTools.hxx>
@@ -117,6 +118,10 @@ GlobalUIModel::GlobalUIModel()
   // Distributed segmentation model
   m_DeepLearningSegmentationModel = DeepLearningSegmentationModel::New();
   m_DeepLearningSegmentationModel->SetParentModel(this);
+
+  // Image-to-image deep learning model
+  m_ImageToImageModel = ImageToImageModel::New();
+  m_ImageToImageModel->SetParentModel(this);
 
   // Create the slice models
   for (unsigned int i = 0; i < 3; i++)
