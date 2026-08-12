@@ -32,7 +32,7 @@ on run argv
 
 				-- Move the icons; this is really finicky, the coordinates don't seem
 				-- to make much sense and if you go too far then ugly scrollbars will appear
-				set position of item "ITK-SNAP.app" to {100, 150}
+				set position of item "LaTIM-SNAP.app" to {100, 150}
 				set position of item "Applications" to {360, 150}
 
 				-- Move these out of the way for users with Finder configured to show all files

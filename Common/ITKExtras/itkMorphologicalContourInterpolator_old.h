@@ -57,7 +57,7 @@ namespace itk
  *
  *  Acknowledgement:
  *  This work is supported by NIH grant R01 EB014346, "Continued development
- *  and maintenance of the ITK-SNAP 3D image segmentation software."
+ *  and maintenance of the LaTIM-SNAP 3D image segmentation software."
  *
  * \ingroup MorphologicalContourInterpolation
  */

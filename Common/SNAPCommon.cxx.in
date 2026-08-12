@@ -15,7 +15,7 @@
 #include "SNAPCommon.h"
 
 // Non-cvs version
-const char SNAPSoftVersion[] = "ITK-SNAP @SNAP_VERSION_FULL@";
+const char SNAPSoftVersion[] = "LaTIM-SNAP @SNAP_VERSION_FULL@";
 
 // Just the number part of the SNAP version
 unsigned int SNAPVersionMajor = @SNAP_VERSION_MAJOR@;

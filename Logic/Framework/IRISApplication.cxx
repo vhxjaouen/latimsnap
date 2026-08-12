@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: IRISApplication.cxx,v $
   Language:  C++
   Date:      $Date: 2011/04/18 17:35:30 $
   Version:   $Revision: 1.37 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -1561,7 +1561,7 @@ IRISApplication
 
   // TODO: in situations where the size is the same and space is different, we may want
   // to ask the user how to handle it, or at least display a warning? For now, we just use
-  // the header information, which may be different from how old ITK-SNAP handled this
+  // the header information, which may be different from how old LaTIM-SNAP handled this
   m_IRISImageData->AddCoregOverlay(io, transform);
 
   ImageWrapperBase *layer = m_IRISImageData->GetLastOverlay();
@@ -2253,9 +2253,9 @@ void IRISApplication::SaveProjectToRegistry(Registry &preg, const std::string pr
 
 void IRISApplication::SaveProject(const std::string &proj_file)
 {
-  // Header for ITK-SNAP projects
+  // Header for LaTIM-SNAP projects
   static const char *header =
-      "ITK-SNAP (itksnap.org) Project File\n"
+      "LaTIM-SNAP (itksnap.org) Project File\n"
       "\n"
       "This file can be moved/copied along with the images that it references\n"
       "as long as the relative location of the images to the project file is \n"

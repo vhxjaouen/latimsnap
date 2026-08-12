@@ -45,7 +45,7 @@ LayoutReminderDialog::ConditionalExec(enum ExecScenarios sce)
   QString side = dsp->GetFlagLayoutPatientRightShownLeft() ? tr("right") : tr("left");
 
   QString msg_axial = tr("<html>On the Axial and Coronal views,&nbsp;"
-                         "ITK-SNAP is currently following <b>%1 convention</b>:&nbsp;"
+                         "LaTIM-SNAP is currently following <b>%1 convention</b>:&nbsp;"
                          "the patient’s left side is shown on the %2 of the screen.&nbsp;</html>")
                         .arg(convention, side);
 

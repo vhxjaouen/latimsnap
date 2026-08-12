@@ -139,7 +139,7 @@ font-size:11px;
          <enum>Qt::FocusPolicy::StrongFocus</enum>
         </property>
         <property name="toolTip">
-         <string>One or more textual tags can be assigned to an image layer. Tags are not used directly by ITK-SNAP but may be used to inform other software of the meaning of different layers. Type in words separated by commas to create tags. </string>
+         <string>One or more textual tags can be assigned to an image layer. Tags are not used directly by LaTIM-SNAP but may be used to inform other software of the meaning of different layers. Type in words separated by commas to create tags. </string>
         </property>
        </widget>
       </item>
@@ -536,7 +536,7 @@ font-size:11px;
       <item row="0" column="1">
        <widget class="QComboBox" name="inMode">
         <property name="toolTip">
-         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Multi-component images have more than one value for each voxel. These values may represent measurements taken at different time points, different chromatic components, etc. ITK-SNAP offers multiple ways to visualize this multi-dimensional information. You can choose to visualize just one component, or a summary function of the components, such as magnitude, average, or maximum. In the special case of three-component images, the components can be rendered as red, green and blue channels (RGB).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+         <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Multi-component images have more than one value for each voxel. These values may represent measurements taken at different time points, different chromatic components, etc. LaTIM-SNAP offers multiple ways to visualize this multi-dimensional information. You can choose to visualize just one component, or a summary function of the components, such as magnitude, average, or maximum. In the special case of three-component images, the components can be rendered as red, green and blue channels (RGB).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
         </property>
        </widget>
       </item>

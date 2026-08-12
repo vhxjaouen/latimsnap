@@ -8,7 +8,7 @@ class SystemInterface;
 
 /**
   A class that handles system and user presets for arbitrary data structures
-  in ITK-SNAP. An example structure is the color map. The data structure must
+  in LaTIM-SNAP. An example structure is the color map. The data structure must
   be described by a traits object. The traits object must define the following:
 
   // The type (derived from itk::Object) that is being managed

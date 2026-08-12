@@ -15,7 +15,7 @@ on:
         default: false
       use_cached_itksnap_build:
         type: boolean
-        description: 'Use cached ITK-SNAP build'
+        description: 'Use cached LaTIM-SNAP build'
         required: false
         default: false        
       skip_testing:
@@ -203,9 +203,9 @@ jobs:
           path: ${{github.workspace}}/itk
           key: ${{ matrix.os }}-itk-${{ matrix.itk_ver }}-build
      
-      # Restore ITK-SNAP cache if requested by the user. This should allow us to create faster builds
+      # Restore LaTIM-SNAP cache if requested by the user. This should allow us to create faster builds
       # because only the updated files should require rebuilding
-      - name: Restore ITK-SNAP Cache (optional)
+      - name: Restore LaTIM-SNAP Cache (optional)
         id: cache-restore-itksnap
         uses: actions/cache/restore@v4
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.use_cached_itksnap_build }}
@@ -213,7 +213,7 @@ jobs:
           path: ${{github.workspace}}/itksnap
           key: ${{ matrix.os }}-itksnap-build-${{ github.ref }}
 
-      # Checkout ITK-SNAP code
+      # Checkout LaTIM-SNAP code
       - name: Checkout code
         uses: actions/checkout@v4
         with:
@@ -230,9 +230,9 @@ jobs:
         continue-on-error: true
         run: git fetch
 
-      # Configure ITK-SNAP
+      # Configure LaTIM-SNAP
       # Note: /FORCE:MULTIPLE is a temporary fix for ITK issues in 5.4.0
-      - name: Configure ITK-SNAP
+      - name: Configure LaTIM-SNAP
         uses: threeal/cmake-action@v2.0.0
         continue-on-error: false
         with:
@@ -257,8 +257,8 @@ jobs:
         uses: mxschmitt/action-tmate@v3
         if: ${{ github.event_name == 'workflow_dispatch' && inputs.debug_enabled }}
 
-      # Build ITK-SNAP using CDash
-      - name: ITK-SNAP Dashboard -- Configure and Build
+      # Build LaTIM-SNAP using CDash
+      - name: LaTIM-SNAP Dashboard -- Configure and Build
         id: ctest-config
         working-directory: ${{github.workspace}}/itksnap/build
         shell: bash
@@ -269,7 +269,7 @@ jobs:
           ${{ matrix.ctest_cmd }} -D ExperimentalConfigure
           ${{ matrix.ctest_cmd }} -D ExperimentalBuild
 
-      - name: ITK-SNAP Dashboard -- Test
+      - name: LaTIM-SNAP Dashboard -- Test
         id: ctest-test
         if: ${{ github.event_name != 'workflow_dispatch' || !inputs.skip_testing }}
         working-directory: ${{github.workspace}}/itksnap/build
@@ -278,7 +278,7 @@ jobs:
         run: |
           ${{ matrix.ctest_cmd }} -D ExperimentalTest
 
-      - name: ITK-SNAP Dashboard -- Submit
+      - name: LaTIM-SNAP Dashboard -- Submit
         id: ctest-submit
         working-directory: ${{github.workspace}}/itksnap/build
         shell: bash
@@ -286,12 +286,12 @@ jobs:
         run: |
           ${{ matrix.ctest_cmd }} -D ExperimentalSubmit
 
-      - name: ITK-SNAP Dashboard -- Gatekeeper
+      - name: LaTIM-SNAP Dashboard -- Gatekeeper
         if: ${{ steps.ctest-config.outcome != 'success' || steps.ctest-submit.outcome != 'success' }}
         run: exit -1          
 
-      # Cache the ITK-SNAP build
-      - name: Cache ITK-SNAP build directory
+      # Cache the LaTIM-SNAP build
+      - name: Cache LaTIM-SNAP build directory
         if: steps.cache-restore-itksnap.outputs.cache-hit != 'true'
         uses: actions/cache/save@v4
         with:
@@ -330,15 +330,15 @@ jobs:
           rm -rf notarize_key
           cmake -DSNAP_MACOS_NOTARYTOOL_PROFILE=itksnap_notarize -DSNAP_MACOS_KEYCHAIN=/Users/runner/Library/Keychains/build.keychain-db -DSNAP_MACOSX_CODESIGN_CERT=$CODESIGN_CERT .
 
-      # Package ITK-SNAP
-      - name: Package ITK-SNAP
+      # Package LaTIM-SNAP
+      - name: Package LaTIM-SNAP
         continue-on-error: false
         working-directory: ${{github.workspace}}/itksnap/build
         shell: bash
         run: |
           cpack --verbose 
 
-      # Extract the filename of ITK-SNAP package
+      # Extract the filename of LaTIM-SNAP package
       - name: Read package name
         id: package_itksnap
         working-directory: ${{github.workspace}}/itksnap/build

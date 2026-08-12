@@ -424,7 +424,7 @@ void SnakeWizardPanel::on_btnBubbleNext_clicked()
   }
   catch(IRISException &exc)
   {
-    QMessageBox::warning(this, tr("ITK-SNAP"), exc.what(), QMessageBox::Ok);
+    QMessageBox::warning(this, tr("LaTIM-SNAP"), exc.what(), QMessageBox::Ok);
   }
 }
 

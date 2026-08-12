@@ -1,13 +1,13 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SNAPLevelSetFunction.h,v $
   Language:  C++
   Date:      $Date: 2007/12/30 04:05:14 $
   Version:   $Revision: 1.2 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.
@@ -153,7 +153,7 @@ public:
   virtual SpeedImageType *GetSpeedImage() const
     { return m_SpeedImage; }
 
-  /** Set the scaling for the speed image. In ITK-SNAP 3.0, speed images
+  /** Set the scaling for the speed image. In LaTIM-SNAP 3.0, speed images
     are of short type, with the range between -0x7fff and 0x7fff. So we
     need to scale them to the range -1 to 1. */
   void SetSpeedScaleFactor(ScalarValueType value)

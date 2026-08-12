@@ -47,7 +47,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>On the Axial and Coronal views, ITK-SNAP is currently following neurological convention: patient's left side is shown on the right side of the screen. This might not be ideal for non-brain images.</string>
+    <string>On the Axial and Coronal views, LaTIM-SNAP is currently following neurological convention: patient's left side is shown on the right side of the screen. This might not be ideal for non-brain images.</string>
    </property>
    <property name="textFormat">
     <enum>Qt::AutoText</enum>

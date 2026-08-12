@@ -1288,7 +1288,7 @@ competition</string>
                  <string notr="true"/>
                 </property>
                 <property name="text">
-                 <string>Use this mode to perform segmentation using a speed image  computed outside of ITK-SNAP.</string>
+                 <string>Use this mode to perform segmentation using a speed image  computed outside of LaTIM-SNAP.</string>
                 </property>
                 <property name="wordWrap">
                  <bool>true</bool>
@@ -2156,7 +2156,7 @@ border-right: 0px;</string>
                 </size>
                </property>
                <property name="toolTip">
-                <string>Accept segmentation and return to the main ITK-SNAP window</string>
+                <string>Accept segmentation and return to the main LaTIM-SNAP window</string>
                </property>
                <property name="text">
                 <string>Finish</string>

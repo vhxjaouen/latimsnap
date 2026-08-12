@@ -38,12 +38,12 @@
     <widget class="QComboBox" name="inOpenMode">
      <item>
       <property name="text">
-       <string>Open workspace in the current ITK-SNAP window</string>
+       <string>Open workspace in the current LaTIM-SNAP window</string>
       </property>
      </item>
      <item>
       <property name="text">
-       <string>Open workspace in a new ITK-SNAP window </string>
+       <string>Open workspace in a new LaTIM-SNAP window </string>
       </property>
      </item>
      <item>

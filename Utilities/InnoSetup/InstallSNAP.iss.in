@@ -36,7 +36,7 @@ Type: filesandordirs; Name: "{app}\Images2D"
 Type: filesandordirs; Name: "{app}\Presets"
 
 [Icons]
-Name: "{group}\InsightSNAP"; Filename: "{app}\InsightSNAP.exe"; Comment: "ITK-SNAP 3D Image Segmentation Tool"; IconFilename: "{app}\itksnap.ico"
+Name: "{group}\InsightSNAP"; Filename: "{app}\InsightSNAP.exe"; Comment: "LaTIM-SNAP 3D Image Segmentation Tool"; IconFilename: "{app}\itksnap.ico"
 Name: "{group}\InsightSNAP on the Web"; Filename: "{app}\SNAP.url"
 Name: "{group}\Uninstall InsightSNAP"; Filename: "{uninstallexe}"
 Name: "{userdesktop}\InsightSNAP"; Filename: "{app}\InsightSNAP.exe"; Tasks: desktopicon

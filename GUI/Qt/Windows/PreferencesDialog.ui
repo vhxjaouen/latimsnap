@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Preferences - ITK-SNAP</string>
+   <string>Preferences - LaTIM-SNAP</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" columnstretch="0,0">
    <item row="0" column="1">
@@ -57,7 +57,7 @@ font-weight:bold;</string>
            <item>
             <widget class="QCheckBox" name="chkAutoContrast">
              <property name="toolTip">
-              <string>When this option is checked, image contrast will be adjusted automatically based on the image histogram whenever a new image is loaded into ITK-SNAP.</string>
+              <string>When this option is checked, image contrast will be adjusted automatically based on the image histogram whenever a new image is loaded into LaTIM-SNAP.</string>
              </property>
              <property name="text">
               <string>Automatically adjust contrast when loading images</string>
@@ -81,7 +81,7 @@ font-weight:bold;</string>
            <item>
             <widget class="QCheckBox" name="chkSynchronize">
              <property name="text">
-              <string>Synchronize view between multiple ITK-SNAP sessions</string>
+              <string>Synchronize view between multiple LaTIM-SNAP sessions</string>
              </property>
             </widget>
            </item>
@@ -163,7 +163,7 @@ font-weight:bold;</string>
            <item>
             <widget class="QCheckBox" name="chkCheckForUpdates">
              <property name="text">
-              <string>Allow ITK-SNAP to check for updates periodically</string>
+              <string>Allow LaTIM-SNAP to check for updates periodically</string>
              </property>
             </widget>
            </item>

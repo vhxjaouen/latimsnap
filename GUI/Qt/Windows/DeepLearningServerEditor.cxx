@@ -382,7 +382,7 @@ DeepLearningServerEditor::on_SetupDLSFinished(int exitCode, QProcess::ExitStatus
   if(exitCode == 0 && status == QProcess::NormalExit)
   {
     ui->txtInstallLog->append("<b>=======================================</b>\n");
-    ui->txtInstallLog->append("<b>ITK-SNAP Deep Learning Server is Ready!</b>\n");
+    ui->txtInstallLog->append("<b>LaTIM-SNAP Deep Learning Server is Ready!</b>\n");
     ui->txtInstallLog->append("<b>=======================================</b>\n");
   }
 }

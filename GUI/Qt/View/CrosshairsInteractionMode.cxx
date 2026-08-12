@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: Filename.cxx,v $
   Language:  C++
   Date:      $Date: 2010/10/18 11:25:44 $
   Version:   $Revision: 1.12 $
   Copyright (c) 2011 Paul A. Yushkevich
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -236,7 +236,7 @@ CrosshairsInteractionMode::keyPressEvent(QKeyEvent *ev)
         QMessageBox::StandardButton reply = QMessageBox::question(
           this,
           tr("Crash simulation"),
-          tr("This key combination simulates a crash in ITK-SNAP. Do you want ITK-SNAP to crash now?"),
+          tr("This key combination simulates a crash in LaTIM-SNAP. Do you want LaTIM-SNAP to crash now?"),
           QMessageBox::Yes | QMessageBox::No);
         if (reply == QMessageBox::Yes)
         {

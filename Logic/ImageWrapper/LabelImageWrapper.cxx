@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: LabelImageWrapper.cxx,v $
   Language:  C++
   Date:      $Date: 2018/01/05 $
   Version:   $Revision: 1 $
   Copyright (c) 2018 Paul A. Yushkevich
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.

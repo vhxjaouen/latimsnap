@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: Filename.cxx,v $
   Language:  C++
   Date:      $Date: 2010/10/18 11:25:44 $
   Version:   $Revision: 1.12 $
   Copyright (c) 2011 Paul A. Yushkevich
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -233,7 +233,7 @@ MainImageWindow::MainImageWindow(QWidget *parent) :
   m_DockLeft->setFeatures(
         QDockWidget::DockWidgetFloatable |
         QDockWidget::DockWidgetMovable);
-  m_DockLeft->setWindowTitle(tr("ITK-SNAP Toolbox"));
+  m_DockLeft->setWindowTitle(tr("LaTIM-SNAP Toolbox"));
   // m_DockLeft->setTitleBarWidget(new QWidget());
   this->addDockWidget(Qt::LeftDockWidgetArea, m_DockLeft);
 
@@ -348,7 +348,7 @@ MainImageWindow::MainImageWindow(QWidget *parent) :
   m_Progress->reset();
 
   // Set title
-  this->setWindowTitle(tr("ITK-SNAP"));
+  this->setWindowTitle(tr("LaTIM-SNAP"));
 
   // We accept drop events
   setAcceptDrops(true);
@@ -1125,19 +1125,19 @@ void MainImageWindow::UpdateWindowTitle()
   if(projfile.length())
     {
     // If a project has multiple layers, we should indicate which segmentation image is being viewed
-    this->setWindowTitle(tr("%1 - ITK-SNAP").arg(projfile));
+    this->setWindowTitle(tr("%1 - LaTIM-SNAP").arg(projfile));
     }
   else if(mainfile.length() && segfile.length())
     {
-    this->setWindowTitle(tr("%1 - %2 - ITK-SNAP").arg(mainfile).arg(segfile));
+    this->setWindowTitle(tr("%1 - %2 - LaTIM-SNAP").arg(mainfile).arg(segfile));
     }
   else if(mainfile.length())
     {
-    this->setWindowTitle(tr("%1 - New Segmentation - ITK-SNAP").arg(mainfile));
+    this->setWindowTitle(tr("%1 - New Segmentation - LaTIM-SNAP").arg(mainfile));
     }
   else
     {
-    this->setWindowTitle(tr("ITK-SNAP"));
+    this->setWindowTitle(tr("LaTIM-SNAP"));
     }
 
   // Set up the save segmentation menu items
@@ -1705,7 +1705,7 @@ void MainImageWindow::LoadProjectInNewInstance(const QString &file)
   }
   catch(IRISException &exc)
   {
-    ReportNonLethalException(this, exc, tr("Failed to open workspace in new ITK-SNAP window"));
+    ReportNonLethalException(this, exc, tr("Failed to open workspace in new LaTIM-SNAP window"));
   }
 }
 
@@ -1885,7 +1885,7 @@ void MainImageWindow::ExportScreenshot(int panelIndex)
   // Open a file browser and have the user select something
   QString fuser = ShowSimpleSaveDialogWithHistory(
         this, m_Model, "Snapshots",
-        "Save Snapshot - ITK-SNAP",
+        "Save Snapshot - LaTIM-SNAP",
         "Snapshot File:",
         "PNG Image (*.png);;TIFF Image (*.tiff *.tif);;JPEG Image (*.jpg *.jpeg)",
         true,
@@ -2019,7 +2019,7 @@ void MainImageWindow::on_actionLoadLabels_triggered()
   // Ask for a filename
   QString selection = ShowSimpleOpenDialogWithHistory(
         this, m_Model, "LabelDescriptions",
-        tr("Open Label Descriptions - ITK-SNAP"),
+        tr("Open Label Descriptions - LaTIM-SNAP"),
         tr("Label Description File"),
         "Text Files (*.txt);; Label Files (*.label)");
 
@@ -2033,7 +2033,7 @@ void MainImageWindow::on_actionSaveLabels_triggered()
   // Ask for a filename
   QString selection = ShowSimpleSaveDialogWithHistory(
         this, m_Model, "LabelDescriptions",
-        tr("Save Label Descriptions - ITK-SNAP"),
+        tr("Save Label Descriptions - LaTIM-SNAP"),
         tr("Label Description File"),
         "Text Files (*.txt);; Label Files (*.label)",
         true);
@@ -2226,7 +2226,7 @@ void MainImageWindow::on_actionOpenWorkspace_triggered()
   // Use the dialog with history - to be consistent with other parts of SNAP
   QString file = ShowSimpleOpenDialogWithHistory(
         this, m_Model, "Project", tr("Open Workspace"),
-        tr("Workspace File"), tr("ITK-SNAP Workspace Files (*.itksnap)"));
+        tr("Workspace File"), tr("LaTIM-SNAP Workspace Files (*.itksnap)"));
 
   // If user hits cancel, move on
   if(file.isNull())
@@ -2296,7 +2296,7 @@ void MainImageWindow::ExportSlice(AnatomicalDirection direction)
   // Open a file browser and have the user select something
   std::string fuser = to_utf8(ShowSimpleSaveDialogWithHistory(
         this, m_Model, "Slices",
-        tr("Save Slice - ITK-SNAP"),
+        tr("Save Slice - LaTIM-SNAP"),
         tr("Slice Image File"),
         tr("PNG Image (*.png);;TIFF Image (*.tiff *.tif);;JPEG Image (*.jpg *.jpeg)"),true));
 
@@ -2405,9 +2405,9 @@ void MainImageWindow::DoUpdateCheck(bool quiet)
     QPushButton *downloadButton = mbox.addButton(tr("Open Download Page"), QMessageBox::ActionRole);
     mbox.addButton(tr("Not Now"), QMessageBox::RejectRole);
     mbox.setIcon(QMessageBox::Question);
-    mbox.setText(tr("A newer ITK-SNAP version (%1) is available.").arg(nver.c_str()));
+    mbox.setText(tr("A newer LaTIM-SNAP version (%1) is available.").arg(nver.c_str()));
     mbox.setInformativeText(tr("Do you want to download the latest version?"));
-    mbox.setWindowTitle(tr("ITK-SNAP Update Check"));
+    mbox.setWindowTitle(tr("LaTIM-SNAP Update Check"));
     mbox.exec();
 
     if (mbox.clickedButton() == downloadButton)
@@ -2417,14 +2417,14 @@ void MainImageWindow::DoUpdateCheck(bool quiet)
     }
   else if(us == SystemInterface::US_UP_TO_DATE && !quiet)
     {
-    QMessageBox::information(this, tr("ITK-SNAP Update Check"),
-                             tr("Your version of ITK-SNAP is up to date!"),
+    QMessageBox::information(this, tr("LaTIM-SNAP Update Check"),
+                             tr("Your version of LaTIM-SNAP is up to date!"),
                              QMessageBox::Ok);
     }
   else if(us == SystemInterface::US_CONNECTION_FAILED && !quiet)
     {
     QMessageBox::warning(this,
-                         tr("ITK-SNAP Update Check Failed"),
+                         tr("LaTIM-SNAP Update Check Failed"),
                          tr("Could not connect to server. Go to itksnap.org to check if a new"
                          " version is available."));
     }
@@ -2441,7 +2441,7 @@ void MainImageWindow::UpdateAutoCheck()
     {
     if(QMessageBox::Yes == QMessageBox::question(
          this, tr("Allow Automatic Update Checks?"),
-         tr("ITK-SNAP can check for software updates automatically.\n"
+         tr("LaTIM-SNAP can check for software updates automatically.\n"
          "Do you want to enable this feature?"),
          QMessageBox::Yes, QMessageBox::No))
       {
@@ -2675,7 +2675,7 @@ void MainImageWindow::on_actionInstallCLI_triggered()
   if(fi.exists() && fi.isExecutable())
     {
     QString html = tr(
-        "<p>ITK-SNAP is packaged with several useful command-line programs. "
+        "<p>LaTIM-SNAP is packaged with several useful command-line programs. "
         "Visit <a href='http://itksnap.org/cmdl'>http://itksnap.org/cmdl</a> "
         "for a listing of these tools. </p>"
         "<p>To create links to these programs in <b>/usr/local/bin</b>, "
@@ -2689,9 +2689,9 @@ void MainImageWindow::on_actionInstallCLI_triggered()
         arg(fi.absoluteFilePath(), fi.absoluteDir().absolutePath());
 
     QMessageBox msg;
-    msg.setText(tr("How to Install ITK-SNAP Command Line Tools"));
+    msg.setText(tr("How to Install LaTIM-SNAP Command Line Tools"));
     msg.setInformativeText(html);
-    msg.setWindowTitle(tr("Install Command Line Tools -- ITK-SNAP"));
+    msg.setWindowTitle(tr("Install Command Line Tools -- LaTIM-SNAP"));
     msg.setStyleSheet("QLabel{min-width: 700px;}");
     msg.exec();
     }

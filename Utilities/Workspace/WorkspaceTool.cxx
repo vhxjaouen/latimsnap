@@ -1,12 +1,12 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Language:  C++
   Copyright (c) 2017 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -76,7 +76,7 @@ void sleep(int n_sec)
 
 int usage(int rc) 
 {
-  cout << "itksnap-wt : ITK-SNAP Workspace Tool" << endl;
+  cout << "itksnap-wt : LaTIM-SNAP Workspace Tool" << endl;
   cout << "Usage: " << endl;
   cout << "  itksnap-wt [commands]" << endl;
   cout << "I/O commands: " << endl;
@@ -191,7 +191,7 @@ int usage(int rc)
   cout << "  <mesh>:N                          : Selects N-th mesh layer" << endl;
   cout << "Contrast Mapping Specification:" << endl;
   cout << "  LINEAR N1 N2                      : Linear contrast between specified numbers" << endl;
-  cout << "  AUTO                              : Automatic, as determined by ITK-SNAP" << endl;
+  cout << "  AUTO                              : Automatic, as determined by LaTIM-SNAP" << endl;
   cout << "  DEFAULT                           : Default state, linear from 0 to 1" << endl;
   cout << "  CURVE N t1 y1 ... tN yN           : Fully specified curve with N points" << endl; 
   cout << "Multi-Component Display (MCD) Specification:" << endl;
@@ -1178,7 +1178,7 @@ int main(int argc, char *argv[])
       }
     catch(IRISException &exc)
       {
-      cerr << "ITK-SNAP exception for command " << arg << " : " << exc.what() << endl;
+      cerr << "LaTIM-SNAP exception for command " << arg << " : " << exc.what() << endl;
       return -1;
       }
     catch(std::exception &sexc)

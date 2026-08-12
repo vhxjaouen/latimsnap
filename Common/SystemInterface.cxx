@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SystemInterface.cxx,v $
   Language:  C++
   Date:      $Date: 2010/04/16 05:14:38 $
   Version:   $Revision: 1.23 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -106,10 +106,10 @@ SystemInterface::GetApplicationDataDirectory()
 
   // Temporary crap-out
   if(utf8_path.length() != wcslen(path_w))
-    throw IRISException("ITK-SNAP currently does not support non-ASCII characters in user names on Windows (tm) platforms. This will be fixed in the future.");
+    throw IRISException("LaTIM-SNAP currently does not support non-ASCII characters in user names on Windows (tm) platforms. This will be fixed in the future.");
 
   // Append the full information
-  std::string strPath = utf8_path + "/itksnap.org/ITK-SNAP";
+  std::string strPath = utf8_path + "/itksnap.org/LaTIM-SNAP";
 
   itksys::SystemTools::ConvertToUnixSlashes(strPath);
 
@@ -121,7 +121,7 @@ std::string
 SystemInterface::GetApplicationDataDirectory()
 {
   // This old code seems unnecessary - Qt delegate returns the right place for Mac
-  // std::string path("~/Library/Application Support/itksnap.org/ITK-SNAP");
+  // std::string path("~/Library/Application Support/itksnap.org/LaTIM-SNAP");
   std::string path = m_SystemInfoDelegate->GetApplicationPermanentDataLocation();
   itksys::SystemTools::ConvertToUnixSlashes(path);
   return path;
@@ -135,7 +135,7 @@ std::string
 SystemInterface::GetApplicationDataDirectory()
 {
   // This old code seems unnecessary - Qt delegate returns the right place for Mac
-  // std::string path("~/Library/Application Support/itksnap.org/ITK-SNAP");
+  // std::string path("~/Library/Application Support/itksnap.org/LaTIM-SNAP");
   std::string path = m_SystemInfoDelegate->GetApplicationPermanentDataLocation();
   itksys::SystemTools::ConvertToUnixSlashes(path);
   return path;
@@ -146,7 +146,7 @@ SystemInterface::GetApplicationDataDirectory()
 std::string
 SystemInterface::GetApplicationDataDirectory()
 {
-  std::string path("~/.itksnap.org/ITK-SNAP");
+  std::string path("~/.itksnap.org/LaTIM-SNAP");
   itksys::SystemTools::ConvertToUnixSlashes(path);
   return path;
 }

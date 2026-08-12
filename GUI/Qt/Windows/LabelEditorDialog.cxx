@@ -148,7 +148,7 @@ void LabelEditorDialog::createNewLabel()
     {
     QMessageBox::information(
           this,
-          "ITK-SNAP: Label Insertion Failed",
+          "LaTIM-SNAP: Label Insertion Failed",
           "There is no room to add a new label. Delete some existing labels.");
     }
 }
@@ -160,7 +160,7 @@ void LabelEditorDialog::duplicateLabel()
     {
     QMessageBox::information(
           this,
-          "ITK-SNAP: Label Insertion Failed",
+          "LaTIM-SNAP: Label Insertion Failed",
           "There is no room to add a new label. Delete some existing labels.");
     }
 }
@@ -205,7 +205,7 @@ void LabelEditorDialog::on_inLabelId_editingFinished()
     // Complain
     QMessageBox::information(
           this,
-          "ITK-SNAP: Label Id Change Failed",
+          "LaTIM-SNAP: Label Id Change Failed",
           QString("Can not change the numerical value to %1 "
                   "because a label with that value already exists. "
                   "Delete label %1 first.").arg(ui->inLabelId->value()));

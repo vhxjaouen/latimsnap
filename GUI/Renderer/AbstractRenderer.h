@@ -38,7 +38,7 @@ public:
 
 
 /**
-  A parent class for ITK-SNAP renderers. A renderer implements all the
+  A parent class for LaTIM-SNAP renderers. A renderer implements all the
   drawing code independently of the widget system (Qt).
   */
 class AbstractRenderer : public AbstractModel

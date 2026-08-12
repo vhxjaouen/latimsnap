@@ -265,7 +265,7 @@ void DropActionDialog::on_btnLoadNew_clicked()
   catch(exception &exc)
     {
     QMessageBox b(this);
-    b.setText(tr("Failed to launch new ITK-SNAP instance"));
+    b.setText(tr("Failed to launch new LaTIM-SNAP instance"));
     b.setDetailedText(exc.what());
     b.setIcon(QMessageBox::Critical);
     b.exec();

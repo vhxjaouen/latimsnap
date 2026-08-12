@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Open Document - ITK-SNAP</string>
+   <string>Open Document - LaTIM-SNAP</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <property name="spacing">
@@ -46,7 +46,7 @@
    <item>
     <widget class="QLabel" name="label_2">
      <property name="text">
-      <string>What should ITK-SNAP do with this image?</string>
+      <string>What should LaTIM-SNAP do with this image?</string>
      </property>
     </widget>
    </item>
@@ -87,7 +87,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>This will load the dropped image alongside the images currently open in this ITK-SNAP window </string>
+         <string>This will load the dropped image alongside the images currently open in this LaTIM-SNAP window </string>
         </property>
         <property name="text">
          <string>Load as Additional Image</string>
@@ -131,7 +131,7 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>This will close all images currently open in this ITK-SNAP window and load the new image as the main image.</string>
+         <string>This will close all images currently open in this LaTIM-SNAP window and load the new image as the main image.</string>
         </property>
         <property name="text">
          <string>Load as Main Image</string>
@@ -196,7 +196,7 @@
    <item>
     <widget class="QGroupBox" name="groupBox_2">
      <property name="title">
-      <string>Open it in a new ITK-SNAP window</string>
+      <string>Open it in a new LaTIM-SNAP window</string>
      </property>
      <layout class="QHBoxLayout" name="horizontalLayout_3">
       <item>
@@ -214,10 +214,10 @@
          </size>
         </property>
         <property name="toolTip">
-         <string>This will open a new ITK-SNAP window and open the dropped image as the main image</string>
+         <string>This will open a new LaTIM-SNAP window and open the dropped image as the main image</string>
         </property>
         <property name="text">
-         <string>Open in New ITK-SNAP</string>
+         <string>Open in New LaTIM-SNAP</string>
         </property>
        </widget>
       </item>

@@ -1,13 +1,13 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SnakeParameters.h,v $
   Language:  C++
   Date:      $Date: 2007/12/30 04:05:15 $
   Version:   $Revision: 1.2 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

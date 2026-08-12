@@ -46,7 +46,7 @@ AnnotationToolPanel::on_btnOpen_clicked()
                                                  "Annotations",
                                                  tr("Open Annotation File"),
                                                  tr("Annotation File"),
-                                                 tr("ITK-SNAP Annotation Files (%1)").arg("*.annot"));
+                                                 tr("LaTIM-SNAP Annotation Files (%1)").arg("*.annot"));
 
   if (!file.isNull())
   {
@@ -74,7 +74,7 @@ AnnotationToolPanel::on_btnSave_clicked()
                                                  "Annotations",
                                                  tr("Open Annotation File"),
                                                  tr("Annotation File"),
-                                                 tr("ITK-SNAP Annotation Files (%1)").arg("*.annot"),
+                                                 tr("LaTIM-SNAP Annotation Files (%1)").arg("*.annot"),
                                                  false);
 
   if (!file.isNull())

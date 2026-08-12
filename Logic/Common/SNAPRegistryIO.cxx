@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SNAPRegistryIO.cxx,v $
   Language:  C++
   Date:      $Date: 2009/06/09 05:43:00 $
   Version:   $Revision: 1.4 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -236,7 +236,7 @@ SNAPRegistryIO
   out.SetROI(outRegion);
 
   // Read resampling properties. If the folder does not contain the resample
-  // dimensions value (added in ITK-SNAP 3.0), we default to the ROI dimensions
+  // dimensions value (added in LaTIM-SNAP 3.0), we default to the ROI dimensions
   out.SetResampleDimensions(
         to_unsigned_int(
           folder["ResampleDimensions"][to_int(Vector3ui(outRegion.GetSize()))]));

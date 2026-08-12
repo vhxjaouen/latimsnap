@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Save Changes - ITK-SNAP</string>
+   <string>Save Changes - LaTIM-SNAP</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

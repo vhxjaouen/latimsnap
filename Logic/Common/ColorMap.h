@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: ColorMap.h,v $
   Language:  C++
   Date:      $Date: 2011/04/18 15:06:07 $
   Version:   $Revision: 1.7 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.

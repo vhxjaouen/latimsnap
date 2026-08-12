@@ -1,4 +1,4 @@
-# ITK-SNAP Release Notes - Version 4.4
+# LaTIM-SNAP Release Notes - Version 4.4
 
 ## Version 4.4.0
 
@@ -25,7 +25,7 @@
 ### Programmatic Improvements
 
 - New [Deep Learning Segmentation (DLS)](https://itksnap-dls.readthedocs.io/) framework :
-  - Extends ITK-SNAP with Python-based deep learning capabilities 
+  - Extends LaTIM-SNAP with Python-based deep learning capabilities 
   - DLS communication layers supports network-based connections and SSH tunneling
   - Lays the foundation for more scalable integration of additional deep learning inference backends
 - Software build automation via GitHub Actions
@@ -131,7 +131,7 @@
 
 ----
 
-This version introduces an exciting new feature: the **Distributed Segmentation Service (DSS)**. This service allows developers to make various image segmentation algorithms available to you directly in ITK-SNAP. Several algorithms have already been made available: most of them focused on hippocampus segmentation, and we expect more to appear soon. DSS is a web-based system, so data is sent to a server and processed by algorithm providers using their own computer hardware.
+This version introduces an exciting new feature: the **Distributed Segmentation Service (DSS)**. This service allows developers to make various image segmentation algorithms available to you directly in LaTIM-SNAP. Several algorithms have already been made available: most of them focused on hippocampus segmentation, and we expect more to appear soon. DSS is a web-based system, so data is sent to a server and processed by algorithm providers using their own computer hardware.
 
 ### New features
 
@@ -158,7 +158,7 @@ This version introduces an exciting new feature: the **Distributed Segmentation 
 
 ----
 
-The main change in this version is the addition of the workspace building tool itksnap_ws. This tool will form the basis of the distributed segmentation system in ITK-SNAP.
+The main change in this version is the addition of the workspace building tool itksnap_ws. This tool will form the basis of the distributed segmentation system in LaTIM-SNAP.
 
 - Added tool itksnap_ws (in Utilities/Workspace)
 
@@ -166,11 +166,11 @@ The main change in this version is the addition of the workspace building tool i
 
 ----
 
-The main focus of this release is on making it easier to work with multiple images that have different size and resolution. This is particularly useful for viewing and segmenting MRI studies, where a single session contains many scans with different parameters. Important new features include the ability to load multiple images of different dimensions, voxel size, and orientation into a single ITK-SNAP window; automatic and manual **registration**; and enhanced support for DICOM format images. With these new features, researchers who work with MRI DICOM datasets will find it much easier to incorporate ITK-SNAP into their workflow. Another important new feature in this release is the ability to **interpolate** segmentation between slices. This makes it possible to create manual segmentations much more quickly than before.
+The main focus of this release is on making it easier to work with multiple images that have different size and resolution. This is particularly useful for viewing and segmenting MRI studies, where a single session contains many scans with different parameters. Important new features include the ability to load multiple images of different dimensions, voxel size, and orientation into a single LaTIM-SNAP window; automatic and manual **registration**; and enhanced support for DICOM format images. With these new features, researchers who work with MRI DICOM datasets will find it much easier to incorporate LaTIM-SNAP into their workflow. Another important new feature in this release is the ability to **interpolate** segmentation between slices. This makes it possible to create manual segmentations much more quickly than before.
 
 ### New features
 
-- Multiple images with different dimensions, voxel size, and orientation can be visualized in the same ITK-SNAP window. When additional images are loaded, they are represented in memory in their native resolution, and resampled on the fly to match the screen resolution.
+- Multiple images with different dimensions, voxel size, and orientation can be visualized in the same LaTIM-SNAP window. When additional images are loaded, they are represented in memory in their native resolution, and resampled on the fly to match the screen resolution.
 
   - This means that you can use information from two MRI modalities to guide manual segmentation. You can load a T1-weighted image with 1.0mm isotropic resolution and a T2-weighted image with 0.4mm x 0.4mm x 2.0mm resolution, and use the full information from both of these images for your segmentation.
 
@@ -190,7 +190,7 @@ The main focus of this release is on making it easier to work with multiple imag
 
   - Listing of DICOM directories (in the Open Image wizard) is much faster than before. This really makes a difference when opening images on DVDs and USB sticks.
 
-  - Dragging and dropping a DICOM file onto the ITK-SNAP window on Windows and Mac now shows the list of 3D volumes in the directory, allowing you to choose a volume to open.
+  - Dragging and dropping a DICOM file onto the LaTIM-SNAP window on Windows and Mac now shows the list of 3D volumes in the directory, allowing you to choose a volume to open.
 
 - A new tool for interpolating segmentations between slices under *Tools->Interpolate Labels*.
 
@@ -204,11 +204,11 @@ The main focus of this release is on making it easier to work with multiple imag
 
 ### Programmatic Enhancements
 
-- ITK-SNAP now includes Convert3D and Greedy registration tools as submodules. This is already used to support registration functionality, but in the future we will be adding more Convert3D-based functionality, such as filtering, etc.
+- LaTIM-SNAP now includes Convert3D and Greedy registration tools as submodules. This is already used to support registration functionality, but in the future we will be adding more Convert3D-based functionality, such as filtering, etc.
 
 - The ImageWrapper class includes a dual slicing module that selects between orthogonal and non-orthogonal slicing based on image orientation. This is significantly cleaned up relative to earlier versions.
 
-- ITK-SNAP now compatible with Qt 5.6, which is the standard for the next 3 years
+- LaTIM-SNAP now compatible with Qt 5.6, which is the standard for the next 3 years
 
 ### Bug Fixes
 
@@ -259,7 +259,7 @@ on usability.
 
 - The interface for loading and viewing additional image layers has been
     extensively redesigned. When more than one anatomical image is loaded into
-    ITK-SNAP, the default behavior is to display one image at full size and the
+    LaTIM-SNAP, the default behavior is to display one image at full size and the
     rest of the images as thumbnails. Clicking the thumbnails makes them full
     size. This new thumbnail mode is far more intuitive for working with
     multiple images than the method of semi-transparent overlays employed in
@@ -324,7 +324,7 @@ on usability.
 ### Programmatic Improvements
 
 - Refactored the software to allow multiple images that occupy different
-    anatomical space to be loaded in the same ITK-SNAP session. This
+    anatomical space to be loaded in the same LaTIM-SNAP session. This
     functionality has not yet been enabled, and will be rolled out it 3.4 as
     part of the new image registration functionality.
 
@@ -333,7 +333,7 @@ on usability.
 - Fixed font size and other rendering issues on Retina displays. Added
     high-resolution icons for Retina.
 
-- Made it possible to build ITK-SNAP against older Qt version 4.8. In some
+- Made it possible to build LaTIM-SNAP against older Qt version 4.8. In some
     Linux environments, applications based on Qt5 do not work well over remote
     connection (ssh -X, VNC, x2go, NX) because the way Qt and X11 interface was
     changed drastically in Qt5. The fallback to Qt4 makes it possible to run the
@@ -364,7 +364,7 @@ the release should be more stable than 3.0.
     modes. Overall, semi-automatic segmentation should be much easier to use
     than in the past.
 
-- ITK-SNAP can now read 4D datasets. Previously such datasets would have to
+- LaTIM-SNAP can now read 4D datasets. Previously such datasets would have to
     be converted to a multi-component 3D dataset by the user. Now working with
     dynamic datasets is much easier.
 
@@ -406,7 +406,7 @@ the release should be more stable than 3.0.
 ## Version 3.0.0
 
 ----
-This is a major new release of ITK-SNAP. The user interface has been completely
+This is a major new release of LaTIM-SNAP. The user interface has been completely
 rewritten using the Qt platform, and new functionality for multi-modal image
 segmentation has been added.
 
@@ -449,8 +449,8 @@ segmentation has been added.
     panel, and these features are organized more logically than before.
 
 - New functionality for saving and opening workspaces. A workspace represents
-    the state of ITK-SNAP at a given moment, including all the images currently
-    loaded in an ITK-SNAP window, as well as associated settings and parameters.
+    the state of LaTIM-SNAP at a given moment, including all the images currently
+    loaded in an LaTIM-SNAP window, as well as associated settings and parameters.
     Workspaces are saved in the XML format. They can be packaged together with
     the images to which they refer and shared with other users.
 
@@ -534,9 +534,9 @@ segmentation has been added.
 ## Version 2.4.0
 
 ----
-This is the last planned release of the FLTK-based version of ITK-SNAP. It adds
+This is the last planned release of the FLTK-based version of LaTIM-SNAP. It adds
 minimal new functionality and addressed a number of bugs reported in the last
-year. The subsequent releases of ITK-SNAP will be based on the Qt platform and
+year. The subsequent releases of LaTIM-SNAP will be based on the Qt platform and
 will have the 3.x version number.
 
 ### New Features and UI Improvements
@@ -544,7 +544,7 @@ will have the 3.x version number.
 - Ported the dependency on ITK 3.20.1 to ITK 4.2 on all operating systems:
     Mac OS X, Linux, and Windows.
 
-- ITK-SNAP can read and write MRC images now.
+- LaTIM-SNAP can read and write MRC images now.
 
 ### Bug Fixes and Stability Improvements
 
@@ -693,9 +693,9 @@ MacOS and Windows.
     image occupy the whole screen.
 
 - An expanded menu bar. We have split the menu into File, Segmentation and Overlay
-    menus to provide easier and faster access to the ITK-SNAP features.
+    menus to provide easier and faster access to the LaTIM-SNAP features.
 
-- Native file chooser. On Windows and MacOS, ITK-SNAP will use a native file
+- Native file chooser. On Windows and MacOS, LaTIM-SNAP will use a native file
     chooser instead of the FLTK built-in file chooser. On Mac OSX, the native
     file chooser can be further enhanced by installing the DTI-TK Quick Look
     plugin that supports NIfTI/Analyze image preview (<www.nitrc.org/projects/dtitk>)
@@ -706,7 +706,7 @@ MacOS and Windows.
 
         itksnap image.nii
 
-    This feature is ideal for users who want to associate ITK-SNAP with certain 3D image
+    This feature is ideal for users who want to associate LaTIM-SNAP with certain 3D image
     types in their operating system (in Finder or Windows Explorer).
 
 - Automatic check for software update. Users can enable automatic update checking.
@@ -716,11 +716,11 @@ MacOS and Windows.
     connected to the internet, but this makes managing documentation a lot easier and
     hopefully will allow us to keep the documentation up to date with the features.
 
-- Crash recovery. When an out-of-memory or other crash occurs, ITK-SNAP will ask you
+- Crash recovery. When an out-of-memory or other crash occurs, LaTIM-SNAP will ask you
     if you want to save the segmentation image before exiting. Of course this may not
     always work, but it should make a lot of frustrated users a little less frustrated.
 
-- Reduced the memory footprint. There is still room for improvement, of course. Currently, ITK-SNAP requires 6 bytes per voxel in manual segmentation mode. More memory is needed for mesh rendering, and a lot more for automatic segmentation. When loading images in 32-bit or 64-bit formats, more memory may be required at the time of image IO. That is because ITK NIFTI reader (and maybe other readers) keeps a second copy of the image in memory during IO. This memory is immediately deallocated though.
+- Reduced the memory footprint. There is still room for improvement, of course. Currently, LaTIM-SNAP requires 6 bytes per voxel in manual segmentation mode. More memory is needed for mesh rendering, and a lot more for automatic segmentation. When loading images in 32-bit or 64-bit formats, more memory may be required at the time of image IO. That is because ITK NIFTI reader (and maybe other readers) keeps a second copy of the image in memory during IO. This memory is immediately deallocated though.
 
 - Unified navigation modes. The crosshair mode allows zoom and pan (RMB/MMB), and has an auto-pan feature when you move the crosshair close to the edge of the slice window. The zoom/pan mode is redundant, but we left it in place for backward compatibility. In the zoom/pan mode, zoom is RMB, pan is LMB, crosshair motion is MMB. In all other modes, crosshair motion is accessible through MMB as well.
 
@@ -774,7 +774,7 @@ MacOS and Windows.
 
     This feature was inspired by a similar tool in ITKGrey, a tool from the
     Vista Lab at Stanford that itself is a branch of an older version of
-    ITK-SNAP. Let us know if this feature works for you. Potentially, we may add
+    LaTIM-SNAP. Let us know if this feature works for you. Potentially, we may add
     other algorithms in the future, including running the level set inside of
     the brush.
 
@@ -929,7 +929,7 @@ MacOS and Windows.
 
         --- NOTE FOR MacOS Users ---
         MacOS doesn't allow you double-click the application icon to open a
-        new instance. To open multiple instances of ITK-SNAP, you need to launch
+        new instance. To open multiple instances of LaTIM-SNAP, you need to launch
         it from the command line.
         ----------------------------
 

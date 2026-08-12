@@ -29,7 +29,7 @@
 # Paul Y.
 # *************************************************************
 
-echo "This script is out of date and no longer supported in ITK-SNAP 2.x"
+echo "This script is out of date and no longer supported in LaTIM-SNAP 2.x"
 exit
 
 # Uncomment the line below to debug
@@ -226,13 +226,13 @@ function get_itk {
 }
 
 # -------------------------------------------------------------
-# Check out and build ITK-SNAP
+# Check out and build LaTIM-SNAP
 # -------------------------------------------------------------
 function get_itksnap {
   cd $basedir/itksnap
 
   # Use CVS to check out InsightApplications
-  echo "Checking out ITK-SNAP (Release $SNAP_REL) from CVS"
+  echo "Checking out LaTIM-SNAP (Release $SNAP_REL) from CVS"
   # cvs -qd :pserver:anonymous@www.itk.org:/cvsroot/Insight co -r $SNAP_REL InsightApplications >> $logfile
   cvs -qd :pserver:itk-snap.cvs.sourceforge.net/cvsroot/itk-snap co -r $SNAP_REL itksnap
 

@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: GlobalState.h,v $
   Language:  C++
   Date:      $Date: 2009/08/29 23:18:42 $
   Version:   $Revision: 1.19 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.                                      
@@ -607,7 +607,7 @@ private:
  *Added synchronization to 3D window viewpoint
  *
  *Revision 1.11  2008/12/02 05:14:19  pyushkevich
- *New feature: watershed-based adaptive paint brush. Based on the similar tool in ITK-Grey (which was derived from ITK-SNAP).
+ *New feature: watershed-based adaptive paint brush. Based on the similar tool in ITK-Grey (which was derived from LaTIM-SNAP).
  *
  *Revision 1.10  2008/11/17 19:38:23  pyushkevich
  *Added tools dialog to label editor window

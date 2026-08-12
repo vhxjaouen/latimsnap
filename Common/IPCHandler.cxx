@@ -43,7 +43,7 @@ IPCHandler::Attach(const char *path, short version, size_t message_size)
   if (!m_SharedData)
   {
     cerr << "Error attaching to or creating shared memory: " << strerror(errno) << endl;
-    cerr << "This error may occur if a user is running two versions of ITK-SNAP" << endl;
+    cerr << "This error may occur if a user is running two versions of LaTIM-SNAP" << endl;
     cerr << "Multisession support is disabled" << endl;
     return IPC_ERROR;
   }
@@ -172,7 +172,7 @@ void
 IPCHandler::Detach()
 {
   // Update the message with sender PID of -1 so that if shared memory is retained
-  // for future runs of ITK-SNAP, it will be ignored
+  // for future runs of LaTIM-SNAP, it will be ignored
   if (m_SharedData)
   {
     // Lock the segment before reading it

@@ -26,7 +26,7 @@ void DownloadTicketDialog::SetModel(DistributedSegmentationModel *model)
 
   // Initialize the file panel
   ui->filePanel->initializeForSaveFile(
-        m_Model->GetParent(), "Download location:", "", "ITK-SNAP Workspaces (*.itksnap)", true);
+        m_Model->GetParent(), "Download location:", "", "LaTIM-SNAP Workspaces (*.itksnap)", true);
   ui->filePanel->setAllowCreateDir(true);
 
   // Hook up the download mode

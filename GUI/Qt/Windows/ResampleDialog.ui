@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Resample ROI - ITK-SNAP</string>
+   <string>Resample ROI - LaTIM-SNAP</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

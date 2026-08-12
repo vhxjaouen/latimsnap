@@ -6,7 +6,7 @@
 
 /**
   This is a base class for domain descriptions that provide some piece
-  of information about every ITK-SNAP layer. This is used in conjunction
+  of information about every LaTIM-SNAP layer. This is used in conjunction
   with the PropertyModel system to provide the GUI with tables and combos
   that list layers, along with specific properties of interest.
   */

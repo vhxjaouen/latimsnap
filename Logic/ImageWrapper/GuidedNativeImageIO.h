@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: GuidedNativeImageIO.h,v $
   Language:  C++
   Date:      $Date: 2010/10/14 16:21:04 $
   Version:   $Revision: 1.6 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -201,8 +201,8 @@ public:
   /** 
    * Save the native image it its native format (to a different location and
    * filename, presumably). This function is not meant as part of the normal
-   * ITK-SNAP image IO, but for exporting workspaces. This preserves the native
-   * format of the image, as opposed to "saving as" from ITK-SNAP, which would
+   * LaTIM-SNAP image IO, but for exporting workspaces. This preserves the native
+   * format of the image, as opposed to "saving as" from LaTIM-SNAP, which would
    * involve casting the image to the internal voxel type.
    */
   void SaveNativeImage(const char *FileName, Registry &folder);

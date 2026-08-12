@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>About ITK-SNAP</string>
+   <string>About LaTIM-SNAP</string>
   </property>
   <layout class="QGridLayout" name="gridLayout" rowstretch="0,1,0" columnstretch="0,1">
    <item row="0" column="1">

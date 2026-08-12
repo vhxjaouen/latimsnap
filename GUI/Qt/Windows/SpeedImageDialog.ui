@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Speed Image Generation - ITK-SNAP</string>
+   <string>Speed Image Generation - LaTIM-SNAP</string>
   </property>
   <property name="styleSheet">
    <string notr="true">* {

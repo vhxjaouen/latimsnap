@@ -154,7 +154,7 @@ protected:
  *     bool IsFooable;
  *   }
  *
- * However, in the model/view paradigm in ITK-SNAP, we want each of the fields
+ * However, in the model/view paradigm in LaTIM-SNAP, we want each of the fields
  * to be represented by a PropertyModel so that observers can listen to changes
  * in the individual fields, and so that the fields can be hooked up to GUI
  * widgets. So instead, FooSettings is represented like this:

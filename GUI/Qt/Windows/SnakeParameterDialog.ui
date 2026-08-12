@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Active Contour Evolution Parameters - ITK-SNAP</string>
+   <string>Active Contour Evolution Parameters - LaTIM-SNAP</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
    <property name="bottomMargin">

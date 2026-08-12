@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: Filename.cxx,v $
   Language:  C++
   Date:      $Date: 2010/10/18 11:25:44 $
   Version:   $Revision: 1.12 $
   Copyright (c) 2011 Paul A. Yushkevich
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -971,7 +971,7 @@ void GenericSliceModel::UpdateViewportLayout()
 void GenericSliceModel::UpdateUpstreamViewportGeometry()
 {
   // In this function, we have to figure out where the active viewport
-  // is located in the physical image space of ITK-SNAP.
+  // is located in the physical image space of LaTIM-SNAP.
   GenericImageData *gid = this->GetImageData();
 
   // Get the display image spec corresponding to the current viewport
@@ -1050,7 +1050,7 @@ void
 GenericSliceModel::UpdateUpstreamThumbnailViewportGeometry()
 {
   // In this function, we have to figure out where the active viewport
-  // is located in the physical image space of ITK-SNAP.
+  // is located in the physical image space of LaTIM-SNAP.
   GenericImageData *gid = this->GetImageData();
 
   // Get the display image spec corresponding to the current viewport

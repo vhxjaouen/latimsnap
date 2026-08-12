@@ -1,9 +1,9 @@
 name: Build-n-Deploy
 
 # Personal test harness between machines.
-# Builds ITK-SNAP from source inside the latimsnap docker base image,
-# bundles a standalone Linux build with linuxdeployqt, tars it as
-# ITK-snap-current.tar.gz, zips it, and rclone-copies it to pcloud:~/TEMP.
+# Builds LaTIM-SNAP from source inside the latimsnap docker base image,
+# bundles a standalone Linux build with linuxdeployqt (Qt + ITK + VTK libs),
+# tars it as LaTIM-SNAP-current.tar.gz, and rclone-copies it to pcloud:~/TEMP.
 #
 # NOTE: compilation is only possible inside the docker base image
 # (ghcr.io/vhxjaouen/latimsnap-base) - the raw GitHub runner has no toolchain.
@@ -29,7 +29,7 @@ jobs:
           submodules: true
           persist-credentials: false
 
-      - name: Build ITK-SNAP inside docker base image
+      - name: Build LaTIM-SNAP inside docker base image
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE":/workspaces/latimsnap \
@@ -45,10 +45,10 @@ jobs:
               if [ -n '$VTK_DIR' ]; then CMAKE_ARGS+=\" -DVTK_DIR=$VTK_DIR\"; fi
               echo \">> cmake \$CMAKE_ARGS\"
               cmake \$CMAKE_ARGS
-              cmake --build \$BUILD_DIR --config Release --target ITK-SNAP
+              cmake --build \$BUILD_DIR --config Release --target LaTIM-SNAP
             "
 
-      - name: Package binary as tar.gz + zip
+      - name: Package self-contained bundle (linuxdeployqt) as tar.gz
         run: |
           docker run --rm \
             -v "$GITHUB_WORKSPACE":/workspaces/latimsnap \
@@ -56,24 +56,37 @@ jobs:
             ghcr.io/vhxjaouen/latimsnap-base:latest \
             bash -c "
               set -e
-              BIN=\$(find /workspaces/latimsnap/$BUILD_DIR -maxdepth 1 -type f -name ITK-SNAP | head -n1)
-              [ -n \"\$BIN\" ] || { echo 'ITK-SNAP binary not found'; exit 1; }
-              # package ONLY the binary, never the whole build dir
-              mkdir -p /tmp/bundle_itk && cp \"\$BIN\" /tmp/bundle_itk/ITK-SNAP
-              cd /tmp/bundle_itk
-              tar -czf ITK-snap-current.tar.gz ITK-SNAP
-              python3 -c "import zipfile; z=zipfile.ZipFile('ITK-snap-current.zip','w'); z.write('ITK-snap-current.tar.gz'); z.close()"
-              cp ITK-snap-current.* /workspaces/latimsnap/
-              ls -la /workspaces/latimsnap/ITK-snap-current.*
+              cd /workspaces/latimsnap
+              # 1. Install to a bundle directory (honours DESTDIR prefix)
+              rm -rf build/bundle
+              DESTDIR=/workspaces/latimsnap/build/bundle cmake --install build
+
+              # 2. Download + extract linuxdeployqt once (cached, gitignored)
+              if [ ! -f linuxdeployqt ]; then
+                wget -c -nv \
+                  https://github.com/probonopd/linuxdeployqt/releases/download/continuous/linuxdeployqt-continuous-x86_64.AppImage \
+                  -O linuxdeployqt && chmod a+x linuxdeployqt
+              fi
+              if [ ! -d squashfs-root ]; then ./linuxdeployqt --appimage-extract; fi
+
+              # 3. Bundle Qt + ITK + VTK shared libs and plugins, patch RPATH to \$ORIGIN
+              ./squashfs-root/AppRun \
+                build/bundle/usr/local/lib/snap-4.4.0/LaTIM-SNAP \
+                -qmake=/usr/bin/qmake6 \
+                -bundle-non-qt-libs \
+                -unsupported-allow-new-glibc
+
+              # 4. Tar the whole bundle (binary + libs + plugins)
+              cd build/bundle/usr/local/lib
+              tar -czf /workspaces/latimsnap/LaTIM-SNAP-current.tar.gz snap-4.4.0
+              ls -la /workspaces/latimsnap/LaTIM-SNAP-current.tar.gz
             "
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: ITK-snap-current
-          path: |
-            ${{ github.workspace }}/ITK-snap-current.tar.gz
-            ${{ github.workspace }}/ITK-snap-current.zip
+          name: LaTIM-SNAP-current
+          path: ${{ github.workspace }}/LaTIM-SNAP-current.tar.gz
 
       - name: Install rclone
         run: |
@@ -90,5 +103,4 @@ jobs:
         if: ${{ secrets.RCLONE_CONFIG != '' }}
         working-directory: ${{ github.workspace }}
         run: |
-          rclone copy ITK-snap-current.tar.gz pcloud:~/TEMP
-          rclone copy ITK-snap-current.zip     pcloud:~/TEMP
+          rclone copy LaTIM-SNAP-current.tar.gz pcloud:~/TEMP

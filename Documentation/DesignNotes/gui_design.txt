@@ -1,4 +1,4 @@
-ITK-SNAP 3.0 GUI Design Notes
+LaTIM-SNAP 3.0 GUI Design Notes
 =============================
 
 

@@ -7,7 +7,7 @@
 class GlobalUIModel;
 
 /**
- * This model provides a list of the recently used color labels in ITK-SNAP.
+ * This model provides a list of the recently used color labels in LaTIM-SNAP.
  * It can be used to create quick palettes of labels.
  */
 class ColorLabelQuickListModel : public AbstractModel

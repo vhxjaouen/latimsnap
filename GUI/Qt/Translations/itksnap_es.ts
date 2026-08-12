@@ -4,8 +4,8 @@
     <message>
         <location filename="../Windows/AboutDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_AboutDialog.h" line="211" />
-        <source>About ITK-SNAP</source>
-        <translation>Acerca de ITK-SNAP</translation>
+        <source>About LaTIM-SNAP</source>
+        <translation>Acerca de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/AboutDialog.ui" line="43" />
@@ -67,8 +67,8 @@
     <message>
         <location filename="../Windows/AnnotationEditDialog.ui" line="94" />
         <location filename="../../../../xc64dbg/ui_AnnotationEditDialog.h" line="137" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;One or more textual tags can be assigned to an annotation. Tags are not used directly by ITK-SNAP but may be used to label objects in the ITK-SNAP workspace for other software. Type in words separated by commas to create tags. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Se puede asignar una o más etiquetas de texto a una anotación. Las etiquetas no son usadas directamente por ITK-SNAP, pero pueden servir para identificar objetos en el área de trabajo de ITK-SNAP para otros programas. Escriba palabras separadas por comas para crear etiquetas. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;One or more textual tags can be assigned to an annotation. Tags are not used directly by LaTIM-SNAP but may be used to label objects in the LaTIM-SNAP workspace for other software. Type in words separated by commas to create tags. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Se puede asignar una o más etiquetas de texto a una anotación. Las etiquetas no son usadas directamente por LaTIM-SNAP, pero pueden servir para identificar objetos en el área de trabajo de LaTIM-SNAP para otros programas. Escriba palabras separadas por comas para crear etiquetas. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
 </context>
 <context>
@@ -201,8 +201,8 @@
     <message>
         <location filename="../Components/AnnotationToolPanel.cxx" line="49" />
         <location filename="../Components/AnnotationToolPanel.cxx" line="77" />
-        <source>ITK-SNAP Annotation Files (%1)</source>
-        <translation>Archivos de anotación ITK-SNAP (%1)</translation>
+        <source>LaTIM-SNAP Annotation Files (%1)</source>
+        <translation>Archivos de anotación LaTIM-SNAP (%1)</translation>
     </message>
     <message>
         <location filename="../Components/AnnotationToolPanel.cxx" line="62" />
@@ -734,8 +734,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../View/CrosshairsInteractionMode.cxx" line="239" />
-        <source>This key combination simulates a crash in ITK-SNAP. Do you want ITK-SNAP to crash now?</source>
-        <translation>Esta combinación de teclas simula un fallo en ITK-SNAP. ¿Desea que ITK-SNAP falle ahora?</translation>
+        <source>This key combination simulates a crash in LaTIM-SNAP. Do you want LaTIM-SNAP to crash now?</source>
+        <translation>Esta combinación de teclas simula un fallo en LaTIM-SNAP. ¿Desea que LaTIM-SNAP falle ahora?</translation>
     </message>
 </context>
 <context>
@@ -852,8 +852,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningInfoDialog.ui" line="163" />
         <location filename="../../../../xc64dbg/ui_DeepLearningInfoDialog.h" line="181" />
-        <source>&lt;h3&gt;ITK-SNAP Deep Learning Extensions&lt;/h3&gt;</source>
-        <translation>&lt;h3&gt;Extensiones de Aprendizaje Profundo de ITK-SNAP&lt;/h3&gt;</translation>
+        <source>&lt;h3&gt;LaTIM-SNAP Deep Learning Extensions&lt;/h3&gt;</source>
+        <translation>&lt;h3&gt;Extensiones de Aprendizaje Profundo de LaTIM-SNAP&lt;/h3&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningInfoDialog.ui" line="194" />
@@ -945,8 +945,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="497" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerEditor.h" line="420" />
-        <source>This will install (or re-install) the Python packages needed to run the ITK-SNAP deep learning extensions server locally.</source>
-        <translation>Esto instalará (o reinstalará) los paquetes Python necesarios para ejecutar localmente el servidor de extensiones de aprendizaje profundo de ITK-SNAP.</translation>
+        <source>This will install (or re-install) the Python packages needed to run the LaTIM-SNAP deep learning extensions server locally.</source>
+        <translation>Esto instalará (o reinstalará) los paquetes Python necesarios para ejecutar localmente el servidor de extensiones de aprendizaje profundo de LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="500" />
@@ -957,8 +957,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="516" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerEditor.h" line="424" />
-        <source>Use the default location for installing Python packages needed to run the ITK-SNAP deep learning extension server.</source>
-        <translation>Usar la ubicación predeterminada para instalar los paquetes Python necesarios para ejecutar el servidor de extensiones de aprendizaje profundo de ITK-SNAP.</translation>
+        <source>Use the default location for installing Python packages needed to run the LaTIM-SNAP deep learning extension server.</source>
+        <translation>Usar la ubicación predeterminada para instalar los paquetes Python necesarios para ejecutar el servidor de extensiones de aprendizaje profundo de LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="519" />
@@ -979,8 +979,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="556" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerEditor.h" line="429" />
-        <source>This will allow the local ITK-SNAP deep learning extension server to download trained models from huggingface.co without SSL certificate verification. Turn on this option if you encounter errors related to invalid or missing SSL certificates.</source>
-        <translation>Esto permitirá que el servidor local de extensiones de aprendizaje profundo de ITK-SNAP descargue modelos entrenados desde huggingface.co sin verificar certificados SSL. Active esta opción si encuentra errores relacionados con certificados SSL inválidos o ausentes.</translation>
+        <source>This will allow the local LaTIM-SNAP deep learning extension server to download trained models from huggingface.co without SSL certificate verification. Turn on this option if you encounter errors related to invalid or missing SSL certificates.</source>
+        <translation>Esto permitirá que el servidor local de extensiones de aprendizaje profundo de LaTIM-SNAP descargue modelos entrenados desde huggingface.co sin verificar certificados SSL. Active esta opción si encuentra errores relacionados con certificados SSL inválidos o ausentes.</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="559" />
@@ -991,8 +991,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="572" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerEditor.h" line="433" />
-        <source>Select the location where Python packages needed to run the ITK-SNAP deep learning extension server will be installed.</source>
-        <translation>Seleccione la ubicación donde se instalarán los paquetes Python necesarios para ejecutar el servidor de extensiones de aprendizaje profundo de ITK-SNAP.</translation>
+        <source>Select the location where Python packages needed to run the LaTIM-SNAP deep learning extension server will be installed.</source>
+        <translation>Seleccione la ubicación donde se instalarán los paquetes Python necesarios para ejecutar el servidor de extensiones de aprendizaje profundo de LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="591" />
@@ -1015,14 +1015,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="638" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerEditor.h" line="443" />
-        <source>Select the Python interpreter that will be used to run the local ITK-SNAP deep learning extensions server.</source>
-        <translation>Seleccione el intérprete de Python que se usará para ejecutar el servidor local de extensiones de aprendizaje profundo de ITK-SNAP.</translation>
+        <source>Select the Python interpreter that will be used to run the local LaTIM-SNAP deep learning extensions server.</source>
+        <translation>Seleccione el intérprete de Python que se usará para ejecutar el servidor local de extensiones de aprendizaje profundo de LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerEditor.ui" line="645" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerEditor.h" line="446" />
-        <source>This is the location where Python packages needed to run the ITK-SNAP deep learning extension server will be installed.</source>
-        <translation>Esta es la ubicación donde se instalarán los paquetes Python necesarios para ejecutar el servidor de extensiones de aprendizaje profundo de ITK-SNAP.</translation>
+        <source>This is the location where Python packages needed to run the LaTIM-SNAP deep learning extension server will be installed.</source>
+        <translation>Esta es la ubicación donde se instalarán los paquetes Python necesarios para ejecutar el servidor de extensiones de aprendizaje profundo de LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerEditor.cxx" line="411" />
@@ -1047,8 +1047,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerPanel.ui" line="45" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerPanel.h" line="152" />
-        <source>ITK-SNAP Deep Learning Segmentation Extensions</source>
-        <translation>Extensiones de Segmentación por Aprendizaje Profundo de ITK-SNAP</translation>
+        <source>LaTIM-SNAP Deep Learning Segmentation Extensions</source>
+        <translation>Extensiones de Segmentación por Aprendizaje Profundo de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DeepLearningServerPanel.ui" line="60" />
@@ -1083,12 +1083,12 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/DeepLearningServerPanel.ui" line="104" />
         <location filename="../../../../xc64dbg/ui_DeepLearningServerPanel.h" line="158" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The ITK-SNAP deep learning extension allows you to take advantage of powerful AI-based interactive segmentation tools provided by &lt;a href="https://github.com/MIC-DKFZ/nnInteractive"&gt;nnInteractive&lt;/a&gt; directly from ITK-SNAP. &lt;/p&gt;
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;The LaTIM-SNAP deep learning extension allows you to take advantage of powerful AI-based interactive segmentation tools provided by &lt;a href="https://github.com/MIC-DKFZ/nnInteractive"&gt;nnInteractive&lt;/a&gt; directly from LaTIM-SNAP. &lt;/p&gt;
 &lt;p&gt;
 Please follow &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;online documentation &lt;/a&gt; to set up the deep learning extension.
 &lt;/p&gt;
 &lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;La extensión de aprendizaje profundo de ITK-SNAP te permite aprovechar potentes herramientas de segmentación interactiva basadas en IA proporcionadas por &lt;a href="https://github.com/MIC-DKFZ/nnInteractive"&gt;nnInteractive&lt;/a&gt; directamente desde ITK-SNAP. &lt;/p&gt;&lt;p&gt;
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;La extensión de aprendizaje profundo de LaTIM-SNAP te permite aprovechar potentes herramientas de segmentación interactiva basadas en IA proporcionadas por &lt;a href="https://github.com/MIC-DKFZ/nnInteractive"&gt;nnInteractive&lt;/a&gt; directamente desde LaTIM-SNAP. &lt;/p&gt;&lt;p&gt;
 Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la documentación en línea &lt;/a&gt; para configurar la extensión de aprendizaje profundo.
 &lt;/p&gt;&lt;/html&gt;</translation>
     </message>
@@ -1216,8 +1216,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DSS/DistributedSegmentationDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_DistributedSegmentationDialog.h" line="547" />
-        <source>ITK-SNAP Distributed Segmentation Service</source>
-        <translation>Servicio de Segmentación Distribuida ITK-SNAP</translation>
+        <source>LaTIM-SNAP Distributed Segmentation Service</source>
+        <translation>Servicio de Segmentación Distribuida LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DSS/DistributedSegmentationDialog.ui" line="24" />
@@ -1246,8 +1246,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DSS/DistributedSegmentationDialog.ui" line="99" />
         <location filename="../../../../xc64dbg/ui_DistributedSegmentationDialog.h" line="553" />
-        <source>ITK-SNAP Distributed Segmentation Services (DSS)</source>
-        <translation>Servicios de Segmentación Distribuida ITK-SNAP (DSS)</translation>
+        <source>LaTIM-SNAP Distributed Segmentation Services (DSS)</source>
+        <translation>Servicios de Segmentación Distribuida LaTIM-SNAP (DSS)</translation>
     </message>
     <message>
         <location filename="../Windows/DSS/DistributedSegmentationDialog.ui" line="128" />
@@ -1547,14 +1547,14 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DSS/DownloadTicketDialog.ui" line="41" />
         <location filename="../../../../xc64dbg/ui_DownloadTicketDialog.h" line="88" />
-        <source>Open workspace in the current ITK-SNAP window</source>
-        <translation>Abrir espacio de trabajo en la ventana actual de ITK-SNAP</translation>
+        <source>Open workspace in the current LaTIM-SNAP window</source>
+        <translation>Abrir espacio de trabajo en la ventana actual de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DSS/DownloadTicketDialog.ui" line="46" />
         <location filename="../../../../xc64dbg/ui_DownloadTicketDialog.h" line="89" />
-        <source>Open workspace in a new ITK-SNAP window </source>
-        <translation>Abrir espacio de trabajo en una nueva ventana de ITK-SNAP </translation>
+        <source>Open workspace in a new LaTIM-SNAP window </source>
+        <translation>Abrir espacio de trabajo en una nueva ventana de LaTIM-SNAP </translation>
     </message>
     <message>
         <location filename="../Windows/DSS/DownloadTicketDialog.ui" line="51" />
@@ -1568,8 +1568,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="181" />
-        <source>Open Document - ITK-SNAP</source>
-        <translation>Abrir documento - ITK-SNAP</translation>
+        <source>Open Document - LaTIM-SNAP</source>
+        <translation>Abrir documento - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="32" />
@@ -1580,8 +1580,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="49" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="183" />
-        <source>What should ITK-SNAP do with this image?</source>
-        <translation>¿Qué debe hacer ITK-SNAP con esta imagen?</translation>
+        <source>What should LaTIM-SNAP do with this image?</source>
+        <translation>¿Qué debe hacer LaTIM-SNAP con esta imagen?</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="72" />
@@ -1592,8 +1592,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="90" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="186" />
-        <source>This will load the dropped image alongside the images currently open in this ITK-SNAP window </source>
-        <translation>Esto cargará la imagen arrastrada junto con las imágenes abiertas actualmente en esta ventana de ITK-SNAP </translation>
+        <source>This will load the dropped image alongside the images currently open in this LaTIM-SNAP window </source>
+        <translation>Esto cargará la imagen arrastrada junto con las imágenes abiertas actualmente en esta ventana de LaTIM-SNAP </translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="93" />
@@ -1620,8 +1620,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="134" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="194" />
-        <source>This will close all images currently open in this ITK-SNAP window and load the new image as the main image.</source>
-        <translation>Esto cerrará todas las imágenes abiertas actualmente en esta ventana de ITK-SNAP y cargará la nueva imagen como imagen principal.</translation>
+        <source>This will close all images currently open in this LaTIM-SNAP window and load the new image as the main image.</source>
+        <translation>Esto cerrará todas las imágenes abiertas actualmente en esta ventana de LaTIM-SNAP y cargará la nueva imagen como imagen principal.</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="137" />
@@ -1650,20 +1650,20 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="199" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="203" />
-        <source>Open it in a new ITK-SNAP window</source>
-        <translation>Abrir en una nueva ventana de ITK-SNAP</translation>
+        <source>Open it in a new LaTIM-SNAP window</source>
+        <translation>Abrir en una nueva ventana de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="217" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="205" />
-        <source>This will open a new ITK-SNAP window and open the dropped image as the main image</source>
-        <translation>Esto abrirá una nueva ventana de ITK-SNAP y cargará la imagen arrastrada como la imagen principal</translation>
+        <source>This will open a new LaTIM-SNAP window and open the dropped image as the main image</source>
+        <translation>Esto abrirá una nueva ventana de LaTIM-SNAP y cargará la imagen arrastrada como la imagen principal</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="220" />
         <location filename="../../../../xc64dbg/ui_DropActionDialog.h" line="207" />
-        <source>Open in New ITK-SNAP</source>
-        <translation>Abrir en nuevo ITK-SNAP</translation>
+        <source>Open in New LaTIM-SNAP</source>
+        <translation>Abrir en nuevo LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.ui" line="272" />
@@ -1683,8 +1683,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.cxx" line="268" />
-        <source>Failed to launch new ITK-SNAP instance</source>
-        <translation>Error al iniciar una nueva instancia de ITK-SNAP</translation>
+        <source>Failed to launch new LaTIM-SNAP instance</source>
+        <translation>Error al iniciar una nueva instancia de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/DropActionDialog.cxx" line="348" />
@@ -1813,8 +1813,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Components/GeneralLayerInspector.ui" line="142" />
         <location filename="../../../../xc64dbg/ui_GeneralLayerInspector.h" line="645" />
-        <source>One or more textual tags can be assigned to an image layer. Tags are not used directly by ITK-SNAP but may be used to inform other software of the meaning of different layers. Type in words separated by commas to create tags. </source>
-        <translation>Se pueden asignar una o más etiquetas textuales a una capa de imagen. Las etiquetas no son usadas directamente por ITK-SNAP pero pueden utilizarse para informar a otros programas sobre el significado de las diferentes capas. Escriba palabras separadas por comas para crear etiquetas. </translation>
+        <source>One or more textual tags can be assigned to an image layer. Tags are not used directly by LaTIM-SNAP but may be used to inform other software of the meaning of different layers. Type in words separated by commas to create tags. </source>
+        <translation>Se pueden asignar una o más etiquetas textuales a una capa de imagen. Las etiquetas no son usadas directamente por LaTIM-SNAP pero pueden utilizarse para informar a otros programas sobre el significado de las diferentes capas. Escriba palabras separadas por comas para crear etiquetas. </translation>
     </message>
     <message>
         <location filename="../Components/GeneralLayerInspector.ui" line="160" />
@@ -1933,8 +1933,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Components/GeneralLayerInspector.ui" line="539" />
         <location filename="../../../../xc64dbg/ui_GeneralLayerInspector.h" line="681" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Multi-component images have more than one value for each voxel. These values may represent measurements taken at different time points, different chromatic components, etc. ITK-SNAP offers multiple ways to visualize this multi-dimensional information. You can choose to visualize just one component, or a summary function of the components, such as magnitude, average, or maximum. In the special case of three-component images, the components can be rendered as red, green and blue channels (RGB).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Las imágenes multicomponente tienen más de un valor por voxel. Estos valores pueden representar mediciones tomadas en diferentes momentos, diferentes componentes cromáticos, etc. ITK-SNAP ofrece varias maneras de visualizar esta información multidimensional. Puede elegir visualizar solo un componente o una función resumen de los componentes, como magnitud, promedio o máximo. En el caso especial de imágenes de tres componentes, los componentes pueden mostrarse como canales rojo, verde y azul (RGB).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Multi-component images have more than one value for each voxel. These values may represent measurements taken at different time points, different chromatic components, etc. LaTIM-SNAP offers multiple ways to visualize this multi-dimensional information. You can choose to visualize just one component, or a summary function of the components, such as magnitude, average, or maximum. In the special case of three-component images, the components can be rendered as red, green and blue channels (RGB).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Las imágenes multicomponente tienen más de un valor por voxel. Estos valores pueden representar mediciones tomadas en diferentes momentos, diferentes componentes cromáticos, etc. LaTIM-SNAP ofrece varias maneras de visualizar esta información multidimensional. Puede elegir visualizar solo un componente o una función resumen de los componentes, como magnitud, promedio o máximo. En el caso especial de imágenes de tres componentes, los componentes pueden mostrarse como canales rojo, verde y azul (RGB).&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Components/GeneralLayerInspector.ui" line="579" />
@@ -2078,13 +2078,13 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <name>ImageIOWizard</name>
     <message>
         <location filename="../Windows/ImageIOWizard.cxx" line="874" />
-        <source>Open Image - ITK-SNAP</source>
-        <translation>Abrir imagen - ITK-SNAP</translation>
+        <source>Open Image - LaTIM-SNAP</source>
+        <translation>Abrir imagen - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/ImageIOWizard.cxx" line="876" />
-        <source>Save Image - ITK-SNAP</source>
-        <translation>Guardar imagen - ITK-SNAP</translation>
+        <source>Save Image - LaTIM-SNAP</source>
+        <translation>Guardar imagen - LaTIM-SNAP</translation>
     </message>
 </context>
 <context>
@@ -2257,8 +2257,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/InterpolateLabelsDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_InterpolateLabelsDialog.h" line="315" />
-        <source>Interpolate Labels - ITK-SNAP</source>
-        <translation>Interpolar Etiquetas - ITK-SNAP</translation>
+        <source>Interpolate Labels - LaTIM-SNAP</source>
+        <translation>Interpolar Etiquetas - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/InterpolateLabelsDialog.ui" line="28" />
@@ -2466,8 +2466,8 @@ Por favor, sigue &lt;a href="https://itksnap-dls.readthedocs.io/en/latest"&gt;la
     <message>
         <location filename="../Windows/LabelEditorDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_LabelEditorDialog.h" line="483" />
-        <source>Segmentation Label Editor - ITK-SNAP</source>
-        <translation>Editor de Etiquetas de Segmentación - ITK-SNAP</translation>
+        <source>Segmentation Label Editor - LaTIM-SNAP</source>
+        <translation>Editor de Etiquetas de Segmentación - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/LabelEditorDialog.ui" line="90" />
@@ -2890,8 +2890,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/LayerInspectorDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_LayerInspectorDialog.h" line="187" />
-        <source>Image Layer Inspector - ITK-SNAP</source>
-        <translation>Inspector de Capas de Imagen - ITK-SNAP</translation>
+        <source>Image Layer Inspector - LaTIM-SNAP</source>
+        <translation>Inspector de Capas de Imagen - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/LayerInspectorDialog.ui" line="164" />
@@ -3286,8 +3286,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/LayoutReminderDialog.ui" line="50" />
         <location filename="../../../../xc64dbg/ui_LayoutReminderDialog.h" line="79" />
-        <source>On the Axial and Coronal views, ITK-SNAP is currently following neurological convention: patient's left side is shown on the right side of the screen. This might not be ideal for non-brain images.</source>
-        <translation>En las vistas Axial y Coronal, ITK-SNAP sigue la convención neurológica: el lado izquierdo del paciente se muestra en el lado derecho de la pantalla. Esto podría no ser ideal para imágenes que no sean cerebrales.</translation>
+        <source>On the Axial and Coronal views, LaTIM-SNAP is currently following neurological convention: patient's left side is shown on the right side of the screen. This might not be ideal for non-brain images.</source>
+        <translation>En las vistas Axial y Coronal, LaTIM-SNAP sigue la convención neurológica: el lado izquierdo del paciente se muestra en el lado derecho de la pantalla. Esto podría no ser ideal para imágenes que no sean cerebrales.</translation>
     </message>
     <message>
         <location filename="../Windows/LayoutReminderDialog.ui" line="69" />
@@ -3343,8 +3343,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../Windows/LayoutReminderDialog.cxx" line="47" />
-        <source>&lt;html&gt;On the Axial and Coronal views,&amp;nbsp;ITK-SNAP is currently following &lt;b&gt;%1 convention&lt;/b&gt;:&amp;nbsp;the patient’s left side is shown on the %2 of the screen.&amp;nbsp;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;En las vistas Axial y Coronal, ITK-SNAP sigue actualmente &lt;b&gt;la convención %1&lt;/b&gt;: el lado izquierdo del paciente se muestra en el %2 de la pantalla. &lt;/html&gt;</translation>
+        <source>&lt;html&gt;On the Axial and Coronal views,&amp;nbsp;LaTIM-SNAP is currently following &lt;b&gt;%1 convention&lt;/b&gt;:&amp;nbsp;the patient’s left side is shown on the %2 of the screen.&amp;nbsp;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;En las vistas Axial y Coronal, LaTIM-SNAP sigue actualmente &lt;b&gt;la convención %1&lt;/b&gt;: el lado izquierdo del paciente se muestra en el %2 de la pantalla. &lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/LayoutReminderDialog.cxx" line="53" />
@@ -3477,14 +3477,14 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/MainControlPanel.ui" line="568" />
         <location filename="../../../../xc64dbg/ui_MainControlPanel.h" line="609" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Display Layout Inspector&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Control which slice views are shown in the main ITK-SNAP window and how multiple image layers are rendered. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Inspector de diseño de pantalla&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Controle qué vistas de corte se muestran en la ventana principal de ITK-SNAP y cómo se representan múltiples capas de imagen. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Display Layout Inspector&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Control which slice views are shown in the main LaTIM-SNAP window and how multiple image layers are rendered. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Inspector de diseño de pantalla&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Controle qué vistas de corte se muestran en la ventana principal de LaTIM-SNAP y cómo se representan múltiples capas de imagen. &lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/MainControlPanel.ui" line="597" />
         <location filename="../../../../xc64dbg/ui_MainControlPanel.h" line="613" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Synchronization Inspector&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Adjust synchronization of cursor, zoom and pan across multiple ITK-SNAP sessions running on one computer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Inspector de sincronización&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Ajuste la sincronización del cursor, zoom y desplazamiento entre múltiples sesiones de ITK-SNAP en una misma computadora.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Synchronization Inspector&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Adjust synchronization of cursor, zoom and pan across multiple LaTIM-SNAP sessions running on one computer.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Inspector de sincronización&lt;/span&gt;&lt;/p&gt;&lt;p&gt;Ajuste la sincronización del cursor, zoom y desplazamiento entre múltiples sesiones de LaTIM-SNAP en una misma computadora.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/MainControlPanel.ui" line="626" />
@@ -3575,8 +3575,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="229" />
         <location filename="../../../../xc64dbg/ui_MainImageWindow.h" line="1582" />
-        <source>Getting started with ITK-SNAP Version 4</source>
-        <translation>Primeros pasos con ITK-SNAP Versión 4</translation>
+        <source>Getting started with LaTIM-SNAP Version 4</source>
+        <translation>Primeros pasos con LaTIM-SNAP Versión 4</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="265" />
@@ -3592,13 +3592,13 @@ li.checked::marker { content: "\2612"; }
 &lt;ul style="margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;"&gt;
 &lt;li style=" font-size:14px;" style=" margin-top:12px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Browse &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=Documentation.SNAP4"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;online documentation and tutorials&lt;/span&gt;&lt;/a&gt; &lt;/li&gt;
 &lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Download &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=Downloads.Data"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;sample datasets&lt;/span&gt;&lt;/a&gt; &lt;/li&gt;
-&lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Connect to the &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;ITK-SNAP community&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</source>
+&lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Connect to the &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;LaTIM-SNAP community&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</source>
         <translation>&lt;html&gt;&lt;head&gt;&lt;meta name="qrichtext" content="1"&gt;&lt;/meta&gt;&lt;meta charset="utf-8"&gt;&lt;/meta&gt;&lt;style type="text/css"&gt;
 p, li { white-space: pre-wrap; }
 hr { height: 1px; border-width: 0; }
 li.unchecked::marker { content: "\2610"; }
 li.checked::marker { content: "\2612"; }
-&lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'.AppleSystemUIFont'; font-size:13px; font-weight:400; font-style:normal;"&gt;&lt;p style="-qt-paragraph-type:empty; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14px;"&gt;&lt;br&gt;&lt;/br&gt;&lt;/p&gt;&lt;ul style="margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;"&gt;&lt;li style=" font-size:14px;" style=" margin-top:12px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Explorar &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=Documentation.SNAP4"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;documentación y tutoriales en línea&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Descargar &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=Downloads.Data"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;conjuntos de datos de ejemplo&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Conectar con la &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;comunidad de ITK-SNAP&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+&lt;/style&gt;&lt;/head&gt;&lt;body style=" font-family:'.AppleSystemUIFont'; font-size:13px; font-weight:400; font-style:normal;"&gt;&lt;p style="-qt-paragraph-type:empty; margin-top:12px; margin-bottom:0px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px; font-size:14px;"&gt;&lt;br&gt;&lt;/br&gt;&lt;/p&gt;&lt;ul style="margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;"&gt;&lt;li style=" font-size:14px;" style=" margin-top:12px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Explorar &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=Documentation.SNAP4"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;documentación y tutoriales en línea&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Descargar &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=Downloads.Data"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;conjuntos de datos de ejemplo&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;li style=" font-size:14px;" style=" margin-top:10px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;"&gt;Conectar con la &lt;a href="http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists"&gt;&lt;span style=" text-decoration: underline; color:#094fd1;"&gt;comunidad de LaTIM-SNAP&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="290" />
@@ -4528,8 +4528,8 @@ li.checked::marker { content: "\2612"; }
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="1322" />
         <location filename="../../../../xc64dbg/ui_MainImageWindow.h" line="1358" />
-        <source>About ITK-SNAP</source>
-        <translation>Acerca de ITK-SNAP</translation>
+        <source>About LaTIM-SNAP</source>
+        <translation>Acerca de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="1330" />
@@ -4759,8 +4759,8 @@ li.checked::marker { content: "\2612"; }
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="1539" />
         <location filename="../../../../xc64dbg/ui_MainImageWindow.h" line="1444" />
-        <source>New ITK-SNAP Window</source>
-        <translation>Nueva ventana de ITK-SNAP</translation>
+        <source>New LaTIM-SNAP Window</source>
+        <translation>Nueva ventana de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="1544" />
@@ -4771,8 +4771,8 @@ li.checked::marker { content: "\2612"; }
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="1547" />
         <location filename="../../../../xc64dbg/ui_MainImageWindow.h" line="1447" />
-        <source>Co-register an image with the main image currently loaded into ITK-SNAP</source>
-        <translation>Co-registrar una imagen con la principal cargada en ITK-SNAP</translation>
+        <source>Co-register an image with the main image currently loaded into LaTIM-SNAP</source>
+        <translation>Co-registrar una imagen con la principal cargada en LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.ui" line="1584" />
@@ -5151,14 +5151,14 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="235" />
-        <source>ITK-SNAP Toolbox</source>
+        <source>LaTIM-SNAP Toolbox</source>
         <translation>Caja de herramientas</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="328" />
         <location filename="../Windows/MainImageWindow.cxx" line="1113" />
-        <source>ITK-SNAP</source>
-        <translation>ITK-SNAP</translation>
+        <source>LaTIM-SNAP</source>
+        <translation>LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="374" />
@@ -5332,18 +5332,18 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1101" />
-        <source>%1 - ITK-SNAP</source>
-        <translation>%1 - ITK-SNAP</translation>
+        <source>%1 - LaTIM-SNAP</source>
+        <translation>%1 - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1105" />
-        <source>%1 - %2 - ITK-SNAP</source>
-        <translation>%1 - %2 - ITK-SNAP</translation>
+        <source>%1 - %2 - LaTIM-SNAP</source>
+        <translation>%1 - %2 - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1109" />
-        <source>%1 - New Segmentation - ITK-SNAP</source>
-        <translation>%1 - Nueva segmentación - ITK-SNAP</translation>
+        <source>%1 - New Segmentation - LaTIM-SNAP</source>
+        <translation>%1 - Nueva segmentación - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1119" />
@@ -5469,13 +5469,13 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1681" />
-        <source>Failed to open workspace in new ITK-SNAP window</source>
-        <translation>Error al abrir el espacio de trabajo en una nueva ventana de ITK-SNAP</translation>
+        <source>Failed to open workspace in new LaTIM-SNAP window</source>
+        <translation>Error al abrir el espacio de trabajo en una nueva ventana de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1989" />
-        <source>Open Label Descriptions - ITK-SNAP</source>
-        <translation>Abrir descripciones de etiquetas - ITK-SNAP</translation>
+        <source>Open Label Descriptions - LaTIM-SNAP</source>
+        <translation>Abrir descripciones de etiquetas - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="1990" />
@@ -5485,8 +5485,8 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2003" />
-        <source>Save Label Descriptions - ITK-SNAP</source>
-        <translation>Guardar descripciones de etiquetas - ITK-SNAP</translation>
+        <source>Save Label Descriptions - LaTIM-SNAP</source>
+        <translation>Guardar descripciones de etiquetas - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2018" />
@@ -5510,13 +5510,13 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2196" />
-        <source>ITK-SNAP Workspace Files (*.itksnap)</source>
-        <translation>Archivos de espacio de trabajo ITK-SNAP (*.itksnap)</translation>
+        <source>LaTIM-SNAP Workspace Files (*.itksnap)</source>
+        <translation>Archivos de espacio de trabajo LaTIM-SNAP (*.itksnap)</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2266" />
-        <source>Save Slice - ITK-SNAP</source>
-        <translation>Guardar corte - ITK-SNAP</translation>
+        <source>Save Slice - LaTIM-SNAP</source>
+        <translation>Guardar corte - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2267" />
@@ -5540,8 +5540,8 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2375" />
-        <source>A newer ITK-SNAP version (%1) is available.</source>
-        <translation>Hay una versión más nueva de ITK-SNAP (%1) disponible.</translation>
+        <source>A newer LaTIM-SNAP version (%1) is available.</source>
+        <translation>Hay una versión más nueva de LaTIM-SNAP (%1) disponible.</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2376" />
@@ -5551,18 +5551,18 @@ li.checked::marker { content: "\2612"; }
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2377" />
         <location filename="../Windows/MainImageWindow.cxx" line="2387" />
-        <source>ITK-SNAP Update Check</source>
-        <translation>Comprobación de actualización de ITK-SNAP</translation>
+        <source>LaTIM-SNAP Update Check</source>
+        <translation>Comprobación de actualización de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2388" />
-        <source>Your version of ITK-SNAP is up to date!</source>
-        <translation>Su versión de ITK-SNAP está actualizada!</translation>
+        <source>Your version of LaTIM-SNAP is up to date!</source>
+        <translation>Su versión de LaTIM-SNAP está actualizada!</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2394" />
-        <source>ITK-SNAP Update Check Failed</source>
-        <translation>Falló la comprobación de actualización de ITK-SNAP</translation>
+        <source>LaTIM-SNAP Update Check Failed</source>
+        <translation>Falló la comprobación de actualización de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2395" />
@@ -5576,9 +5576,9 @@ li.checked::marker { content: "\2612"; }
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2411" />
-        <source>ITK-SNAP can check for software updates automatically.
+        <source>LaTIM-SNAP can check for software updates automatically.
 Do you want to enable this feature?</source>
-        <translation>ITK-SNAP puede buscar actualizaciones automáticamente.
+        <translation>LaTIM-SNAP puede buscar actualizaciones automáticamente.
 ¿Desea activar esta función?</translation>
     </message>
     <message>
@@ -5593,18 +5593,18 @@ Do you want to enable this feature?</source>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2644" />
-        <source>&lt;p&gt;ITK-SNAP is packaged with several useful command-line programs. Visit &lt;a href='http://itksnap.org/cmdl'&gt;http://itksnap.org/cmdl&lt;/a&gt; for a listing of these tools. &lt;/p&gt;&lt;p&gt;To create links to these programs in &lt;b&gt;/usr/local/bin&lt;/b&gt;, execute the following command in the Terminal App:&lt;/p&gt;&lt;code&gt; sudo %1 &lt;/code&gt;&lt;p&gt;To create links in another directory 'my_directory', execute &lt;/p&gt;&lt;code&gt; sudo %1 my_directory &lt;/code&gt;&lt;p&gt;To enable the tools for a single session, enter this command into the Terminal window:&lt;/p&gt;&lt;code&gt; export PATH=%2:$PATH &lt;/code&gt;</source>
-        <translation>&lt;p&gt;ITK-SNAP incluye varios programas útiles de línea de comandos. Visite &lt;a href="http://itksnap.org/cmdl"&gt;http://itksnap.org/cmdl&lt;/a&gt; para ver la lista de estas herramientas. &lt;/p&gt;&lt;p&gt;Para crear enlaces a estos programas en &lt;b&gt;/usr/local/bin&lt;/b&gt;, ejecute el siguiente comando en la Terminal:&lt;/p&gt;&lt;code&gt; sudo %1 &lt;/code&gt;&lt;p&gt;Para crear enlaces en otro directorio 'mi_directorio', ejecute &lt;/p&gt;&lt;code&gt; sudo %1 mi_directorio &lt;/code&gt;&lt;p&gt;Para habilitar las herramientas en una sesión, ingrese este comando en la Terminal:&lt;/p&gt;&lt;code&gt; export PATH=%2:$PATH &lt;/code&gt;</translation>
+        <source>&lt;p&gt;LaTIM-SNAP is packaged with several useful command-line programs. Visit &lt;a href='http://itksnap.org/cmdl'&gt;http://itksnap.org/cmdl&lt;/a&gt; for a listing of these tools. &lt;/p&gt;&lt;p&gt;To create links to these programs in &lt;b&gt;/usr/local/bin&lt;/b&gt;, execute the following command in the Terminal App:&lt;/p&gt;&lt;code&gt; sudo %1 &lt;/code&gt;&lt;p&gt;To create links in another directory 'my_directory', execute &lt;/p&gt;&lt;code&gt; sudo %1 my_directory &lt;/code&gt;&lt;p&gt;To enable the tools for a single session, enter this command into the Terminal window:&lt;/p&gt;&lt;code&gt; export PATH=%2:$PATH &lt;/code&gt;</source>
+        <translation>&lt;p&gt;LaTIM-SNAP incluye varios programas útiles de línea de comandos. Visite &lt;a href="http://itksnap.org/cmdl"&gt;http://itksnap.org/cmdl&lt;/a&gt; para ver la lista de estas herramientas. &lt;/p&gt;&lt;p&gt;Para crear enlaces a estos programas en &lt;b&gt;/usr/local/bin&lt;/b&gt;, ejecute el siguiente comando en la Terminal:&lt;/p&gt;&lt;code&gt; sudo %1 &lt;/code&gt;&lt;p&gt;Para crear enlaces en otro directorio 'mi_directorio', ejecute &lt;/p&gt;&lt;code&gt; sudo %1 mi_directorio &lt;/code&gt;&lt;p&gt;Para habilitar las herramientas en una sesión, ingrese este comando en la Terminal:&lt;/p&gt;&lt;code&gt; export PATH=%2:$PATH &lt;/code&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2659" />
-        <source>How to Install ITK-SNAP Command Line Tools</source>
-        <translation>Cómo instalar las herramientas de línea de comandos de ITK-SNAP</translation>
+        <source>How to Install LaTIM-SNAP Command Line Tools</source>
+        <translation>Cómo instalar las herramientas de línea de comandos de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/MainImageWindow.cxx" line="2661" />
-        <source>Install Command Line Tools -- ITK-SNAP</source>
-        <translation>Instalar herramientas de línea de comandos -- ITK-SNAP</translation>
+        <source>Install Command Line Tools -- LaTIM-SNAP</source>
+        <translation>Instalar herramientas de línea de comandos -- LaTIM-SNAP</translation>
     </message>
 </context>
 <context>
@@ -6190,8 +6190,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_PreferencesDialog.h" line="1276" />
-        <source>Preferences - ITK-SNAP</source>
-        <translation>Preferencias - ITK-SNAP</translation>
+        <source>Preferences - LaTIM-SNAP</source>
+        <translation>Preferencias - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="54" />
@@ -6202,8 +6202,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="60" />
         <location filename="../../../../xc64dbg/ui_PreferencesDialog.h" line="1279" />
-        <source>When this option is checked, image contrast will be adjusted automatically based on the image histogram whenever a new image is loaded into ITK-SNAP.</source>
-        <translation>Al marcar esta opción, el contraste de la imagen se ajustará automáticamente según el histograma cada vez que se cargue una nueva imagen en ITK-SNAP.</translation>
+        <source>When this option is checked, image contrast will be adjusted automatically based on the image histogram whenever a new image is loaded into LaTIM-SNAP.</source>
+        <translation>Al marcar esta opción, el contraste de la imagen se ajustará automáticamente según el histograma cada vez que se cargue una nueva imagen en LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="63" />
@@ -6226,8 +6226,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="84" />
         <location filename="../../../../xc64dbg/ui_PreferencesDialog.h" line="1284" />
-        <source>Synchronize view between multiple ITK-SNAP sessions</source>
-        <translation>Sincronizar vista entre múltiples sesiones de ITK-SNAP</translation>
+        <source>Synchronize view between multiple LaTIM-SNAP sessions</source>
+        <translation>Sincronizar vista entre múltiples sesiones de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="122" />
@@ -6256,8 +6256,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="166" />
         <location filename="../../../../xc64dbg/ui_PreferencesDialog.h" line="1290" />
-        <source>Allow ITK-SNAP to check for updates periodically</source>
-        <translation>Permitir que ITK-SNAP revise actualizaciones periódicamente</translation>
+        <source>Allow LaTIM-SNAP to check for updates periodically</source>
+        <translation>Permitir que LaTIM-SNAP revise actualizaciones periódicamente</translation>
     </message>
     <message>
         <location filename="../Windows/PreferencesDialog.ui" line="210" />
@@ -6894,8 +6894,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Components/QtWarningDialog.ui" line="20" />
         <location filename="../../../../xc64dbg/ui_QtWarningDialog.h" line="93" />
-        <source>ITK-SNAP - Warnings Generated</source>
-        <translation>ITK-SNAP - Advertencias Generadas</translation>
+        <source>LaTIM-SNAP - Warnings Generated</source>
+        <translation>LaTIM-SNAP - Advertencias Generadas</translation>
     </message>
     <message>
         <location filename="../Components/QtWarningDialog.ui" line="47" />
@@ -6972,8 +6972,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/Registration/RegistrationDialog.ui" line="234" />
         <location filename="../../../../xc64dbg/ui_RegistrationDialog.h" line="723" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this is checked, the current segmentation in ITK-SNAP will be used as a mask  for the registration. This means that the similarity between the main image and the moving image layer will only be computed at the voxels assigned a segmentation label.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Al marcar esto, la segmentación actual en ITK-SNAP se usará como máscara para el registro. Esto significa que la similitud entre la imagen principal y la capa móvil se calculará solo en los vóxeles asignados a una etiqueta de segmentación.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;When this is checked, the current segmentation in LaTIM-SNAP will be used as a mask  for the registration. This means that the similarity between the main image and the moving image layer will only be computed at the voxels assigned a segmentation label.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Al marcar esto, la segmentación actual en LaTIM-SNAP se usará como máscara para el registro. Esto significa que la similitud entre la imagen principal y la capa móvil se calculará solo en los vóxeles asignados a una etiqueta de segmentación.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Windows/Registration/RegistrationDialog.ui" line="240" />
@@ -7225,8 +7225,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../Windows/Registration/RegistrationDialog.cxx" line="227" />
-        <source>Save Transform - ITK-SNAP</source>
-        <translation>Guardar Transformación - ITK-SNAP</translation>
+        <source>Save Transform - LaTIM-SNAP</source>
+        <translation>Guardar Transformación - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/Registration/RegistrationDialog.cxx" line="228" />
@@ -7245,8 +7245,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../Windows/Registration/RegistrationDialog.cxx" line="280" />
-        <source>Reslicing Options - ITK-SNAP</source>
-        <translation>Opciones de rebanado - ITK-SNAP</translation>
+        <source>Reslicing Options - LaTIM-SNAP</source>
+        <translation>Opciones de rebanado - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/Registration/RegistrationDialog.cxx" line="284" />
@@ -7278,8 +7278,8 @@ rebanada usando el menú contextual.</translation>
     <message>
         <location filename="../Windows/ReorientImageDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_ReorientImageDialog.h" line="444" />
-        <source>Reorient Image - ITK-SNAP</source>
-        <translation>Reorientar imagen - ITK-SNAP</translation>
+        <source>Reorient Image - LaTIM-SNAP</source>
+        <translation>Reorientar imagen - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/ReorientImageDialog.ui" line="48" />
@@ -7431,8 +7431,8 @@ rebanada usando el menú contextual.</translation>
     <message>
         <location filename="../Windows/ResampleDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_ResampleDialog.h" line="377" />
-        <source>Resample ROI - ITK-SNAP</source>
-        <translation>Re-muestrear ROI - ITK-SNAP</translation>
+        <source>Resample ROI - LaTIM-SNAP</source>
+        <translation>Re-muestrear ROI - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/ResampleDialog.ui" line="20" />
@@ -7631,8 +7631,8 @@ rebanada usando el menú contextual.</translation>
     <message>
         <location filename="../Windows/SaveModifiedLayersDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_SaveModifiedLayersDialog.h" line="70" />
-        <source>Save Changes - ITK-SNAP</source>
-        <translation>Guardar cambios - ITK-SNAP</translation>
+        <source>Save Changes - LaTIM-SNAP</source>
+        <translation>Guardar cambios - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/SaveModifiedLayersDialog.ui" line="20" />
@@ -8328,8 +8328,8 @@ p, li { white-space: pre-wrap; }
     <message>
         <location filename="../Windows/SnakeParameterDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_SnakeParameterDialog.h" line="729" />
-        <source>Active Contour Evolution Parameters - ITK-SNAP</source>
-        <translation>Parámetros de Evolución del Contorno Activo - ITK-SNAP</translation>
+        <source>Active Contour Evolution Parameters - LaTIM-SNAP</source>
+        <translation>Parámetros de Evolución del Contorno Activo - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/SnakeParameterDialog.ui" line="41" />
@@ -8541,8 +8541,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../Windows/SnakeParameterDialog.cxx" line="184" />
-        <source>Open Active Contour Evolution Parameters - ITK-SNAP</source>
-        <translation>Abrir Parámetros de Evolución de Contorno Activo - ITK-SNAP</translation>
+        <source>Open Active Contour Evolution Parameters - LaTIM-SNAP</source>
+        <translation>Abrir Parámetros de Evolución de Contorno Activo - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/SnakeParameterDialog.cxx" line="185" />
@@ -8569,8 +8569,8 @@ p, li { white-space: pre-wrap; }
     </message>
     <message>
         <location filename="../Windows/SnakeParameterDialog.cxx" line="208" />
-        <source>Save Active Contour Evolution Parameters - ITK-SNAP</source>
-        <translation>Guardar Parámetros de Evolución de Contorno Activo - ITK-SNAP</translation>
+        <source>Save Active Contour Evolution Parameters - LaTIM-SNAP</source>
+        <translation>Guardar Parámetros de Evolución de Contorno Activo - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/SnakeParameterDialog.cxx" line="223" />
@@ -8953,8 +8953,8 @@ de región</translation>
     <message>
         <location filename="../Components/SnakeWizardPanel.ui" line="1291" />
         <location filename="../../../../xc64dbg/ui_SnakeWizardPanel.h" line="1315" />
-        <source>Use this mode to perform segmentation using a speed image  computed outside of ITK-SNAP.</source>
-        <translation>Use este modo para realizar segmentación utilizando una imagen de velocidad calculada fuera de ITK-SNAP.</translation>
+        <source>Use this mode to perform segmentation using a speed image  computed outside of LaTIM-SNAP.</source>
+        <translation>Use este modo para realizar segmentación utilizando una imagen de velocidad calculada fuera de LaTIM-SNAP.</translation>
     </message>
     <message>
         <location filename="../Components/SnakeWizardPanel.ui" line="1301" />
@@ -9103,8 +9103,8 @@ de región</translation>
     <message>
         <location filename="../Components/SnakeWizardPanel.ui" line="2159" />
         <location filename="../../../../xc64dbg/ui_SnakeWizardPanel.h" line="1361" />
-        <source>Accept segmentation and return to the main ITK-SNAP window</source>
-        <translation>Aceptar segmentación y volver a la ventana principal de ITK-SNAP</translation>
+        <source>Accept segmentation and return to the main LaTIM-SNAP window</source>
+        <translation>Aceptar segmentación y volver a la ventana principal de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Components/SnakeWizardPanel.ui" line="2162" />
@@ -9146,8 +9146,8 @@ de región</translation>
     </message>
     <message>
         <location filename="../Components/SnakeWizardPanel.cxx" line="427" />
-        <source>ITK-SNAP</source>
-        <translation>ITK-SNAP</translation>
+        <source>LaTIM-SNAP</source>
+        <translation>LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Components/SnakeWizardPanel.cxx" line="563" />
@@ -9160,8 +9160,8 @@ de región</translation>
     <message>
         <location filename="../Windows/SpeedImageDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_SpeedImageDialog.h" line="1027" />
-        <source>Speed Image Generation - ITK-SNAP</source>
-        <translation>Generación de Imagen de Velocidad - ITK-SNAP</translation>
+        <source>Speed Image Generation - LaTIM-SNAP</source>
+        <translation>Generación de Imagen de Velocidad - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/SpeedImageDialog.ui" line="62" />
@@ -9481,8 +9481,8 @@ de región</translation>
     <message>
         <location filename="../Windows/SplashPanel.ui" line="52" />
         <location filename="../../../../xc64dbg/ui_SplashPanel.h" line="103" />
-        <source>ITK-SNAP</source>
-        <translation>ITK-SNAP</translation>
+        <source>LaTIM-SNAP</source>
+        <translation>LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/SplashPanel.ui" line="79" />
@@ -9522,8 +9522,8 @@ Institutos Nacionales de Salud de EE.UU.
     <message>
         <location filename="../Windows/StatisticsDialog.ui" line="14" />
         <location filename="../../../../xc64dbg/ui_StatisticsDialog.h" line="98" />
-        <source>Volumes and Statistics - ITK-SNAP</source>
-        <translation>Volúmenes y Estadísticas - ITK-SNAP</translation>
+        <source>Volumes and Statistics - LaTIM-SNAP</source>
+        <translation>Volúmenes y Estadísticas - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/StatisticsDialog.ui" line="45" />
@@ -9578,8 +9578,8 @@ Institutos Nacionales de Salud de EE.UU.
     </message>
     <message>
         <location filename="../Windows/StatisticsDialog.cxx" line="137" />
-        <source>Export Volumes and Statistics - ITK-SNAP</source>
-        <translation>Exportar volúmenes y estadísticas - ITK-SNAP</translation>
+        <source>Export Volumes and Statistics - LaTIM-SNAP</source>
+        <translation>Exportar volúmenes y estadísticas - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Windows/StatisticsDialog.cxx" line="138" />
@@ -9613,8 +9613,8 @@ Institutos Nacionales de Salud de EE.UU.
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="43" />
         <location filename="../../../../xc64dbg/ui_SynchronizationInspector.h" line="165" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Toggle synchronization&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;When enabled, this ITK-SNAP window will synchronize cursor position and other view properties with other ITK-SNAP windows open on the same machine. This is useful for yoking the cursor across two medical images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Alternar sincronización&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/br&gt;&lt;/p&gt;&lt;p&gt;Al activar, esta ventana de ITK-SNAP sincronizará la posición del cursor y otras propiedades de vista con otras ventanas de ITK-SNAP abiertas en la misma máquina. Esto es útil para enlazar el cursor entre dos imágenes médicas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Toggle synchronization&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br/&gt;&lt;/p&gt;&lt;p&gt;When enabled, this LaTIM-SNAP window will synchronize cursor position and other view properties with other LaTIM-SNAP windows open on the same machine. This is useful for yoking the cursor across two medical images.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;&lt;span style=" font-weight:600;"&gt;Alternar sincronización&lt;/span&gt;&lt;/p&gt;&lt;p&gt;&lt;br&gt;&lt;/br&gt;&lt;/p&gt;&lt;p&gt;Al activar, esta ventana de LaTIM-SNAP sincronizará la posición del cursor y otras propiedades de vista con otras ventanas de LaTIM-SNAP abiertas en la misma máquina. Esto es útil para enlazar el cursor entre dos imágenes médicas.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="49" />
@@ -9626,9 +9626,9 @@ Institutos Nacionales de Salud de EE.UU.
         <location filename="../Components/SynchronizationInspector.ui" line="75" />
         <location filename="../../../../xc64dbg/ui_SynchronizationInspector.h" line="168" />
         <source>Share state with other 
-ITK-SNAP windows</source>
+LaTIM-SNAP windows</source>
         <translation>Compartir estado con otras ventanas 
-de ITK-SNAP</translation>
+de LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="94" />
@@ -9639,8 +9639,8 @@ de ITK-SNAP</translation>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="127" />
         <location filename="../../../../xc64dbg/ui_SynchronizationInspector.h" line="172" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the position of the 3D cursor between ITK-SNAP windows&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar la posición del cursor 3D entre ventanas de ITK-SNAP&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the position of the 3D cursor between LaTIM-SNAP windows&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar la posición del cursor 3D entre ventanas de LaTIM-SNAP&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="130" />
@@ -9651,8 +9651,8 @@ de ITK-SNAP</translation>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="137" />
         <location filename="../../../../xc64dbg/ui_SynchronizationInspector.h" line="176" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the zoom level between ITK-SNAP windows. &lt;span style=" font-style:italic;"&gt;Linked zoom must be enabled in the zoom inspector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar el nivel de zoom entre ventanas de ITK-SNAP. &lt;span style=" font-style:italic;"&gt;El zoom vinculado debe estar activado en el inspector de zoom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the zoom level between LaTIM-SNAP windows. &lt;span style=" font-style:italic;"&gt;Linked zoom must be enabled in the zoom inspector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar el nivel de zoom entre ventanas de LaTIM-SNAP. &lt;span style=" font-style:italic;"&gt;El zoom vinculado debe estar activado en el inspector de zoom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="140" />
@@ -9663,8 +9663,8 @@ de ITK-SNAP</translation>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="147" />
         <location filename="../../../../xc64dbg/ui_SynchronizationInspector.h" line="180" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the panning position betweenITK-SNAP windows. &lt;span style=" font-style:italic;"&gt;Linked zoom must be enabled in the zoom inspector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar la posición de paneo entre ventanas de ITK-SNAP. &lt;span style=" font-style:italic;"&gt;El zoom vinculado debe estar activado en el inspector de zoom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the panning position betweenLaTIM-SNAP windows. &lt;span style=" font-style:italic;"&gt;Linked zoom must be enabled in the zoom inspector.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar la posición de paneo entre ventanas de LaTIM-SNAP. &lt;span style=" font-style:italic;"&gt;El zoom vinculado debe estar activado en el inspector de zoom.&lt;/span&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="150" />
@@ -9675,8 +9675,8 @@ de ITK-SNAP</translation>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="157" />
         <location filename="../../../../xc64dbg/ui_SynchronizationInspector.h" line="184" />
-        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the 3D view camera position between ITK-SNAP windows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
-        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar la posición de la cámara de vista 3D entre ventanas de ITK-SNAP.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
+        <source>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;Sync the 3D view camera position between LaTIM-SNAP windows.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</source>
+        <translation>&lt;html&gt;&lt;head&gt;&lt;/head&gt;&lt;body&gt;&lt;p&gt;Sincronizar la posición de la cámara de vista 3D entre ventanas de LaTIM-SNAP.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</translation>
     </message>
     <message>
         <location filename="../Components/SynchronizationInspector.ui" line="160" />
@@ -10007,8 +10007,8 @@ de ITK-SNAP</translation>
     </message>
     <message>
         <location filename="../Components/ViewPanel3D.cxx" line="570" />
-        <source>Load Camera Viewpoint - ITK-SNAP</source>
-        <translation>Cargar vista de cámara - ITK-SNAP</translation>
+        <source>Load Camera Viewpoint - LaTIM-SNAP</source>
+        <translation>Cargar vista de cámara - LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../Components/ViewPanel3D.cxx" line="571" />
@@ -10024,8 +10024,8 @@ de ITK-SNAP</translation>
     </message>
     <message>
         <location filename="../Components/ViewPanel3D.cxx" line="584" />
-        <source>Save Camera Viewpoint - ITK-SNAP</source>
-        <translation>Guardar vista de cámara - ITK-SNAP</translation>
+        <source>Save Camera Viewpoint - LaTIM-SNAP</source>
+        <translation>Guardar vista de cámara - LaTIM-SNAP</translation>
     </message>
 </context>
 <context>
@@ -10367,8 +10367,8 @@ de ITK-SNAP</translation>
     <name>main</name>
     <message>
         <location filename="../main.cxx" line="226" />
-        <source>ITK-SNAP crashed due to an unexpected error. Your unsaved segmentations have been saved to folder '%1'</source>
-        <translation>ITK-SNAP se bloqueó debido a un error inesperado. Sus segmentaciones no guardadas se han guardado en la carpeta '%1'</translation>
+        <source>LaTIM-SNAP crashed due to an unexpected error. Your unsaved segmentations have been saved to folder '%1'</source>
+        <translation>LaTIM-SNAP se bloqueó debido a un error inesperado. Sus segmentaciones no guardadas se han guardado en la carpeta '%1'</translation>
     </message>
     <message>
         <location filename="../main.cxx" line="230" />
@@ -10453,13 +10453,13 @@ de ITK-SNAP</translation>
     </message>
     <message>
         <location filename="../main.cxx" line="1381" />
-        <source>ITK-SNAP failed to start</source>
-        <translation>Fallo al iniciar ITK-SNAP</translation>
+        <source>LaTIM-SNAP failed to start</source>
+        <translation>Fallo al iniciar LaTIM-SNAP</translation>
     </message>
     <message>
         <location filename="../main.cxx" line="1381" />
-        <source>Exception occurred during ITK-SNAP startup</source>
-        <translation>Se produjo una excepción durante el inicio de ITK-SNAP</translation>
+        <source>Exception occurred during LaTIM-SNAP startup</source>
+        <translation>Se produjo una excepción durante el inicio de LaTIM-SNAP</translation>
     </message>
 </context>
 </TS>

@@ -1,13 +1,13 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SNAPLevelSetDriver.txx,v $
   Language:  C++
   Date:      $Date: 2010/06/28 18:45:08 $
   Version:   $Revision: 1.6 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

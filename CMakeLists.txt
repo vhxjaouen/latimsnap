@@ -123,7 +123,7 @@ get_git_branch(SNAP_VERSION_GIT_BRANCH)
 get_git_commit_date(${SNAP_VERSION_GIT_BRANCH} SNAP_VERSION_GIT_TIMESTAMP)
 
 # Print the Git information
-MESSAGE(STATUS "ITK-SNAP Git Info:")
+MESSAGE(STATUS "LaTIM-SNAP Git Info:")
 MESSAGE(STATUS "  Branch : ${SNAP_VERSION_GIT_BRANCH}")
 MESSAGE(STATUS "  SHA    : ${SNAP_VERSION_GIT_SHA1}")
 MESSAGE(STATUS "  Date   : ${SNAP_VERSION_GIT_TIMESTAMP}")
@@ -189,7 +189,7 @@ IF(CMAKE_SYSTEM_NAME MATCHES Darwin AND CMAKE_OSX_ARCHITECTURES)
 ENDIF()
 
 # If this is an OSMESA enabled build, add that to the name
-OPTION(SNAP_USE_OSMESA "Use off-screen software OpenGL rendering in ITK-SNAP" OFF)
+OPTION(SNAP_USE_OSMESA "Use off-screen software OpenGL rendering in LaTIM-SNAP" OFF)
 IF(SNAP_USE_OSMESA)
   MESSAGE(STATUS "Building ITKSNAP with OSMESA support")
   SET(CPACK_SYSTEM_NAME "${CPACK_SYSTEM_NAME}-osmesa")
@@ -977,7 +977,7 @@ SET(UI_RESOURCES
   Testing/GUI/Qt/TestingScripts.qrc
 )
 
-# The source code for ITK-SNAP testing project
+# The source code for LaTIM-SNAP testing project
 SET(TESTING_CXX
   Testing/Logic/TestMain.cxx
   Testing/Logic/SNAPTestDriver.cxx
@@ -1261,7 +1261,7 @@ ENDIF(WIN32)
 
 
 # Define the main SNAP executable
-SET(SNAP_BUNDLE_NAME ITK-SNAP)
+SET(SNAP_BUNDLE_NAME LaTIM-SNAP)
 
 # Configure the executable's sources and libraries
 qt_add_executable(${SNAP_BUNDLE_NAME} WIN32 ${SNAP_MAIN_SRC})
@@ -1513,7 +1513,7 @@ IF(APPLE)
   SET(CPACK_EXTENSION "dmg")
 
   # Set the name of the application
-  SET(CPACK_BUNDLE_NAME "ITK-SNAP")
+  SET(CPACK_BUNDLE_NAME "LaTIM-SNAP")
 
   # Set the info.plist file
   SET(CPACK_BUNDLE_PLIST_SOURCE ${SNAP_SOURCE_DIR}/Utilities/MacOS/BundleResources/Info.plist)
@@ -1620,7 +1620,7 @@ ELSEIF(WIN32)
   # Install to the bin directory
   INSTALL(TARGETS ${SNAP_BUNDLE_NAME} RUNTIME_DEPENDENCY_SET deps RUNTIME DESTINATION bin)
 
-  # This code installs the .dll dependencies of ITK-SNAP that are not picked up by Qt
+  # This code installs the .dll dependencies of LaTIM-SNAP that are not picked up by Qt
   # Thank you: https://discourse.cmake.org/t/install-runtime-dependency-set-appdeps-does-nothing-install/9741/17
   install(RUNTIME_DEPENDENCY_SET deps 
     PRE_EXCLUDE_REGEXES
@@ -1677,12 +1677,12 @@ ELSEIF(WIN32)
 
   # On windows, we have to configure NSIS
   SET(CPACK_NSIS_MUI_ICON "${SNAP_SOURCE_DIR}/Utilities/Win32/snaplogo.ico")
-  SET(CPACK_NSIS_INSTALLED_ICON_NAME "ITK-SNAP.exe")
-  SET(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} ITK-SNAP")
+  SET(CPACK_NSIS_INSTALLED_ICON_NAME "LaTIM-SNAP.exe")
+  SET(CPACK_NSIS_DISPLAY_NAME "${CPACK_PACKAGE_INSTALL_DIRECTORY} LaTIM-SNAP")
   SET(CPACK_NSIS_HELP_LINK "http:\\\\\\\\www.itksnap.org")
   SET(CPACK_NSIS_URL_INFO_ABOUT "http:\\\\\\\\www.itksnap.org/credits.php")
   SET(CPACK_NSIS_MODIFY_PATH ON)
-  SET(CPACK_NSIS_MENU_LINKS "http://itksnap.org" "ITK-SNAP Web Site")
+  SET(CPACK_NSIS_MENU_LINKS "http://itksnap.org" "LaTIM-SNAP Web Site")
 
   # CMake does not yet know to install into (x64) program files or not
   IF(CMAKE_CL_64)
@@ -1690,10 +1690,10 @@ ELSEIF(WIN32)
   ENDIF(CMAKE_CL_64)
 
   # Give it a windowsy directory name
-  SET(CPACK_PACKAGE_INSTALL_DIRECTORY "ITK-SNAP ${SNAP_VERSION_MAJOR}.${SNAP_VERSION_MINOR}")
+  SET(CPACK_PACKAGE_INSTALL_DIRECTORY "LaTIM-SNAP ${SNAP_VERSION_MAJOR}.${SNAP_VERSION_MINOR}")
   
   # On Win32, the executable is the actual exe
-  SET(CPACK_PACKAGE_EXECUTABLES ITK-SNAP "ITK-SNAP")
+  SET(CPACK_PACKAGE_EXECUTABLES LaTIM-SNAP "LaTIM-SNAP")
 
   # On Win32, we must include the redistributable
   IF(MSVC_VERSION GREATER 1399)
@@ -1718,8 +1718,8 @@ ELSEIF(WIN32)
   ENDIF(MSVC_VERSION GREATER 1399)
 
   # Try setting the MSVC environment so we can debug from MSVC
-  set_target_properties(ITK-SNAP PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:ITK-SNAP>"
-                                            VS_DEBUGGER_COMMAND           "$<TARGET_FILE:ITK-SNAP>"
+  set_target_properties(LaTIM-SNAP PROPERTIES VS_DEBUGGER_WORKING_DIRECTORY "$<TARGET_FILE_DIR:LaTIM-SNAP>"
+                                            VS_DEBUGGER_COMMAND           "$<TARGET_FILE:LaTIM-SNAP>"
                                             VS_DEBUGGER_ENVIRONMENT       "PATH=%PATH%;${VTK_DIR}/bin/Debug;${Qt6_DIR}/../../../bin;")
 
 ELSE()
@@ -1727,10 +1727,10 @@ ELSE()
   # On Linux, we generate forward shared executable
   SUBDIRS(Utilities/Forwarding)
 
-  SET(SNAP_EXE "ITK-SNAP")
+  SET(SNAP_EXE "LaTIM-SNAP")
   SET(SNAP_MAIN_INSTALL_DIR lib/snap-${SNAP_VERSION_FULL})
   SET(SNAP_DATA_INSTALL_DIR ${SNAP_MAIN_INSTALL_DIR})
-  SET(CPACK_PACKAGE_EXECUTABLES "itksnap" "ITK-SNAP")
+  SET(CPACK_PACKAGE_EXECUTABLES "itksnap" "LaTIM-SNAP")
   INSTALL(TARGETS ${SNAP_BUNDLE_NAME} RUNTIME DESTINATION ${SNAP_MAIN_INSTALL_DIR})
 
   # Use Qt deployment script to take care of plugins (Qt 6.5+)

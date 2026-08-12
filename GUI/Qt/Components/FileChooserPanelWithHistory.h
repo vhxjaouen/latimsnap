@@ -11,7 +11,7 @@ namespace Ui {
 class GlobalUIModel;
 
 /**
- * This component is used by different ITK-SNAP dialogs to prompt the
+ * This component is used by different LaTIM-SNAP dialogs to prompt the
  * user for a filename, while presenting a history drop-down button and
  * a browse button.
  */

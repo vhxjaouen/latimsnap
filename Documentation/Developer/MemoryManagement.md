@@ -1,6 +1,6 @@
-# Memory Management Best Practices for ITK-SNAP
+# Memory Management Best Practices for LaTIM-SNAP
 
-This document captures patterns that have caused memory leaks in ITK-SNAP and
+This document captures patterns that have caused memory leaks in LaTIM-SNAP and
 the correct idioms to use instead. See also `MemoryLeakTestingMacOS.md` for
 how to detect leaks during development.
 
@@ -21,7 +21,7 @@ Parent *m_Parent = nullptr;
 ```
 
 A bidirectional `SmartPtr` cycle is the most common cause of
-reference-counted leaks in ITK-based code. The canonical pattern in ITK-SNAP
+reference-counted leaks in ITK-based code. The canonical pattern in LaTIM-SNAP
 is: the object that logically "contains" another holds a `SmartPtr`; the
 contained object may hold a raw pointer back to its container, which is valid
 for the container's lifetime.
@@ -126,7 +126,7 @@ The two best canary tests for catching regressions in core model and renderer
 setup are `PreferencesDialog` and `RandomForestBailOut`. They exercise full
 GUI initialisation with minimal test-specific logic. A clean build should
 report roughly **500–600 leaks / ~84 KB**, all attributable to Qt framework
-ROOT CYCLEs (not addressable from ITK-SNAP code) and residual
+ROOT CYCLEs (not addressable from LaTIM-SNAP code) and residual
 `Rebroadcaster::Association` entries that require full application teardown to
 release.
 

@@ -8,7 +8,7 @@
 /**
  * \class IRISDisplayGeometry
  * \brief This structure encapsulates the coordinate mapping between
- * the three orthogonal slices in ITK-SNAP and the patient coordinate system.
+ * the three orthogonal slices in LaTIM-SNAP and the patient coordinate system.
  * It is characterized by three 3-character strings, which define how the
  * directions in the display space map to the directions in the anatomical
  * space.

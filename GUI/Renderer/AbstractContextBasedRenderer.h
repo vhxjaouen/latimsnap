@@ -14,7 +14,7 @@ class vtkUnsignedCharArray;
 
 /**
  * A dataset (texture or path) optimized for rendering. It inherits from AbstractModel
- * and thus has modification date and can be associated with ITK-SNAP image layers.
+ * and thus has modification date and can be associated with LaTIM-SNAP image layers.
  *
  * Internally, it just stores a void* to whatever data structure is used by the render
  * context to represent the texture or path.

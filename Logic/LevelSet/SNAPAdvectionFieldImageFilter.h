@@ -1,13 +1,13 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SNAPAdvectionFieldImageFilter.h,v $
   Language:  C++
   Date:      $Date: 2009/01/23 20:09:38 $
   Version:   $Revision: 1.3 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
   Licensed under the Apache License, Version 2.0 (the "License");
   you may not use this file except in compliance with the License.

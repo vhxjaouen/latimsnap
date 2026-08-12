@@ -1,15 +1,15 @@
 /*=========================================================================
 
-Program:   ITK-SNAP
+Program:   LaTIM-SNAP
 Module:    $RCSfile: Filename.cxx,v $
 Language:  C++
 Date:      $Date: 2010/10/18 11:25:44 $
 Version:   $Revision: 1.12 $
 Copyright (c) 2025 Paul A. Yushkevich
 
-This file is part of ITK-SNAP
+This file is part of LaTIM-SNAP
 
-ITK-SNAP is free software: you can redistribute it and/or modify
+LaTIM-SNAP is free software: you can redistribute it and/or modify
 it under the terms of the GNU General Public License as published by
 the Free Software Foundation, either version 3 of the License, or
 (at your option) any later version.
@@ -208,7 +208,7 @@ GenericSliceRenderer::GetTexture(AbstractRenderContext *context,
     if (intent == DISPLAY_SLICE_MAIN ||
         (intent == DISPLAY_SLICE_THUMBNAIL && !layer->IsSlicingOrthogonal()))
     {
-      // The texture should be obtained from the ITK-SNAP slicing and display mapping
+      // The texture should be obtained from the LaTIM-SNAP slicing and display mapping
       // pipeline (main window and zoom thumbnail when in non-orthogonal slicing mode)
 
       // Set the interpolation mode

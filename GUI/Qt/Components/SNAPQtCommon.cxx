@@ -392,7 +392,7 @@ void ReportNonLethalException(QWidget *parent,
                               QString mainErrorText)
 {
   QMessageBox b(parent);
-  b.setWindowTitle(QString("%1 - ITK-SNAP").arg(windowTitleText));
+  b.setWindowTitle(QString("%1 - LaTIM-SNAP").arg(windowTitleText));
   if(mainErrorText.isNull())
     {
     b.setText(exc.what());
@@ -533,7 +533,7 @@ bool SaveWorkspace(QWidget *parent, GlobalUIModel *model, bool interactive, QWid
     // Use the dialog with history - to be consistent with other parts of SNAP
     QString file = ShowSimpleSaveDialogWithHistory(
           parent, model, "Project", "Save Workspace",
-          "Workspace File", "ITK-SNAP Workspace Files (*.itksnap)",
+          "Workspace File", "LaTIM-SNAP Workspace Files (*.itksnap)",
           true, file_abs);
 
     // If user hits cancel, move on

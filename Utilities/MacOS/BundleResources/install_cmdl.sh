@@ -81,10 +81,10 @@ DESTDIR=${1:-"/usr/local/bin"}
 
 # Say what we are doing
 echo -e "${BOLD}====================================${NC}"
-echo -e "${BOLD}ITK-SNAP Command Line Tool Installer${NC}"
+echo -e "${BOLD}LaTIM-SNAP Command Line Tool Installer${NC}"
 echo -e "${BOLD}====================================${NC}"
 echo -e "This script will install links to command-line programs included with" \
-        "ITK-SNAP to $(emph $DESTDIR)"
+        "LaTIM-SNAP to $(emph $DESTDIR)"
 prompt_yesno "" "Do you wish to continue? [Y/n] " 1
 if [[ $yesno -ne 1 ]]; then
   exit 0
@@ -92,19 +92,19 @@ fi
 
 # Handle the launcher
 if [[ ! -f $BINDIR/itksnap ]]; then
-  echo -e "${RED}ERROR:${NC} missing ITK-SNAP launcher $(emph $BINDIR/itksnap)"
+  echo -e "${RED}ERROR:${NC} missing LaTIM-SNAP launcher $(emph $BINDIR/itksnap)"
   exit -1
 fi
 
 # Copy the launcher to /usr/local/bin
-echo -e "Installing the ITK-SNAP command-line launcher $(emph itksnap) to $(emph $DESTDIR)"
+echo -e "Installing the LaTIM-SNAP command-line launcher $(emph itksnap) to $(emph $DESTDIR)"
 cp -a $BINDIR/itksnap $DESTDIR
 
 # Install the workspace tool
-install_binary itksnap-wt "ITK-SNAP workspace tool" $BINDIR $DESTDIR
+install_binary itksnap-wt "LaTIM-SNAP workspace tool" $BINDIR $DESTDIR
 
 # Prompt whether to install Convert3D
-echo "ITK-SNAP is packaged with Convert3D, a command-line tool" \
+echo "LaTIM-SNAP is packaged with Convert3D, a command-line tool" \
   "for image filtering, image arithmetic, and many useful" \
   "image processing commands (see http://itksnap.org/c3d)"
 prompt_yesno "" "Install links to Convert3D commands? [Y/n] " 1
@@ -117,7 +117,7 @@ if [[ $yesno -eq 1 ]]; then
 fi
 
 # Prompt whether to install Convert3D
-echo "ITK-SNAP is also packaged with 'greedy', a command-line" \
+echo "LaTIM-SNAP is also packaged with 'greedy', a command-line" \
   "image registration tool (see https://sites.google.com/view/greedyreg)"
 prompt_yesno "" "Install links to 'greedy'? [Y/n] " 1
 

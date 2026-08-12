@@ -226,7 +226,7 @@ color:rgb(103, 103, 103);
 </string>
                  </property>
                  <property name="text">
-                  <string>Getting started with ITK-SNAP Version 4</string>
+                  <string>Getting started with LaTIM-SNAP Version 4</string>
                  </property>
                 </widget>
                </item>
@@ -258,7 +258,7 @@ font-size: 13px;</string>
 - Download 
   [sample datasets](http://www.itksnap.org/pmwiki/pmwiki.php?n=Downloads.Data) 
 - Connect to the 
-  [ITK-SNAP community](http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists)
+  [LaTIM-SNAP community](http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists)
 </string>
                  </property>
                  <property name="html">
@@ -273,7 +273,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
 &lt;ul style=&quot;margin-top: 0px; margin-bottom: 0px; margin-left: 0px; margin-right: 0px; -qt-list-indent: 1;&quot;&gt;
 &lt;li style=&quot; font-size:14px;&quot; style=&quot; margin-top:12px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Browse &lt;a href=&quot;http://www.itksnap.org/pmwiki/pmwiki.php?n=Documentation.SNAP4&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;online documentation and tutorials&lt;/span&gt;&lt;/a&gt; &lt;/li&gt;
 &lt;li style=&quot; font-size:14px;&quot; style=&quot; margin-top:10px; margin-bottom:10px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Download &lt;a href=&quot;http://www.itksnap.org/pmwiki/pmwiki.php?n=Downloads.Data&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;sample datasets&lt;/span&gt;&lt;/a&gt; &lt;/li&gt;
-&lt;li style=&quot; font-size:14px;&quot; style=&quot; margin-top:10px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Connect to the &lt;a href=&quot;http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;ITK-SNAP community&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
+&lt;li style=&quot; font-size:14px;&quot; style=&quot; margin-top:10px; margin-bottom:12px; margin-left:0px; margin-right:0px; -qt-block-indent:0; text-indent:0px;&quot;&gt;Connect to the &lt;a href=&quot;http://www.itksnap.org/pmwiki/pmwiki.php?n=MailingLists.MailingLists&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#094fd1;&quot;&gt;LaTIM-SNAP community&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;&lt;/ul&gt;&lt;/body&gt;&lt;/html&gt;</string>
                  </property>
                  <property name="openExternalLinks">
                   <bool>true</bool>
@@ -1319,7 +1319,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
   </action>
   <action name="actionAbout">
    <property name="text">
-    <string>About ITK-SNAP</string>
+    <string>About LaTIM-SNAP</string>
    </property>
    <property name="menuRole">
     <enum>QAction::MenuRole::AboutRole</enum>
@@ -1536,7 +1536,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
   </action>
   <action name="actionNew_ITK_SNAP_Window">
    <property name="text">
-    <string>New ITK-SNAP Window</string>
+    <string>New LaTIM-SNAP Window</string>
    </property>
   </action>
   <action name="actionCoregister_Overlay">
@@ -1544,7 +1544,7 @@ li.checked::marker { content: &quot;\2612&quot;; }
     <string>Coregister Overlay ...</string>
    </property>
    <property name="toolTip">
-    <string>Co-register an image with the main image currently loaded into ITK-SNAP</string>
+    <string>Co-register an image with the main image currently loaded into LaTIM-SNAP</string>
    </property>
   </action>
   <action name="actionRecentOverlay_1">

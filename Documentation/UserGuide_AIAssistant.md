@@ -1,9 +1,9 @@
 # AI Assistant (Ollama Q&A) — User Guide
 
 This guide explains how to use the **AI Assistant** panel that has been added to
-ITK-SNAP. The panel provides a chat-style dialog with a locally running
+LaTIM-SNAP. The panel provides a chat-style dialog with a locally running
 [Ollama](https://ollama.com) server, allowing you to ask questions about the
-image currently displayed in your ITK-SNAP viewport using Vision-Language
+image currently displayed in your LaTIM-SNAP viewport using Vision-Language
 Models (VLMs).
 
 ---
@@ -22,7 +22,7 @@ curl -fsSL https://ollama.com/install.sh | sh
 ollama serve
 ```
 
-By convention, ITK-SNAP assumes the server is available at:
+By convention, LaTIM-SNAP assumes the server is available at:
 
 ```
 http://localhost:11434
@@ -44,7 +44,7 @@ combo box to any model you have pulled locally.
 
 ## 2. Opening the AI Assistant Panel
 
-1. Launch ITK-SNAP as usual and load an image.
+1. Launch LaTIM-SNAP as usual and load an image.
 2. Go to the menu bar: **Views → AI Assistant (Ollama)**.
 3. A dockable panel titled **"AI Assistant"** will appear on the right-hand
    side of the main window.
@@ -81,13 +81,13 @@ The panel can be:
 3. Click **Send**.
 
 ### 4.2 Question About the Displayed Image
-1. Ensure a slice or 3D rendering is visible in the ITK-SNAP viewport.
+1. Ensure a slice or 3D rendering is visible in the LaTIM-SNAP viewport.
 2. Check **Attach Current View**.
 3. Pick the view to capture (Axial / Sagittal / Coronal / 3D View).
 4. Type a question — e.g. *"Describe the anatomy visible in this slice."*
 5. Click **Send**.
 
-The image is captured from the ITK-SNAP viewport, downscaled to at most
+The image is captured from the LaTIM-SNAP viewport, downscaled to at most
 1024 px, JPEG-encoded, and sent as a Base64 string with your prompt.
 
 ### 4.3 Follow-Up Questions

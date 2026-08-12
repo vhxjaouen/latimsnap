@@ -169,7 +169,9 @@ void ImageAnnotationData::Reset()
 
 void ImageAnnotationData::SaveAnnotations(Registry &reg)
 {
-  // Store the current format of the annotations
+  // Store the current format of the annotations. The string below is an
+// on-disk format identifier shared with upstream ITK-SNAP; keep it unchanged
+// so existing .itksnap workspace files remain loadable.
   reg["Format"] << "ITK-SNAP Annotation File";
 
   // Format date specifies the date this format was developed. If in the future

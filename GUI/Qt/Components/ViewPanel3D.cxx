@@ -577,7 +577,7 @@ void ViewPanel3D::on_actionImport_Viewpoint_triggered()
   QString selection = ShowSimpleOpenDialogWithHistory(this,
                                                       m_Model->GetParentUI(),
                                                       "CameraViewpoint",
-                                                      tr("Load Camera Viewpoint - ITK-SNAP"),
+                                                      tr("Load Camera Viewpoint - LaTIM-SNAP"),
                                                       tr("Camera Viewpoint JSON File"),
                                                       tr("Camera Files (%1)").arg("*.json"));
 
@@ -591,7 +591,7 @@ void ViewPanel3D::on_actionExport_Viewpoint_triggered()
   // Ask for a filename
   QString selection = ShowSimpleSaveDialogWithHistory(
         this, m_Model->GetParentUI(), "CameraViewpoint",
-        tr("Save Camera Viewpoint - ITK-SNAP"),
+        tr("Save Camera Viewpoint - LaTIM-SNAP"),
         tr("Camera Viewpoint JSON File"),
         tr("Camera Files (%1)").arg("*.json"),
         true);

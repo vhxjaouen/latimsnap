@@ -30,7 +30,7 @@ class ImageMeshLayers;
 
 /**
  * A struct representing the state of the VTK camera. This struct
- * can be used to communicate camera state between ITK-SNAP sessions
+ * can be used to communicate camera state between LaTIM-SNAP sessions
  */
 struct CameraState
 {

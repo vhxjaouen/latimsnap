@@ -134,7 +134,7 @@ void StatisticsDialog::on_btnExport_clicked()
     this,
     m_Model,
     "Statistics",
-    tr("Export Volumes and Statistics - ITK-SNAP"),
+    tr("Export Volumes and Statistics - LaTIM-SNAP"),
     tr("Volumes and Statistics File"),
     tr("Text Files (%1);; Comma Separated Value Files (%2)").arg("*.txt", "*.csv"),
     true);

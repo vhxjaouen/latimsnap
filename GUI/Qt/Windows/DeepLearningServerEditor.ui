@@ -494,7 +494,7 @@ color:rgb(96, 96, 96);</string>
              <item>
               <widget class="QPushButton" name="btnConfigurePackages">
                <property name="toolTip">
-                <string>This will install (or re-install) the Python packages needed to run the ITK-SNAP deep learning extensions server locally.</string>
+                <string>This will install (or re-install) the Python packages needed to run the LaTIM-SNAP deep learning extensions server locally.</string>
                </property>
                <property name="text">
                 <string>Setup Python Packages ...</string>
@@ -513,7 +513,7 @@ color:rgb(96, 96, 96);</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>Use the default location for installing Python packages needed to run the ITK-SNAP deep learning extension server.</string>
+             <string>Use the default location for installing Python packages needed to run the LaTIM-SNAP deep learning extension server.</string>
             </property>
             <property name="text">
              <string>...</string>
@@ -553,7 +553,7 @@ color:rgb(96, 96, 96);</string>
           <item row="5" column="1">
            <widget class="QCheckBox" name="chkNoSSLVerify">
             <property name="toolTip">
-             <string>This will allow the local ITK-SNAP deep learning extension server to download trained models from huggingface.co without SSL certificate verification. Turn on this option if you encounter errors related to invalid or missing SSL certificates.</string>
+             <string>This will allow the local LaTIM-SNAP deep learning extension server to download trained models from huggingface.co without SSL certificate verification. Turn on this option if you encounter errors related to invalid or missing SSL certificates.</string>
             </property>
             <property name="text">
              <string>Disable SSL certificate verification</string>
@@ -569,7 +569,7 @@ color:rgb(96, 96, 96);</string>
              </size>
             </property>
             <property name="toolTip">
-             <string>Select the location where Python packages needed to run the ITK-SNAP deep learning extension server will be installed.</string>
+             <string>Select the location where Python packages needed to run the LaTIM-SNAP deep learning extension server will be installed.</string>
             </property>
             <property name="text">
              <string>...</string>
@@ -635,14 +635,14 @@ color: rgb(64, 64, 64);</string>
           <item row="0" column="1" colspan="4">
            <widget class="QComboBox" name="inPythonExe">
             <property name="toolTip">
-             <string>Select the Python interpreter that will be used to run the local ITK-SNAP deep learning extensions server.</string>
+             <string>Select the Python interpreter that will be used to run the local LaTIM-SNAP deep learning extensions server.</string>
             </property>
            </widget>
           </item>
           <item row="2" column="1" colspan="4">
            <widget class="QLineEdit" name="inPythonVEnv">
             <property name="toolTip">
-             <string>This is the location where Python packages needed to run the ITK-SNAP deep learning extension server will be installed.</string>
+             <string>This is the location where Python packages needed to run the LaTIM-SNAP deep learning extension server will be installed.</string>
             </property>
            </widget>
           </item>

@@ -224,7 +224,7 @@ test_terminate_handler()
       msgBox.setIcon(QMessageBox::Critical);
       msgBox.setText(
         QCoreApplication::translate("main",
-                                    "ITK-SNAP crashed due to an unexpected error. Your unsaved "
+                                    "LaTIM-SNAP crashed due to an unexpected error. Your unsaved "
                                     "segmentations have been saved to folder '%1'")
           .arg(backup_dir));
       msgBox.setWindowTitle(QCoreApplication::translate("main", "Crash Recovery"));
@@ -558,7 +558,7 @@ parse(int argc, char *argv[], CommandLineRequest &argdata)
 #ifdef SNAP_DEBUG_EVENTS
     argdata.flagDebugEvents = true;
 #else
-    cerr << "Option --debug-events ignored because ITK-SNAP was compiled "
+    cerr << "Option --debug-events ignored because LaTIM-SNAP was compiled "
             "without the SNAP_DEBUG_EVENTS option. Please recompile."
          << endl;
 #endif
@@ -772,7 +772,7 @@ main(int argc, char *argv[])
   // script engine, which must be deleted at the very end
   SNAPTestQt *testingEngine = NULL;
 
-  std::cout << "Launching ITK-SNAP" << std::endl;
+  std::cout << "Launching LaTIM-SNAP" << std::endl;
 
   // Parse the command line
   CommandLineRequest argdata;
@@ -1035,7 +1035,7 @@ main(int argc, char *argv[])
     if (argdata.gui_language.size())
     {
       QLocale::setDefault(QLocale(argdata.gui_language.c_str()));
-      qDebug() << "ITK-SNAP using locale:" << QLocale().name();
+      qDebug() << "LaTIM-SNAP using locale:" << QLocale().name();
     }
 
     // Adjust the locale for discrepancy between zh_CN and zh-Hans_US codes that
@@ -1378,7 +1378,7 @@ main(int argc, char *argv[])
   catch (std::exception &exc)
   {
     ReportNonLethalException(
-      NULL, exc, QCoreApplication::translate("main", "ITK-SNAP failed to start"), QCoreApplication::translate("main", "Exception occurred during ITK-SNAP startup"));
+      NULL, exc, QCoreApplication::translate("main", "LaTIM-SNAP failed to start"), QCoreApplication::translate("main", "Exception occurred during LaTIM-SNAP startup"));
     exit(-1);
   }
 }

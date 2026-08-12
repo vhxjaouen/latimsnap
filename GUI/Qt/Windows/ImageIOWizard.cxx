@@ -871,9 +871,9 @@ void ImageIOWizard::SetModel(ImageIOWizardModel *model)
 
   // Set the title
   if(model->IsLoadMode())
-    this->setWindowTitle(tr("Open Image - ITK-SNAP"));
+    this->setWindowTitle(tr("Open Image - LaTIM-SNAP"));
   else
-    this->setWindowTitle(tr("Save Image - ITK-SNAP"));
+    this->setWindowTitle(tr("Save Image - LaTIM-SNAP"));
 }
 
 void ImageIOWizard::SetFilename(const std::string &filename,

@@ -4,7 +4,7 @@ Guidance for agents working in this repo. Keep additions to things an agent woul
 miss without help; verify before adding.
 
 ## What this is
-- **ITK-SNAP** C++/Qt6 medical imaging app (this fork: `vhxjaouen/latimsnap`,
+- **LaTIM-SNAP** C++/Qt6 medical imaging app (this fork: `vhxjaouen/latimsnap`,
   default branch `llm-test`). Large CMake project requiring external **ITK, VTK,
   Qt6**. Uses git submodules (`Submodules/c3d`, `greedy`, `digestible`).
 - Active experimental feature: **AI Assistant** chat panel (Ollama).
@@ -16,7 +16,7 @@ miss without help; verify before adding.
   container; repo is mounted at `/workspaces/latimsnap`.
 - Deploy flow (automated in `.github/workflows/deploy.yml`):
   1. build in Docker
-  2. `linuxdeployqt -no-strip -bundle-non-qt-libs` on the `ITK-SNAP` binary
+  2. `linuxdeployqt -no-strip -bundle-non-qt-libs` on the `LaTIM-SNAP` binary
   3. tar as **`ITK-snap-current.tar.gz`**
   4. `zip ITK-snap-current.zip ITK-snap-current.tar.gz`
   5. `rclone copy <file> pcloud:~/TEMP`
@@ -47,6 +47,6 @@ miss without help; verify before adding.
 
 ## Layout & test
 - `GUI/Qt/Components/` = panels/widgets, `GUI/Qt/Windows/` = main windows/docks.
-- Executable target is `ITK-SNAP` (`SNAP_BUNDLE_NAME`).
+- Executable target is `LaTIM-SNAP` (`SNAP_BUNDLE_NAME`).
 - Tests run via `ctest` (headless builds use `QT_QPA_PLATFORM=offscreen`/
   `xvfb-run`).

@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: Filename.cxx,v $
   Language:  C++
   Date:      $Date: 2010/10/18 11:25:44 $
   Version:   $Revision: 1.12 $
   Copyright (c) 2011 Paul A. Yushkevich
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -78,7 +78,7 @@ public:
 /**
   \class GenericSliceModel
   \brief Describes the state of the slice panel showing an orthogonal
-  projection of a dataset in ITK-SNAP
+  projection of a dataset in LaTIM-SNAP
 
   This class holds the state of the slice viewer widget. It contains
   information about the slice currently being shown, the mapping of

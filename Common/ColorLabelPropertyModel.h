@@ -18,7 +18,7 @@ typedef ConcretePropertyModel<LabelType, ColorLabelItemSetDomain>
   ConcreteColorLabelPropertyModelBase;
 
 /**
-  This is an ITK-SNAP model that internally stores a color label and provides
+  This is an LaTIM-SNAP model that internally stores a color label and provides
   a set of options, correponding to currently available color labels
   */
 class ConcreteColorLabelPropertyModel
@@ -93,7 +93,7 @@ typedef ConcretePropertyModel<DrawOverFilter, DrawOverLabelItemSetDomain>
   ConcreteDrawOverFilterPropertyModelBase;
 
 /**
-  This is an ITK-SNAP model that internally stores a draw-over state atomic
+  This is an LaTIM-SNAP model that internally stores a draw-over state atomic
   object.
   */
 class ConcreteDrawOverFilterPropertyModel

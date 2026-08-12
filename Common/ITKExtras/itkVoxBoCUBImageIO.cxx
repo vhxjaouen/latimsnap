@@ -1,6 +1,6 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: itkVoxBoCUBImageIO.cxx,v $
   Language:  C++
   Date:      $Date: 2008/11/20 04:23:28 $
@@ -8,9 +8,9 @@
 
   Copyright (c) Insight Software Consortium. All rights reserved.
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.

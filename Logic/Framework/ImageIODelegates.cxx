@@ -30,8 +30,8 @@ void LoadAnatomicImageDelegate
           IRISWarning(
             "Warning: Possible Loss of Precision."
             "The file you opened represents image data using the '%s' data type, "
-            "but ITK-SNAP only supports 16-bit integer and 32-bit floating point data types. "
-            "Intensity values reported in ITK-SNAP may differ from the "
+            "but LaTIM-SNAP only supports 16-bit integer and 32-bit floating point data types. "
+            "Intensity values reported in LaTIM-SNAP may differ from the "
             "actual values in the image.", oss.str().c_str()));
     }
 }
@@ -164,7 +164,7 @@ LoadSegmentationImageDelegate
     {
     throw IRISException("Error: Multicomponent Image. "
                         "The segmentation image has multiple (%d) components, "
-                        "but only one component is supported by ITK-SNAP.",
+                        "but only one component is supported by LaTIM-SNAP.",
                         io->GetNumberOfComponentsInNativeImage());
     }
   
@@ -246,9 +246,9 @@ LoadSegmentationImageDelegate
     wl.push_back(IRISWarning(
                    "Warning: Header Mismatch."
                    "There is a mismatch between the header of the image that you are "
-                   "loading and the header of the main image currently open in ITK-SNAP. "
+                   "loading and the header of the main image currently open in LaTIM-SNAP. "
                    "The images have different %s. "
-                   "ITK-SNAP will ignore the header in the image you are loading.",
+                   "LaTIM-SNAP will ignore the header in the image you are loading.",
                    object.c_str()));
     }
 }
@@ -397,7 +397,7 @@ AbstractReloadWrapperDelegate
     {
     std::ostringstream oss;
     oss << "Following header elements mismatch between header of the file and the "
-        << "image header currently open in ITK-SNAP: ("
+        << "image header currently open in LaTIM-SNAP: ("
         << (match_spacing ? "" : "spacing ")
         << (match_origin ? "" : "origin ")
         << (match_direction ? "" : "direction ")

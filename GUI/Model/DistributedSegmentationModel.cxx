@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    DistributedSegmentationModel.cxx
   Language:  C++
   Date:      March 2018
 
   Copyright (c) 2018 Paul A. Yushkevich
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -1372,8 +1372,8 @@ DistributedSegmentationModel::GetDefaultDownloadLocation()
   size_t p2 = encoded_url.find_last_not_of('_');
   encoded_url = encoded_url.substr(p1, 1 + p2 - p1);
 
-  // Append ITK-SNAP
-  std::string full_dir = dir_docs + std::string("/") + "ITK-SNAP" + std::string("/") + encoded_url;
+  // Append LaTIM-SNAP
+  std::string full_dir = dir_docs + std::string("/") + "LaTIM-SNAP" + std::string("/") + encoded_url;
 
   // Convert to correct slashes
   return itksys::SystemTools::ConvertToOutputPath(full_dir);
@@ -1467,8 +1467,8 @@ DistributedSegmentationModel::DistributedSegmentationModel()
 
   // Download action model
   DownloadActionDomain dl_action_domain;
-  dl_action_domain[DL_OPEN_CURRENT_WINDOW] = "Open workspace in the current ITK-SNAP window";
-  dl_action_domain[DL_OPEN_NEW_WINDOW] = "Open workspace in a new ITK-SNAP window";
+  dl_action_domain[DL_OPEN_CURRENT_WINDOW] = "Open workspace in the current LaTIM-SNAP window";
+  dl_action_domain[DL_OPEN_NEW_WINDOW] = "Open workspace in a new LaTIM-SNAP window";
   dl_action_domain[DL_DONT_OPEN] = "Do not open workspace";
   m_DownloadActionModel = NewConcreteProperty(DL_OPEN_CURRENT_WINDOW, dl_action_domain);
 

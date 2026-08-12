@@ -11,7 +11,7 @@ template <class TData, class TLabel> class MLData;
 class SNAPImageData;
 
 /**
- * This class serves as the high-level interface between ITK-SNAP and the
+ * This class serves as the high-level interface between LaTIM-SNAP and the
  * random forest code.
  */
 template <class TPixel, class TLabel, int VDim>

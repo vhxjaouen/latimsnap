@@ -248,7 +248,7 @@ void RegistrationDialog::on_btnSave_clicked()
   SimpleFileDialogWithHistory::QueryResult result = SimpleFileDialogWithHistory::showSaveDialog(
     this,
     m_Model->GetParent(),
-    tr("Save Transform - ITK-SNAP"),
+    tr("Save Transform - LaTIM-SNAP"),
     tr("Transform File"),
     "AffineTransform",
     tr("ITK Transform Files (%1);; Convert3D Transform Files (%2)").arg("*.txt", "*.mat"),
@@ -279,7 +279,7 @@ void RegistrationDialog::on_btnSaveWarp_clicked()
   SimpleFileDialogWithHistory::QueryResult result = SimpleFileDialogWithHistory::showSaveDialog(
     this,
     m_Model->GetParent(),
-    tr("Save Warp Field - ITK-SNAP"),
+    tr("Save Warp Field - LaTIM-SNAP"),
     tr("Warp File"),
     "GreedyWarp",
     tr("NIfTI Image File (%1)").arg("*.nii *.nii.gz"),
@@ -362,7 +362,7 @@ void RegistrationDialog::on_btnReslice_clicked()
   QDialog *dialog = new QDialog(this);
   QFormLayout *lo = new QFormLayout();
 
-  dialog->setWindowTitle(tr("Reslicing Options - ITK-SNAP"));
+  dialog->setWindowTitle(tr("Reslicing Options - LaTIM-SNAP"));
 
   // Set up interpolation options
   QComboBox *cbInterp = new QComboBox(dialog);

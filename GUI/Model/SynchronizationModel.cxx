@@ -204,7 +204,7 @@ SynchronizationModel::OnUpdate()
   // If we reached this point, either there has not been a change in main image and
   // not a change in sync state; or a main image has been loaded, but shared memory
   // was created. In both of these situations, we want to broadcast our current state
-  // to other ITK-SNAP sessions.
+  // to other LaTIM-SNAP sessions.
   if (!m_CanBroadcast)
     return;
 

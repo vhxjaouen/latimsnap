@@ -31,3 +31,8 @@ CLAUDE.local.md
 # Local packaged builds
 ITK-snap-current.tar.gz
 ITK-snap-current.zip
+LaTIM-SNAP-current.tar.gz
+
+# linuxdeployqt cache (downloaded AppImage + extracted bundle)
+linuxdeployqt
+squashfs-root/

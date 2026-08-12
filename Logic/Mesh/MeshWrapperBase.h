@@ -186,7 +186,7 @@ protected:
 
 /**
  *  \class MeshWrapperBase
- *  \brief An abstract class representing a mesh layer in ITK-SNAP
+ *  \brief An abstract class representing a mesh layer in LaTIM-SNAP
  *
  *  The class wraps around a MeshAssemblyMap, which maps MeshAssemblies, representing
  *  a scene assembled by meshes, to time points.

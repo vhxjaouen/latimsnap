@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: ImageWrapper.h,v $
   Language:  C++
   Date:      $Date: 2009/11/13 00:59:47 $
   Version:   $Revision: 1.14 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -935,7 +935,7 @@ protected:
   /**
    * The native intensity mapping is a linear mapping from the format in which
    * the image is stored internally (e.g., 16-bit integer) to the values that
-   * the user interacts with (e.g., float). For some images in ITK-SNAP, we
+   * the user interacts with (e.g., float). For some images in LaTIM-SNAP, we
    * represent them internally as 16-bit integers even though they are meant
    * to represent floating point numbers in some range (e.g., -1 to 1). This
    * is to save memory.
@@ -945,7 +945,7 @@ protected:
   /**
    * This holds the transformation between the physical image coordinates (LPS)
    * and display coordinates (i.e., slices shown to the user). Through version
-   * ITK-SNAP 4.0, this is an orthogonal transformation, but we intend to allow
+   * LaTIM-SNAP 4.0, this is an orthogonal transformation, but we intend to allow
    * non-orthogonal transformations as well.
    */
   IRISDisplayGeometry m_DisplayGeometry;

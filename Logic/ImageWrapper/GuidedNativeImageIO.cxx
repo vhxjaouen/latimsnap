@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: GuidedNativeImageIO.cxx,v $
   Language:  C++
   Date:      $Date: 2010/10/14 16:21:04 $
   Version:   $Revision: 1.11 $
   Copyright (c) 2007 Paul A. Yushkevich
   
-  This file is part of ITK-SNAP 
+  This file is part of LaTIM-SNAP 
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.
@@ -497,7 +497,7 @@ GuidedNativeImageIO
   CreateImageIO(FileName, m_Hints, true);
   if(!m_IOBase)
     throw IRISException("Error: Unsupported or missing image file format. "
-                        "ITK-SNAP failed to create an ImageIO object for the "
+                        "LaTIM-SNAP failed to create an ImageIO object for the "
                         "image '%s' using format '%s'.",
                         FileName, m_Hints["Format"][""]);
 

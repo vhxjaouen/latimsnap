@@ -181,7 +181,7 @@ SnakeParameterDialog::on_btnOpen_clicked()
     ShowSimpleOpenDialogWithHistory(this,
                                     m_Model->GetParentModel(),
                                     "SnakeParameters",
-                                    tr("Open Active Contour Evolution Parameters - ITK-SNAP"),
+                                    tr("Open Active Contour Evolution Parameters - LaTIM-SNAP"),
                                     tr("Parameter File"),
                                     tr("Text Files (%1)").arg("*.txt"));
 
@@ -205,7 +205,7 @@ void SnakeParameterDialog::on_btnSave_clicked()
   // Ask for a filename
   QString selection = ShowSimpleSaveDialogWithHistory(
         this, m_Model->GetParentModel(), "SnakeParameters",
-        tr("Save Active Contour Evolution Parameters - ITK-SNAP"),
+        tr("Save Active Contour Evolution Parameters - LaTIM-SNAP"),
         tr("Parameter File"),
         tr("Text Files (%1)").arg("*.txt"),
         true);

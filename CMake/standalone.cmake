@@ -145,7 +145,7 @@ GET_FILENAME_COMPONENT(QT_LIBRARY_DIR "${Qt6Core_DIR}/../../" ABSOLUTE)
 # Set the QTVERSION var
 SET(QTVERSION ${Qt6Widgets_VERSION})
 
-# Look for CURL. It is now required part of ITK-SNAP
+# Look for CURL. It is now required part of LaTIM-SNAP
 FIND_PACKAGE(CURL)
 IF(CURL_FOUND)
   INCLUDE_DIRECTORIES(${CURL_INCLUDE_DIR})

@@ -106,7 +106,7 @@ GuidedMeshIO
 {
   // Adding a comment illustrating the purpose
   std::ostringstream oss;
-  oss << "ITK-SNAP coord sys for 3D Slicer: " << slicer_coord_sys_string;
+  oss << "LaTIM-SNAP coord sys for 3D Slicer: " << slicer_coord_sys_string;
   return oss.str();
 }
 

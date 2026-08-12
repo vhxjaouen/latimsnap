@@ -37,7 +37,7 @@ LoadTransformationDialog
       initializeForOpenFile(model, "Transform File", "AffineTransform",
                             "ITK Transform Files (*.txt);; Convert3D Transform Files (*.mat)",
                             QString());
-  dialog->setWindowTitle("Open Transform - ITK-SNAP");
+  dialog->setWindowTitle("Open Transform - LaTIM-SNAP");
 
   // Launch the dialog
   if(dialog->exec() == QDialog::Accepted)

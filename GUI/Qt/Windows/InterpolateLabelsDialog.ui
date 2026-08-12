@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Interpolate Labels - ITK-SNAP</string>
+   <string>Interpolate Labels - LaTIM-SNAP</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>

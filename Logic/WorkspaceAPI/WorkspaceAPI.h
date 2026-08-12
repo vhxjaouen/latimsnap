@@ -9,7 +9,7 @@ namespace itk { class Command; }
 struct MultiChannelDisplayMode;
 
 /**
- * This class encapsulates an ITK-SNAP workspace. It is just a wrapper around
+ * This class encapsulates an LaTIM-SNAP workspace. It is just a wrapper around
  * a registry object, but with extra functions that support workspaces
  */
 class WorkspaceAPI

@@ -1,6 +1,6 @@
 # Memory Leak Testing on macOS
 
-This document explains how to build ITK-SNAP in a leak-detectable configuration
+This document explains how to build LaTIM-SNAP in a leak-detectable configuration
 and use the macOS `leaks` tool to find heap memory leaks in the GUI test suite.
 
 ---
@@ -25,7 +25,7 @@ cmake -G Ninja \
   -DITK_DIR=/path/to/itk/build \
   -DVTK_DIR=/path/to/vtk/lib/cmake/vtk-9.3 \
   ../itksnap
-ninja ITK-SNAP
+ninja LaTIM-SNAP
 ```
 
 A `RelWithDebInfo` build also works and runs faster, but stack traces are
@@ -40,7 +40,7 @@ entitlement. Without it the tool silently produces no output. Re-apply this
 signature after every `ninja` invocation that relinks the binary:
 
 ```bash
-codesign --force -s - --entitlements /dev/stdin build-leaks/ITK-SNAP <<'EOF'
+codesign --force -s - --entitlements /dev/stdin build-leaks/LaTIM-SNAP <<'EOF'
 <?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
@@ -60,10 +60,10 @@ EOF
 
 ## 3. Run a Single GUI Test
 
-ITK-SNAP's GUI tests are driven by `--test <TestName>`:
+LaTIM-SNAP's GUI tests are driven by `--test <TestName>`:
 
 ```bash
-MallocStackLogging=1 leaks --atExit -- build-leaks/ITK-SNAP \
+MallocStackLogging=1 leaks --atExit -- build-leaks/LaTIM-SNAP \
   --test PreferencesDialog \
   --testdir itksnap/Testing/TestData
 ```
@@ -102,10 +102,10 @@ Key fields:
 | **ROOT CYCLE** | Group of objects pointing to each other in a cycle, unreachable from any live root |
 | Call stack | Where the leaked object was allocated |
 
-Focus on ROOT LEAKs and ROOT CYCLEs whose call stacks lead into ITK-SNAP
+Focus on ROOT LEAKs and ROOT CYCLEs whose call stacks lead into LaTIM-SNAP
 source files. Leaks rooted in Qt internals (`QStandardItem`,
 `QObjectPrivate::ConnectionData`, `QHashPrivate`, etc.) are framework-owned
-and not addressable from ITK-SNAP code.
+and not addressable from LaTIM-SNAP code.
 
 ---
 
@@ -116,7 +116,7 @@ passed one at a time:
 
 ```bash
 TESTDIR=itksnap/Testing/TestData
-BINARY=build-leaks/ITK-SNAP
+BINARY=build-leaks/LaTIM-SNAP
 
 for TEST in PreferencesDialog RandomForestBailOut Workspace \
             EchoCartesianDicomLoading MeshImport MeshWorkspace \
@@ -162,7 +162,7 @@ the clearest indicator of a new regression.
 
 ## 7. Tips
 
-- **Re-sign after every relink.** `ninja` relinks `ITK-SNAP` when any
+- **Re-sign after every relink.** `ninja` relinks `LaTIM-SNAP` when any
   translation unit changes; the new binary loses the entitlement and `leaks`
   will silently produce no output until you re-sign.
 

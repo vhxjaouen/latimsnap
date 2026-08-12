@@ -1,15 +1,15 @@
 /*=========================================================================
 
-  Program:   ITK-SNAP
+  Program:   LaTIM-SNAP
   Module:    $RCSfile: SystemInterface.h,v $
   Language:  C++
   Date:      $Date: 2010/04/14 10:06:23 $
   Version:   $Revision: 1.11 $
   Copyright (c) 2003-2013 Paul A. Yushkevich and Guido Gerig
 
-  This file is part of ITK-SNAP
+  This file is part of LaTIM-SNAP
 
-  ITK-SNAP is free software: you can redistribute it and/or modify
+  LaTIM-SNAP is free software: you can redistribute it and/or modify
   it under the terms of the GNU General Public License as published by
   the Free Software Foundation, either version 3 of the License, or
   (at your option) any later version.

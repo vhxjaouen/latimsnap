@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="windowTitle">
-   <string>ITK-SNAP Distributed Segmentation Service</string>
+   <string>LaTIM-SNAP Distributed Segmentation Service</string>
   </property>
   <layout class="QHBoxLayout" name="horizontalLayout_4">
    <item>
@@ -96,7 +96,7 @@ font-weight:bold;
 color: rgb(96, 96, 96);</string>
             </property>
             <property name="text">
-             <string>ITK-SNAP Distributed Segmentation Services (DSS)</string>
+             <string>LaTIM-SNAP Distributed Segmentation Services (DSS)</string>
             </property>
            </widget>
           </item>
