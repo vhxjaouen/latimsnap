@@ -92,54 +92,23 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
       src->GetSource()->Update();
     src->Update();
 
+    // We upload the raw in-memory buffer (ITK layout) and tag it "itk"; the
+    // server converts it to the MONAI/nibabel layout the model expects before
+    // inference. Doing the reorder server-side (in numpy) guarantees it
+    // matches the offline reference exactly.
     RESTMultipartData mpd;
     std::string gzip_buffer;
-
-    // NOTE (layout fix): reorder the source voxels to the MONAI/nibabel layout
-    // the model expects:
-    //   out[i0*ny*nz + i1*nz + i2] = src[i2*nx*ny + i1*nx + i0].
-    // If anything about the buffer is inconsistent we fall back to the plain
-    // EncodeImage upload rather than risk a crash.
-    const size_t nx = src->GetBufferedRegion().GetSize()[0];
-    const size_t ny = src->GetBufferedRegion().GetSize()[1];
-    const size_t nz = src->GetBufferedRegion().GetSize()[2];
-    const size_t n_pix = (size_t) src->GetPixelContainer()->Size();
-    size_t nc = 1;
-    bool ok_reorder = (nx > 0 && ny > 0 && nz > 0 && n_pix % (nx * ny * nz) == 0);
-    if(ok_reorder)
+    const float *buf = src->GetBufferPointer();
+    if(buf && src->GetPixelContainer()->Size() > 0)
       {
-      nc = n_pix / (nx * ny * nz);
-      const float *buf = src->GetBufferPointer();
-      if(!buf || n_pix == 0)
-        ok_reorder = false;
-      else
-        {
-        std::vector<float> reordered(n_pix);
-        for(size_t i0 = 0; i0 < nx && ok_reorder; i0++)
-          for(size_t i1 = 0; i1 < ny && ok_reorder; i1++)
-            for(size_t i2 = 0; i2 < nz; i2++)
-              {
-              size_t s = (i2 * nx * ny + i1 * nx + i0) * nc;
-              size_t d = (i0 * ny * nz + i1 * nz + i2) * nc;
-              if(s + nc > n_pix || d + nc > n_pix)
-                { ok_reorder = false; break; }
-              for(size_t c = 0; c < nc; c++)
-                reordered[d + c] = buf[s + c];
-              }
-        if(ok_reorder)
-          dls_utility::gzipDeflate((const char *) reordered.data(),
-                                   reordered.size() * sizeof(float), gzip_buffer);
-        }
-      }
-
-    if(ok_reorder)
-      {
+      dls_utility::gzipDeflate((const char *) buf,
+                               src->GetPixelContainer()->Size() * sizeof(float),
+                               gzip_buffer);
       mpd.addBytes("file", "application/gzip", "image.gz",
                    gzip_buffer.c_str(), gzip_buffer.size());
       }
     else
       {
-      // Fallback: send the buffer as-is (no reorder) - never crash.
       dls_utility::EncodeImage(mpd, src, gzip_buffer);
       }
 
@@ -148,8 +117,9 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
     root["spacing"] = Json::Value(Json::arrayValue);
     root["origin"] = Json::Value(Json::arrayValue);
     root["direction"] = Json::Value(Json::arrayValue);
-    root["components_per_pixel"] = Json::Value((int) nc);
+    root["components_per_pixel"] = Json::Value((int) src->GetNumberOfComponentsPerPixel());
     root["component_type"] = "float32";
+    root["layout"] = "itk";
     for(unsigned int i = 0; i < 3; i++)
       {
       root["dimensions"].append((Json::Value::Int64) src->GetBufferedRegion().GetSize()[i]);

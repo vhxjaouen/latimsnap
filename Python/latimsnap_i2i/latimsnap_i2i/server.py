@@ -159,12 +159,20 @@ def create_app(models_dir=None):
         if spec is None:
             raise HTTPException(status_code=404, detail="unknown model %r" % model)
 
-        # Re-decode the source volume each run.
+# Re-decode the source volume each run.
         try:
             raw = gunzip_bytes(cached["payload"])
-            src = decode_raw(raw, cached["metadata"])   # (C,Z,Y,X)
+            src = decode_raw(raw, cached["metadata"])   # (C, X, Y, Z)
         except Exception as exc:  # noqa: BLE001
             raise HTTPException(status_code=400, detail="failed to decode source: %s" % exc)
+
+        # ITK-layout uploads (from LaTIM-SNAP) are stored in a different voxel
+        # axis order than the layout the model was trained on (MONAI/nibabel).
+        # Reorder to the model layout exactly as the offline path does:
+        #   model[X,Y,Z] = raw.reshape(Z,Y,X).transpose(2,1,0)
+        if cached["metadata"].get("layout") == "itk":
+            d0, d1, d2 = src.shape[1], src.shape[2], src.shape[3]
+            src = src[0].reshape(d2, d1, d0).transpose(2, 1, 0)[None].copy()
 
         job = state.jobs.create(session_id, model)
 
