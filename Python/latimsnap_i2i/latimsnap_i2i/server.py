@@ -19,7 +19,7 @@ from latimsnap_i2i.model_loader import ModelRunner, load_model_specs
 
 log = logging.getLogger("latimsnap_i2i.server")
 
-SOFT_VERSION = "0.1.0"
+SOFT_VERSION = "0.3.0"
 CONTRACT_VERSION = 1
 
 
@@ -49,6 +49,7 @@ def create_app(models_dir=None):
         return {
             "status": "ok",
             "version": SOFT_VERSION,
+            "engine": "monai-window-v2",
             "contract_version": CONTRACT_VERSION,
             "type": "image-to-image",
             "models": models,

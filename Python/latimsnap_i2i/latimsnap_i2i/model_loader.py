@@ -270,44 +270,6 @@ def _invoke(runner, input_name, batched_np):
     return np.asarray(runner.run(None, {input_name: batched_np})[0], dtype=np.float32)
 
 
-def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap):
-    """2D sliding-window inference with gaussian blending + replicate padding.
-
-    All windows of the slice are collected and run in a **single batched**
-    inference call, which is dramatically faster on GPU than one small forward
-    per window. ``im``: (1, C, H, W). Returns (1, OC, H, W).
-    """
-    c = im.shape[1]
-    h, w = im.shape[2], im.shape[3]
-    acc = np.zeros((1, output_channels, h, w), dtype=np.float32)
-    wgt = np.zeros((1, 1, h, w), dtype=np.float32)
-
-    w2 = _gauss2d(ph, pw)
-    step_h = max(1, int(ph * (1.0 - overlap)))
-    step_w = max(1, int(pw * (1.0 - overlap)))
-
-    windows = []
-    coords = []
-    for yy in range(0, h, step_h):
-        for xx in range(0, w, step_w):
-            sy = np.clip(np.arange(yy, yy + ph), 0, h - 1)
-            sx = np.clip(np.arange(xx, xx + pw), 0, w - 1)
-            windows.append(im[:, :, sy][:, :, :, sx])  # (1, C, ph, pw)
-            coords.append((yy, xx))
-
-    if windows:
-        batched = np.concatenate(windows, axis=0)     # (N, C, ph, pw)
-        outs = _invoke(runner, input_name, batched)    # (N, OC, ph, pw)
-        for n, (yy, xx) in enumerate(coords):
-            out = outs[n]                              # (OC, ph, pw)
-            hh = min(ph, h - yy)
-            ww = min(pw, w - xx)
-            wpart = w2[:hh, :ww][None, None]
-            acc[:, :, yy:yy + hh, xx:xx + ww] += out[None, :, :hh, :ww] * wpart
-            wgt[:, :, yy:yy + hh, xx:xx + ww] += wpart
-    return acc / np.maximum(1e-8, wgt)
-
-
 def _gauss2d(ph, pw, sigma_scale=0.5):
     """MONAI-style gaussian importance map.
 
