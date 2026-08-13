@@ -192,6 +192,15 @@ def create_app(models_dir=None):
             # Ensure at least one channel if the model returned a bare scalar vol.
             if outp.ndim == 3:
                 outp = outp[None, ...]
+            try:  # diagnostic: dump the result the model produced
+                import nibabel as nib  # noqa: PLC0415
+                nii = nib.Nifti1Image(np.ascontiguousarray(np.asarray(outp[0])),
+                                      np.eye(4))
+                nii.header.set_zooms(tuple(cached["metadata"].get("spacing", (1, 1, 1))))
+                os.makedirs("/tmp/opencode", exist_ok=True)
+                nib.save(nii, "/tmp/opencode/last_result.nii.gz")
+            except Exception:  # noqa: BLE001
+                pass
             # Carry the source geometry (spacing/origin/direction) so the
             # result registers in the same space as the source image.
             return encode_result(outp, base_metadata=cached["metadata"])
