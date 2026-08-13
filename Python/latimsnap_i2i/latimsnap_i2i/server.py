@@ -34,6 +34,7 @@ class I2IState:
         self.jobs = JobManager()
         self.model_registry = {}
         self.registry_lock = threading.Lock()
+        self.last_upload = None    # debug: description of the last uploaded source
         load_model_specs(models_dir, self.model_registry)
 
 
@@ -54,6 +55,11 @@ def create_app(models_dir=None):
             "type": "image-to-image",
             "models": models,
         }
+
+    @app.get("/debug/upload")
+    def debug_upload():
+        """Describe the most recently uploaded source image (for diagnostics)."""
+        return state.last_upload or {"error": "no upload recorded yet"}
 
     @app.get("/start_session")
     def start_session():
@@ -98,6 +104,28 @@ def create_app(models_dir=None):
             "metadata": meta,
             "checksum": hashlib.md5(data).hexdigest(),
         }
+        # Debug: describe the decoded source so the uploaded image can be
+        # compared to the reference (e.g. nibabel) offline.
+        try:
+            src = decode_raw(gunzip_bytes(data), meta)
+            arr = src[0]
+            state.last_upload = {
+                "session_id": session_id,
+                "shape": [int(s) for s in arr.shape],
+                "spacing": meta.get("spacing"),
+                "origin": meta.get("origin"),
+                "direction": meta.get("direction"),
+                "component_type": meta.get("component_type"),
+                "min": float(arr.min()),
+                "max": float(arr.max()),
+                "mean": float(arr.mean()),
+                "p1": float(np.percentile(arr, 1)),
+                "p50": float(np.percentile(arr, 50)),
+                "p99": float(np.percentile(arr, 99)),
+                "nan": int(np.isnan(arr).sum()),
+            }
+        except Exception as exc:  # noqa: BLE001
+            state.last_upload = {"error": str(exc)}
         return {"ok": True, "checksum": state.uploads[session_id]["checksum"]}
 
     @app.api_route("/run_transfer/{session_id}", methods=["GET", "POST"])

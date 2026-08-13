@@ -286,6 +286,9 @@ public:
                               ImageWrapperBase *overlay,
                               bool inherit_colormap);
 
+  /** Force auto-contrast on a derived overlay (used by the I2I result path). */
+  void AutoContrastDerivedOverlay(ImageWrapperBase *layer) { this->AutoContrastLayerOnLoad(layer); }
+
   /**
    * Remove a specific overlay
    */

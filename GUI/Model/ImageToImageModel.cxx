@@ -337,6 +337,52 @@ ImageToImageModel::AddOverlayFromResult(const std::string &json, ImageWrapperBas
     return;
     }
 
+  auto *driver = m_ParentModel->GetDriver();
+
+  // Single-component results are wrapped as a SCALAR image so ITK-SNAP renders
+  // them like a normal grey CT with automatic contrast (a VectorImage overlay
+  // goes through the multi-channel display policy and does not get the
+  // auto-contrast treatment, which looks wrong on HU data).
+  if(components == 1)
+    {
+    typedef itk::Image<float, 4> ScalarImg4DType;
+    ScalarImg4DType::Pointer img4s = ScalarImg4DType::New();
+    typename ScalarImg4DType::RegionType region;
+    region.SetSize(0, dims[0]);
+    region.SetSize(1, dims[1]);
+    region.SetSize(2, dims[2]);
+    region.SetSize(3, 1);
+    region.SetIndex(3, 0);
+
+    typename ScalarImg4DType::SpacingType spc4;
+    typename ScalarImg4DType::PointType org4;
+    typename ScalarImg4DType::DirectionType dir4;
+    for(int i = 0; i < 4; i++)
+      {
+      for(int j = 0; j < 4; j++)
+        dir4(i, j) = (i < 3 && j < 3) ? direction[i * 3 + j] : (i == j ? 1.0 : 0.0);
+      spc4[i] = i < 3 ? spacing[i] : 1.0;
+      org4[i] = i < 3 ? origin[i] : 0.0;
+      }
+    img4s->SetRegions(region);
+    img4s->SetSpacing(spc4);
+    img4s->SetOrigin(org4);
+    img4s->SetDirection(dir4);
+    img4s->Allocate();
+    memcpy(img4s->GetPixelContainer()->GetBufferPointer(), raw.data(), n_floats * sizeof(float));
+
+    typedef AnatomicScalarImageWrapperTraits<float> ScalarTraits;
+    SmartPtr<ScalarTraits::WrapperType> wrapper = ScalarTraits::WrapperType::New();
+    wrapper->InitializeToWrapper(source, img4s);
+    wrapper->SetDefaultNickname("transferred");
+    driver->AddDerivedOverlayImage(source, wrapper, false);
+    // Opaque + normal CT contrast, like opening the result as an image file.
+    wrapper->SetAlpha(1.0);
+    driver->AutoContrastDerivedOverlay(wrapper);
+    return;
+    }
+
+  // Multi-component results keep the vector path.
   // Build a 4D vector image (single time point) that holds the raw result.
   typedef itk::VectorImage<float, 4> Img4DType;
   Img4DType::Pointer img4 = Img4DType::New();
@@ -373,7 +419,7 @@ ImageToImageModel::AddOverlayFromResult(const std::string &json, ImageWrapperBas
   SmartPtr<WrapperType> wrapper = WrapperType::New();
   wrapper->InitializeToWrapper(source, img4);
   wrapper->SetDefaultNickname("transferred");
-  m_ParentModel->GetDriver()->AddDerivedOverlayImage(source, wrapper, false);
+  driver->AddDerivedOverlayImage(source, wrapper, false);
 }
 
 bool
