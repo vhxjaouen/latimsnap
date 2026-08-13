@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# LaTIM-SNAP image-to-image server launcher.
+# Sets LD_LIBRARY_PATH to the venv's bundled NVIDIA CUDA libraries before
+# exec'ing python, so onnxruntime can use CUDAExecutionProvider without a
+# system CUDA toolkit. Pass through any latimsnap_i2i CLI args.
+set -euo pipefail
+
+REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+VENV="$REPO/.venv"
+PY="$VENV/bin/python"
+
+# Collect the nvidia/*/lib dirs shipped inside the venv (CUDA runtime, cuDNN...).
+LIBS=""
+for d in "$VENV"/lib/python*/site-packages/nvidia/*/lib; do
+  [ -d "$d" ] && LIBS="${LIBS:+$LIBS:}$d"
+done
+if [ -n "$LIBS" ]; then
+  export LD_LIBRARY_PATH="${LIBS}:${LD_LIBRARY_PATH:-}"
+fi
+
+exec "$PY" -m latimsnap_i2i "$@"

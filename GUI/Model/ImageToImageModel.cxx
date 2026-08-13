@@ -149,9 +149,19 @@ ImageToImageModel::StartTransfer(const std::string &model_id, std::string &error
 
     if(!cli.Get("run_transfer/%s?model=%s", m_ActiveSession.c_str(), model_id.c_str()))
       {
-      error_out = cli.GetErrorString();
-      this->Reset();
-      return false;
+      // The server may have restarted, invalidating the cached session id.
+      // Retry once with a fresh session before giving up.
+      std::string first_err = cli.GetErrorString();
+      m_ActiveSession.clear();
+      m_UploadedLayer = std::make_tuple(-1, -1);
+      if(!EnsureSessionAndUpload(cli, error_out))
+        return false;
+      if(!cli.Get("run_transfer/%s?model=%s", m_ActiveSession.c_str(), model_id.c_str()))
+        {
+        error_out = cli.GetErrorString();
+        this->Reset();
+        return false;
+        }
       }
 
     std::string out = cli.GetOutput() ? cli.GetOutput() : "";

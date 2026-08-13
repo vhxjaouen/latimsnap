@@ -32,7 +32,11 @@ def _apply_preprocess(name, cfg, vol):
     if name == "minmax":
         lo = float(cfg.get("min", 0.0))
         hi = float(cfg.get("max", 1.0))
-        return np.clip(vol, lo, hi)
+        b_lo = float(cfg.get("b_min", -1.0))
+        b_hi = float(cfg.get("b_max", 1.0))
+        # Faithful to MONAI ScaleIntensityRanged(min,max -> b_min,b_max, clip=True).
+        a = np.clip(vol, lo, hi)
+        return ((a - lo) / max(hi - lo, 1e-8) * (b_hi - b_lo) + b_lo).astype(np.float32)
     if name == "percentile":
         plo = float(cfg.get("pmin", 0.5))
         phi = float(cfg.get("pmax", 99.5))
@@ -58,10 +62,10 @@ def _apply_postprocess(name, cfg, vol):
     if name == "denorm_minmax":
         lo = float(cfg.get("min", 0.0))
         hi = float(cfg.get("max", 1.0))
-        # Faithful to ScaleIntensityRanged(..., clip=True): clip the model
-        # output to the normalized [-1,1] range before mapping back to
-        # physical units (prevents OOD blow-ups on noisy inputs).
-        return (np.clip(vol, -1.0, 1.0) * (hi - lo) + lo).astype(np.float32)
+        # Faithful to MONAI's inverse ScaleIntensityRanged(..., clip=True):
+        # map the model output from the normalized [-1,1] range back to
+        # physical units [lo, hi].
+        return ((np.clip(vol, -1.0, 1.0) + 1.0) / 2.0 * (hi - lo) + lo).astype(np.float32)
     raise ValueError("unknown postprocessing type %r" % name)
 
 
