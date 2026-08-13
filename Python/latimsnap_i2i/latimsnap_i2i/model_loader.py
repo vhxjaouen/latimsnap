@@ -106,10 +106,13 @@ def _load_onnx(spec):
     # Use CPUExecutionProvider by default (AI engines may use others).
     sess_options = ort.SessionOptions()
     sess_options.log_severity_level = 3
-    providers = ["CPUExecutionProvider"]
-    for p in ort.get_available_providers():
-        if p in ("CUDAExecutionProvider", "TensorrtExecutionProvider"):
-            providers.insert(0, p)
+    # Prefer GPU when available. TensorRT is intentionally not listed (it needs
+    # a separate install and would otherwise print init errors and fall back).
+    if "CUDAExecutionProvider" in ort.get_available_providers():
+        providers = ["CUDAExecutionProvider", "CPUExecutionProvider"]
+    else:
+        providers = ["CPUExecutionProvider"]
+    log.info("onnx inference providers requested: %s", providers)
     sess = ort.InferenceSession(
         model_path, sess_options=sess_options, providers=providers)
     return sess, sess.get_inputs()[0].name
@@ -253,10 +256,22 @@ def _run_patches(runner, input_name, vol, output_channels, progress, spatial):
 # 2D models applied per-slice to a 3D volume (spatial.mode == "slice")
 # ---------------------------------------------------------------------------
 
+def _invoke(runner, input_name, batched_np):
+    """Run a batched ``(N, C, ph, pw)`` tensor and return ``(N, OC, ph, pw)``."""
+    if input_name is None:  # torch runner
+        import torch  # noqa: PLC0415
+        out = runner(torch.from_numpy(np.ascontiguousarray(batched_np, np.float32)))
+        return np.asarray(out.detach().cpu().numpy(), dtype=np.float32)
+    # onnx runner
+    return np.asarray(runner.run(None, {input_name: batched_np})[0], dtype=np.float32)
+
+
 def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap):
     """2D sliding-window inference with gaussian blending + replicate padding.
 
-    ``im``: (1, C, H, W). Returns (1, OC, H, W).
+    All windows of the slice are collected and run in a **single batched**
+    inference call, which is dramatically faster on GPU than one small forward
+    per window. ``im``: (1, C, H, W). Returns (1, OC, H, W).
     """
     c = im.shape[1]
     h, w = im.shape[2], im.shape[3]
@@ -267,16 +282,24 @@ def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap):
     step_h = max(1, int(ph * (1.0 - overlap)))
     step_w = max(1, int(pw * (1.0 - overlap)))
 
+    windows = []
+    coords = []
     for yy in range(0, h, step_h):
         for xx in range(0, w, step_w):
             sy = np.clip(np.arange(yy, yy + ph), 0, h - 1)
             sx = np.clip(np.arange(xx, xx + pw), 0, w - 1)
-            patch = im[:, :, sy][:, :, :, sx]      # (1, C, ph, pw) replicate pad
-            out = _run_once(runner, input_name, patch, output_channels)
+            windows.append(im[:, :, sy][:, :, :, sx])  # (1, C, ph, pw)
+            coords.append((yy, xx))
+
+    if windows:
+        batched = np.concatenate(windows, axis=0)     # (N, C, ph, pw)
+        outs = _invoke(runner, input_name, batched)    # (N, OC, ph, pw)
+        for n, (yy, xx) in enumerate(coords):
+            out = outs[n]                              # (OC, ph, pw)
             hh = min(ph, h - yy)
             ww = min(pw, w - xx)
             wpart = w2[:hh, :ww][None, None]
-            acc[:, :, yy:yy + hh, xx:xx + ww] += out[:, :, :hh, :ww] * wpart
+            acc[:, :, yy:yy + hh, xx:xx + ww] += out[None, :, :hh, :ww] * wpart
             wgt[:, :, yy:yy + hh, xx:xx + ww] += wpart
     return acc / np.maximum(1e-8, wgt)
 

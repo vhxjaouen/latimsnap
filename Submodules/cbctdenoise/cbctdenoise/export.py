@@ -132,7 +132,10 @@ def export_onnx(checkpoint_path: str, onnx_path: str,
     torch.onnx.export(
         gen, dummy, onnx_path,
         input_names=["input"], output_names=["output"],
-        dynamic_axes={"input": {2: "H", 3: "W"}, "output": {2: "H", 3: "W"}},
+        # Dynamic batch (0:N) so the server can run many 2D windows in one
+        # batched inference call; dynamic H/W for any patch size.
+        dynamic_axes={"input": {0: "N", 2: "H", 3: "W"},
+                      "output": {0: "N", 2: "H", 3: "W"}},
         opset_version=opset,
         # Legacy exporter keeps weights inline (single self-contained .onnx).
         dynamo=False,
