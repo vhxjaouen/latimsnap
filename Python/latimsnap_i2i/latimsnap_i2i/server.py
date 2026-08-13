@@ -34,7 +34,6 @@ class I2IState:
         self.jobs = JobManager()
         self.model_registry = {}
         self.registry_lock = threading.Lock()
-        self.last_upload = None    # debug: description of the last uploaded source
         load_model_specs(models_dir, self.model_registry)
 
 
@@ -55,11 +54,6 @@ def create_app(models_dir=None):
             "type": "image-to-image",
             "models": models,
         }
-
-    @app.get("/debug/upload")
-    def debug_upload():
-        """Describe the most recently uploaded source image (for diagnostics)."""
-        return state.last_upload or {"error": "no upload recorded yet"}
 
     @app.get("/start_session")
     def start_session():
@@ -104,48 +98,6 @@ def create_app(models_dir=None):
             "metadata": meta,
             "checksum": hashlib.md5(data).hexdigest(),
         }
-        # Debug: describe the decoded source so the uploaded image can be
-        # compared to the reference (e.g. nibabel) offline.
-        try:
-            src = decode_raw(gunzip_bytes(data), meta)
-            arr = src[0]
-            state.last_upload = {
-                "session_id": session_id,
-                "shape": [int(s) for s in arr.shape],
-                "payload_md5": hashlib.md5(data).hexdigest(),
-                "spacing": meta.get("spacing"),
-                "origin": meta.get("origin"),
-                "direction": meta.get("direction"),
-                "component_type": meta.get("component_type"),
-                "min": float(arr.min()),
-                "max": float(arr.max()),
-                "mean": float(arr.mean()),
-                "p1": float(np.percentile(arr, 1)),
-                "p50": float(np.percentile(arr, 50)),
-                "p99": float(np.percentile(arr, 99)),
-                "nan": int(np.isnan(arr).sum()),
-            }
-        except Exception as exc:  # noqa: BLE001
-            state.last_upload = {"error": str(exc)}
-
-        # Dump the decoded source to disk for diagnostics (compare to the input
-        # NIfTI to check values/orientation actually uploaded by the client).
-        try:
-            src2 = decode_raw(gunzip_bytes(data), meta)
-            vol = src2[0]
-            dst = "/tmp/opencode/last_upload.nii.gz"
-            os.makedirs(os.path.dirname(dst), exist_ok=True)
-            import nibabel as nib
-            affine = np.diag([1.0, 1.0, 1.0, 1.0])
-            sp = meta.get("spacing")
-            if len(sp or []) == 3:
-                for i in range(3):
-                    affine[i, i] = 1.0  # spacing handled below via zooms
-            nii = nib.Nifti1Image(vol, affine)
-            nii.header.set_zooms(tuple(sp[:3]) if len(sp or []) == 3 else (1, 1, 1))
-            nib.save(nii, dst)
-        except Exception:  # noqa: BLE001
-            pass
         return {"ok": True, "checksum": state.uploads[session_id]["checksum"]}
 
     @app.api_route("/run_transfer/{session_id}", methods=["GET", "POST"])
@@ -159,7 +111,7 @@ def create_app(models_dir=None):
         if spec is None:
             raise HTTPException(status_code=404, detail="unknown model %r" % model)
 
-# Re-decode the source volume each run.
+        # Re-decode the source volume each run.
         try:
             raw = gunzip_bytes(cached["payload"])
             src = decode_raw(raw, cached["metadata"])   # (C, X, Y, Z)
@@ -170,17 +122,11 @@ def create_app(models_dir=None):
         # axis order than the layout the model was trained on (MONAI/nibabel).
         # Reorder to the model layout exactly as the offline path does:
         #   model[X,Y,Z] = raw.reshape(Z,Y,X).transpose(2,1,0)
+        converted_input = False
         if cached["metadata"].get("layout") == "itk":
+            converted_input = True
             d0, d1, d2 = src.shape[1], src.shape[2], src.shape[3]
             src = src[0].reshape(d2, d1, d0).transpose(2, 1, 0)[None].copy()
-            try:  # diagnostic: dump the model-layout volume after conversion
-                import nibabel as nib  # noqa: PLC0415
-                nii = nib.Nifti1Image(np.asarray(src[0]), np.diag([1.0, 1.0, 1.0, 1.0]))
-                nii.header.set_zooms((1.0, 1.0, 1.0))
-                os.makedirs("/tmp/opencode", exist_ok=True)
-                nib.save(nii, "/tmp/opencode/last_converted.nii.gz")
-            except Exception:  # noqa: BLE001
-                pass
 
         job = state.jobs.create(session_id, model)
 
@@ -192,15 +138,18 @@ def create_app(models_dir=None):
             # Ensure at least one channel if the model returned a bare scalar vol.
             if outp.ndim == 3:
                 outp = outp[None, ...]
-            try:  # diagnostic: dump the result the model produced
-                import nibabel as nib  # noqa: PLC0415
-                nii = nib.Nifti1Image(np.ascontiguousarray(np.asarray(outp[0])),
-                                      np.eye(4))
-                nii.header.set_zooms(tuple(cached["metadata"].get("spacing", (1, 1, 1))))
-                os.makedirs("/tmp/opencode", exist_ok=True)
-                nib.save(nii, "/tmp/opencode/last_result.nii.gz")
-            except Exception:  # noqa: BLE001
-                pass
+
+            # Return the result in the SAME layout the client (source) uses
+            # (ITK), so wrapping it with the source geometry aligns it. The
+            # model output is in MONAI layout; convert it back per channel:
+            #   out_itk = out_monai.transpose(2,1,0).reshape(X,Y,Z)
+            if converted_input:
+                od0, od1, od2 = outp.shape[1], outp.shape[2], outp.shape[3]
+                outp = np.stack([
+                    np.ascontiguousarray(
+                        o.transpose(2, 1, 0).reshape(od0, od1, od2))
+                    for o in outp
+                ])
             # Carry the source geometry (spacing/origin/direction) so the
             # result registers in the same space as the source image.
             return encode_result(outp, base_metadata=cached["metadata"])
