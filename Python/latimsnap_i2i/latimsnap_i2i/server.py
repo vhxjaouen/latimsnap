@@ -19,7 +19,7 @@ from latimsnap_i2i.model_loader import ModelRunner, load_model_specs
 
 log = logging.getLogger("latimsnap_i2i.server")
 
-SOFT_VERSION = "0.3.0"
+SOFT_VERSION = "0.3.1"
 CONTRACT_VERSION = 1
 
 
@@ -50,7 +50,7 @@ def create_app(models_dir=None):
         return {
             "status": "ok",
             "version": SOFT_VERSION,
-            "engine": "monai-window-v2",
+            "engine": "monai-window-v2-layout",
             "contract_version": CONTRACT_VERSION,
             "type": "image-to-image",
             "models": models,
@@ -173,6 +173,14 @@ def create_app(models_dir=None):
         if cached["metadata"].get("layout") == "itk":
             d0, d1, d2 = src.shape[1], src.shape[2], src.shape[3]
             src = src[0].reshape(d2, d1, d0).transpose(2, 1, 0)[None].copy()
+            try:  # diagnostic: dump the model-layout volume after conversion
+                import nibabel as nib  # noqa: PLC0415
+                nii = nib.Nifti1Image(np.asarray(src[0]), np.diag([1.0, 1.0, 1.0, 1.0]))
+                nii.header.set_zooms((1.0, 1.0, 1.0))
+                os.makedirs("/tmp/opencode", exist_ok=True)
+                nib.save(nii, "/tmp/opencode/last_converted.nii.gz")
+            except Exception:  # noqa: BLE001
+                pass
 
         job = state.jobs.create(session_id, model)
 
