@@ -88,38 +88,60 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
     using FloatImageType = ImageWrapperBase::FloatImageType;
     FloatImageType *src = layer->GetDefaultScalarRepresentation()
                               ->CreateCastToFloatPipeline("I2IExport");
-    src->GetSource()->Update();
-
-    // NOTE (layout fix): the in-memory buffer produced by the wrapper for this
-    // NIfTI is NOT in the same axis order that the model (trained via MONAI /
-    // nibabel) expects. Without a reorder the axial slices fed to the model
-    // come from the wrong plane and the result is wrong, even though offline
-    // reprocessing matches the notebook. We therefore serialize the voxels in
-    // the MONAI layout: out[i0*ny*nz + i1*nz + i2] = src[i2*nx*ny + i1*nx + i0].
-    const size_t nx = src->GetBufferedRegion().GetSize()[0];
-    const size_t ny = src->GetBufferedRegion().GetSize()[1];
-    const size_t nz = src->GetBufferedRegion().GetSize()[2];
-    const size_t nc = src->GetNumberOfComponentsPerPixel();
+    if(src->GetSource())
+      src->GetSource()->Update();
+    src->Update();
 
     RESTMultipartData mpd;
     std::string gzip_buffer;
-    {
-    std::vector<float> reordered(nx * ny * nz * nc);
-    const float *buf = src->GetBufferPointer();
-    for(size_t i0 = 0; i0 < nx; i0++)
-      for(size_t i1 = 0; i1 < ny; i1++)
-        for(size_t i2 = 0; i2 < nz; i2++)
-          {
-          size_t s = (i2 * nx * ny + i1 * nx + i0) * nc;
-          size_t d = (i0 * ny * nz + i1 * nz + i2) * nc;
-          for(size_t c = 0; c < nc; c++)
-            reordered[d + c] = buf[s + c];
-          }
-    dls_utility::gzipDeflate((const char *) reordered.data(),
-                             reordered.size() * sizeof(float), gzip_buffer);
-    }
-    mpd.addBytes("file", "application/gzip", "image.gz",
-                 gzip_buffer.c_str(), gzip_buffer.size());
+
+    // NOTE (layout fix): reorder the source voxels to the MONAI/nibabel layout
+    // the model expects:
+    //   out[i0*ny*nz + i1*nz + i2] = src[i2*nx*ny + i1*nx + i0].
+    // If anything about the buffer is inconsistent we fall back to the plain
+    // EncodeImage upload rather than risk a crash.
+    const size_t nx = src->GetBufferedRegion().GetSize()[0];
+    const size_t ny = src->GetBufferedRegion().GetSize()[1];
+    const size_t nz = src->GetBufferedRegion().GetSize()[2];
+    const size_t n_pix = (size_t) src->GetPixelContainer()->Size();
+    size_t nc = 1;
+    bool ok_reorder = (nx > 0 && ny > 0 && nz > 0 && n_pix % (nx * ny * nz) == 0);
+    if(ok_reorder)
+      {
+      nc = n_pix / (nx * ny * nz);
+      const float *buf = src->GetBufferPointer();
+      if(!buf || n_pix == 0)
+        ok_reorder = false;
+      else
+        {
+        std::vector<float> reordered(n_pix);
+        for(size_t i0 = 0; i0 < nx && ok_reorder; i0++)
+          for(size_t i1 = 0; i1 < ny && ok_reorder; i1++)
+            for(size_t i2 = 0; i2 < nz; i2++)
+              {
+              size_t s = (i2 * nx * ny + i1 * nx + i0) * nc;
+              size_t d = (i0 * ny * nz + i1 * nz + i2) * nc;
+              if(s + nc > n_pix || d + nc > n_pix)
+                { ok_reorder = false; break; }
+              for(size_t c = 0; c < nc; c++)
+                reordered[d + c] = buf[s + c];
+              }
+        if(ok_reorder)
+          dls_utility::gzipDeflate((const char *) reordered.data(),
+                                   reordered.size() * sizeof(float), gzip_buffer);
+        }
+      }
+
+    if(ok_reorder)
+      {
+      mpd.addBytes("file", "application/gzip", "image.gz",
+                   gzip_buffer.c_str(), gzip_buffer.size());
+      }
+    else
+      {
+      // Fallback: send the buffer as-is (no reorder) - never crash.
+      dls_utility::EncodeImage(mpd, src, gzip_buffer);
+      }
 
     Json::Value root(Json::objectValue);
     root["dimensions"] = Json::Value(Json::arrayValue);
