@@ -127,6 +127,9 @@ protected:
   SmartPtr<ConcreteSimpleIntProperty> m_PortModel;
   SmartPtr<ConcreteSimpleBooleanProperty> m_UseSSHTunnelModel;
   SmartPtr<AbstractSimpleStringProperty> m_FullURLModel;
+  // Persistent storage of the user-typed full URL (e.g. "http://host:port");
+  // parsed into the Hostname/Port models by SetFullURLValue.
+  SmartPtr<ConcreteSimpleStringProperty> m_StoredFullURLModel;
   SmartPtr<AbstractSimpleStringProperty> m_DisplayNameModel;
   SmartPtr<ConcreteSimpleStringProperty> m_SSHUsernameModel;
   SmartPtr<ConcreteSimpleStringProperty> m_SSHPrivateKeyFileModel;
@@ -138,6 +141,7 @@ protected:
   SmartPtr<PythonExeModelType> m_LocalPythonExePathModel;
 
   bool GetFullURLValue(std::string &value);
+  void SetFullURLValue(std::string value);
   bool GetDisplayNameValue(std::string &value);
 
   bool GetLocalPythonExePathValueAndRange(std::string &value, PythonExeDomain *domain);

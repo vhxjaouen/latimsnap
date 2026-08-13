@@ -228,12 +228,10 @@ DeepLearningServerEditor::SetModel(DeepLearningServerPropertiesModel *model)
   makeCoupling((QComboBox *) ui->inServerType, m_Model->GetTaskTypeModel());
   makeRadioGroupCoupling(ui->radioConnRemote, ui->radioConnLocal, m_Model->GetRemoteConnectionModel());
   makeCoupling(ui->inNickname, m_Model->GetNicknameModel());
-  makeCoupling(ui->inHostname, m_Model->GetHostnameModel());
-  makeCoupling(ui->inPort, m_Model->GetPortModel());
+  makeCoupling(ui->inFullURL, m_Model->GetFullURLModel());
   makeCoupling(ui->chkTunnel, m_Model->GetUseSSHTunnelModel());
   makeCoupling(ui->inSSHUsername, m_Model->GetSSHUsernameModel());
   makeCoupling(ui->inSSHPrivateKey, m_Model->GetSSHPrivateKeyFileModel());
-  makeCoupling(ui->outURL, m_Model->GetFullURLModel());
   makeCoupling(ui->inPythonVEnv, m_Model->GetLocalPythonVEnvPathModel());
   makeCoupling(ui->inPythonExe, m_Model->GetLocalPythonExePathModel());
   makeCoupling(ui->chkNoSSLVerify, m_Model->GetNoSSLVerifyModel());

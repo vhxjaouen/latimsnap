@@ -834,20 +834,61 @@ DeepLearningServerPropertiesModel::AddKnownLocalPythonExePath(const std::string 
 bool
 DeepLearningServerPropertiesModel::GetFullURLValue(std::string &value)
 {
+  // Prefer the user-typed URL verbatim (preserves scheme e.g. https).
+  if(!m_StoredFullURLModel->GetValue().empty())
+    {
+    value = m_StoredFullURLModel->GetValue();
+    return true;
+    }
+
+  // Fallback: compose from host/port (legacy servers without a stored URL).
   if(GetHostname().size() > 0 && GetPort() > 0)
-  {
+    {
     std::string method = GetPort() == 443 ? "https" : "http";
     char buffer[256];
     snprintf(buffer, 256, "%s://%s:%d", method.c_str(), GetHostname().c_str(), GetPort());
     value = buffer;
     return true;
-  }
+    }
   else
-  {
+    {
     value = "";
     return false;
-  }
+    }
 }
+
+void
+DeepLearningServerPropertiesModel::SetFullURLValue(std::string value)
+{
+  // Keep the verbatim URL, adding http:// if the user omitted a scheme.
+  std::string url = value;
+  if(url.find("://") == std::string::npos && !url.empty())
+    url = "http://" + url;
+  m_StoredFullURLModel->SetValue(url);
+
+  // Parse "http://host:port" (or "host:port") into Hostname + Port so that
+  // SSH tunneling (which needs the target host/port) keeps working.
+  std::string host = url;
+  std::string port_str;
+  size_t scheme = host.find("://");
+  if(scheme != std::string::npos)
+    host = host.substr(scheme + 3);
+  size_t colon = host.rfind(':');
+  if(colon != std::string::npos)
+    {
+    port_str = host.substr(colon + 1);
+    host = host.substr(0, colon);
+    }
+  this->SetHostname(host);
+  int port = 0;
+  if(!port_str.empty())
+    {
+    try { port = std::stoi(port_str); }
+    catch(...) { port = 0; }
+    }
+  this->SetPort(port);
+}
+
 
 bool
 DeepLearningServerPropertiesModel::GetDisplayNameValue(std::string &value)
@@ -935,9 +976,10 @@ DeepLearningServerPropertiesModel::DeepLearningServerPropertiesModel()
   m_LocalPythonVEnvPathModel = NewSimpleProperty("LocalPythonVEnvPath", std::string());
   m_NoSSLVerifyModel = NewSimpleProperty("NoSSLVerify", false);
 
-  m_FullURLModel = wrapGetterSetterPairAsProperty(this, &Self::GetFullURLValue);  
-  m_FullURLModel->RebroadcastFromSourceProperty(m_HostnameModel);
-  m_FullURLModel->RebroadcastFromSourceProperty(m_PortModel);
+  m_StoredFullURLModel = NewSimpleProperty("FullURL", std::string());
+
+  m_FullURLModel = wrapGetterSetterPairAsProperty(this, &Self::GetFullURLValue,
+                                                  &Self::SetFullURLValue);
 
   m_DisplayNameModel = wrapGetterSetterPairAsProperty(this, &Self::GetDisplayNameValue);
   m_DisplayNameModel->RebroadcastFromSourceProperty(m_HostnameModel);
