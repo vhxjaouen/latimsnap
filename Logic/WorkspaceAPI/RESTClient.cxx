@@ -275,7 +275,18 @@ RESTClient<ServerTraits>::PostVA(const char *rel_url, const char *post_string, s
 
   // The POST data
   if (post_string)
+  {
+    // Clear any prior total-GET state so this handle issues a real POST.
+    curl_easy_setopt(m_Curl, CURLOPT_HTTPGET, 0L);
     curl_easy_setopt(m_Curl, CURLOPT_POSTFIELDS, post_filled.c_str());
+  }
+  else
+  {
+    // A GET with no body. The curl handle is reused across calls and may have
+    // been left in POST/multipart mode by a previous request (e.g. upload_raw),
+    // so force it back to GET, otherwise the server returns 405.
+    curl_easy_setopt(m_Curl, CURLOPT_HTTPGET, 1L);
+  }
 
   // Capture output
   m_Output.clear();

@@ -99,7 +99,7 @@ def create_app(models_dir=None):
         }
         return {"ok": True, "checksum": state.uploads[session_id]["checksum"]}
 
-    @app.get("/run_transfer/{session_id}")
+    @app.api_route("/run_transfer/{session_id}", methods=["GET", "POST"])
     def run_transfer(session_id: str, model: str = Query(...)):
         _require_session(session_id)
         cached = state.uploads.get(session_id)
@@ -134,14 +134,14 @@ def create_app(models_dir=None):
         state.jobs.submit(job, _work)
         return {"job_id": job.job_id}
 
-    @app.get("/transfer_progress/{session_id}")
+    @app.api_route("/transfer_progress/{session_id}", methods=["GET", "POST"])
     def transfer_progress(session_id: str, job: str):
         snap = state.jobs.snapshot(job)
         if snap is None:
             raise HTTPException(status_code=404, detail="unknown job")
         return snap
 
-    @app.get("/transfer_result/{session_id}")
+    @app.api_route("/transfer_result/{session_id}", methods=["GET", "POST"])
     def transfer_result(session_id: str, job: str):
         snap = state.jobs.snapshot(job)
         if snap is None:
