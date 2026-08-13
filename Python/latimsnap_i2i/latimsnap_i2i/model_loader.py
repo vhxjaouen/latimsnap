@@ -308,12 +308,80 @@ def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap):
     return acc / np.maximum(1e-8, wgt)
 
 
-def _gauss2d(ph, pw):
+def _gauss2d(ph, pw, sigma_scale=0.5):
+    """MONAI-style gaussian importance map.
+
+    ``sigma = size * sigma_scale`` per axis and the map is clamped to a small
+    positive floor (>=1e-3) so overlapping windows always get non-zero weight
+    (faithful to monai.compute_importance_map).
+    """
     if ph <= 1 or pw <= 1:
         return np.ones((ph, pw), dtype=np.float32)
-    gy = np.exp(-((np.arange(ph) - (ph - 1) / 2.0) ** 2) / (2 * ((ph / 4.0) ** 2)))
-    gx = np.exp(-((np.arange(pw) - (pw - 1) / 2.0) ** 2) / (2 * ((pw / 4.0) ** 2)))
-    return np.outer(gy, gx).astype(np.float32)
+
+    def g(n):
+        x = np.arange(-(n - 1) / 2.0, (n - 1) / 2.0 + 1, dtype=np.float32)
+        sig = n * sigma_scale
+        return np.exp(x * x / (-2.0 * sig * sig))
+
+    w = np.outer(g(ph), g(pw)).astype(np.float32)
+    mn = max(float(w.min()), 1e-3)
+    return np.clip(w, mn, None)
+
+
+def _monai_starts(image_size, patch_size, scan_interval):
+    """Window start indices exactly as MONAI's dense_patch_slices.
+
+    The last window is pulled back so it ends at the image edge (no overshoot,
+    hence no padding/replication needed).
+    """
+    starts = []
+    for dim in range(len(image_size)):
+        n = 1 if scan_interval[dim] == 0 else int(np.ceil(image_size[dim] / scan_interval[dim]))
+        if scan_interval[dim] != 0:
+            sd = next((k for k in range(n)
+                       if k * scan_interval[dim] + patch_size[dim] >= image_size[dim]), None)
+            n = (sd + 1) if sd is not None else 1
+        ds = []
+        for idx in range(n):
+            s = idx * scan_interval[dim]
+            s -= max(s + patch_size[dim] - image_size[dim], 0)
+            ds.append(s)
+        starts.append(ds)
+    return starts
+
+
+def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap, sigma_scale=0.5):
+    """2D sliding-window inference, MONAI-compatible.
+
+    Window starts match MONAI's dense_patch_slices (last window snug to the
+    edge, windows always fit inside the image - no replicate padding). All
+    windows of the slice run in one batched call for GPU speed.
+
+    ``im``: (1, C, H, W). Returns (1, OC, H, W).
+    """
+    h, w = im.shape[2], im.shape[3]
+    acc = np.zeros((1, output_channels, h, w), dtype=np.float32)
+    wgt = np.zeros((1, 1, h, w), dtype=np.float32)
+
+    w2 = _gauss2d(ph, pw, sigma_scale)[None, None]
+    step_h = max(1, int(ph * (1.0 - overlap)))
+    step_w = max(1, int(pw * (1.0 - overlap)))
+    starts_h, starts_w = _monai_starts([h, w], [ph, pw], [step_h, step_w])
+
+    windows = []
+    coords = []
+    for yy in starts_h:
+        for xx in starts_w:
+            windows.append(im[:, :, yy:yy + ph, xx:xx + pw])  # always inside
+            coords.append((yy, xx))
+
+    if windows:
+        batched = np.concatenate(windows, axis=0)   # (N, C, ph, pw)
+        outs = _invoke(runner, input_name, batched)  # (N, OC, ph, pw)
+        for n, (yy, xx) in enumerate(coords):
+            acc[:, :, yy:yy + ph, xx:xx + pw] += outs[n][None] * w2
+            wgt[:, :, yy:yy + ph, xx:xx + pw] += w2
+    return acc / np.maximum(1e-8, wgt)
 
 
 def _run_plane(runner, input_name, vol, output, output_channels, spatial, plane,
@@ -321,23 +389,24 @@ def _run_plane(runner, input_name, vol, output, output_channels, spatial, plane,
     """Fill ``output`` (1, OC, X, Y, Z) by running the 2D model per slice."""
     ph, pw = spatial.get("patch_size", [256, 256])[:2]
     overlap = float(spatial.get("overlap", 0.0))
+    sigma_scale = float(spatial.get("sigma_scale", 0.5))
     c = vol.shape[1]
     if plane == "axial":
         n = vol.shape[4]
         for i in range(n):
-            out = _sw2d(runner, input_name, vol[:, :, :, :, i], output_channels, ph, pw, overlap)
+            out = _sw2d(runner, input_name, vol[:, :, :, :, i], output_channels, ph, pw, overlap, sigma_scale)
             output[:, :, :, :, i] = out
             progress(pstart + (pend - pstart) * (i + 1) / n)
     elif plane == "coronal":
         n = vol.shape[3]
         for i in range(n):
-            out = _sw2d(runner, input_name, vol[:, :, :, i, :], output_channels, ph, pw, overlap)
+            out = _sw2d(runner, input_name, vol[:, :, :, i, :], output_channels, ph, pw, overlap, sigma_scale)
             output[:, :, :, i, :] = out
             progress(pstart + (pend - pstart) * (i + 1) / n)
     elif plane == "sagittal":
         n = vol.shape[2]
         for i in range(n):
-            out = _sw2d(runner, input_name, vol[:, :, i, :, :], output_channels, ph, pw, overlap)
+            out = _sw2d(runner, input_name, vol[:, :, i, :, :], output_channels, ph, pw, overlap, sigma_scale)
             output[:, :, i, :, :] = out
             progress(pstart + (pend - pstart) * (i + 1) / n)
     else:
