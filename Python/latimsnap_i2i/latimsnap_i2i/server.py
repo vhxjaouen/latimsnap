@@ -112,6 +112,7 @@ def create_app(models_dir=None):
             state.last_upload = {
                 "session_id": session_id,
                 "shape": [int(s) for s in arr.shape],
+                "payload_md5": hashlib.md5(data).hexdigest(),
                 "spacing": meta.get("spacing"),
                 "origin": meta.get("origin"),
                 "direction": meta.get("direction"),
@@ -126,6 +127,25 @@ def create_app(models_dir=None):
             }
         except Exception as exc:  # noqa: BLE001
             state.last_upload = {"error": str(exc)}
+
+        # Dump the decoded source to disk for diagnostics (compare to the input
+        # NIfTI to check values/orientation actually uploaded by the client).
+        try:
+            src2 = decode_raw(gunzip_bytes(data), meta)
+            vol = src2[0]
+            dst = "/tmp/opencode/last_upload.nii.gz"
+            os.makedirs(os.path.dirname(dst), exist_ok=True)
+            import nibabel as nib
+            affine = np.diag([1.0, 1.0, 1.0, 1.0])
+            sp = meta.get("spacing")
+            if len(sp or []) == 3:
+                for i in range(3):
+                    affine[i, i] = 1.0  # spacing handled below via zooms
+            nii = nib.Nifti1Image(vol, affine)
+            nii.header.set_zooms(tuple(sp[:3]) if len(sp or []) == 3 else (1, 1, 1))
+            nib.save(nii, dst)
+        except Exception:  # noqa: BLE001
+            pass
         return {"ok": True, "checksum": state.uploads[session_id]["checksum"]}
 
     @app.api_route("/run_transfer/{session_id}", methods=["GET", "POST"])

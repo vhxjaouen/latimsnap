@@ -90,9 +90,55 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
                               ->CreateCastToFloatPipeline("I2IExport");
     src->GetSource()->Update();
 
+    // NOTE (layout fix): the in-memory buffer produced by the wrapper for this
+    // NIfTI is NOT in the same axis order that the model (trained via MONAI /
+    // nibabel) expects. Without a reorder the axial slices fed to the model
+    // come from the wrong plane and the result is wrong, even though offline
+    // reprocessing matches the notebook. We therefore serialize the voxels in
+    // the MONAI layout: out[i0*ny*nz + i1*nz + i2] = src[i2*nx*ny + i1*nx + i0].
+    const size_t nx = src->GetBufferedRegion().GetSize()[0];
+    const size_t ny = src->GetBufferedRegion().GetSize()[1];
+    const size_t nz = src->GetBufferedRegion().GetSize()[2];
+    const size_t nc = src->GetNumberOfComponentsPerPixel();
+
     RESTMultipartData mpd;
     std::string gzip_buffer;
-    dls_utility::EncodeImage(mpd, src, gzip_buffer);
+    {
+    std::vector<float> reordered(nx * ny * nz * nc);
+    const float *buf = src->GetBufferPointer();
+    for(size_t i0 = 0; i0 < nx; i0++)
+      for(size_t i1 = 0; i1 < ny; i1++)
+        for(size_t i2 = 0; i2 < nz; i2++)
+          {
+          size_t s = (i2 * nx * ny + i1 * nx + i0) * nc;
+          size_t d = (i0 * ny * nz + i1 * nz + i2) * nc;
+          for(size_t c = 0; c < nc; c++)
+            reordered[d + c] = buf[s + c];
+          }
+    dls_utility::gzipDeflate((const char *) reordered.data(),
+                             reordered.size() * sizeof(float), gzip_buffer);
+    }
+    mpd.addBytes("file", "application/gzip", "image.gz",
+                 gzip_buffer.c_str(), gzip_buffer.size());
+
+    Json::Value root(Json::objectValue);
+    root["dimensions"] = Json::Value(Json::arrayValue);
+    root["spacing"] = Json::Value(Json::arrayValue);
+    root["origin"] = Json::Value(Json::arrayValue);
+    root["direction"] = Json::Value(Json::arrayValue);
+    root["components_per_pixel"] = Json::Value((int) nc);
+    root["component_type"] = "float32";
+    for(unsigned int i = 0; i < 3; i++)
+      {
+      root["dimensions"].append((Json::Value::Int64) src->GetBufferedRegion().GetSize()[i]);
+      root["origin"].append((double) src->GetOrigin()[i]);
+      root["spacing"].append((double) src->GetSpacing()[i]);
+      for(unsigned int j = 0; j < 3; j++)
+        root["direction"].append((double) src->GetDirection()(i, j));
+      }
+    std::ostringstream oss;
+    oss << root;
+    mpd.addString("metadata", "application/json", oss.str());
 
     auto *pdel = m_ParentModel->GetProgressReporterDelegate();
     pdel->Show("Uploading image to server...");
