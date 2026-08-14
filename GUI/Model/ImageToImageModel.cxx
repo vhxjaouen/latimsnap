@@ -146,6 +146,9 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
       pdel->Hide();
       layer->ReleaseInternalPipeline("I2IExport");
       accum->UnregisterAllSources();
+      // The accumulator (and its generic progress source) is being torn down;
+      // the client must not reference it on any later request.
+      cli.ClearProgressCallback();
       error_out = std::string("Error uploading source image to I2I server: ")
                   + cli.GetErrorString();
       return false;
@@ -154,6 +157,9 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
     pdel->Hide();
     layer->ReleaseInternalPipeline("I2IExport");
     accum->UnregisterAllSources();
+    // The accumulator and its progress source are now destroyed - make sure
+    // the client no longer points at them before it is reused below.
+    cli.ClearProgressCallback();
     m_UploadedLayer = sel;
     }
 

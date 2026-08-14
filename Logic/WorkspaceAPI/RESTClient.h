@@ -195,6 +195,14 @@ public:
    */
   void SetProgressCallback(void *cb_data, ProgressCallbackFunction fn);
 
+  /**
+   * Clear the progress callback. This must be done once the callback data
+   * (typically an AllPurposeProgressAccumulator) goes out of scope; otherwise
+   * subsequent requests on this client would re-arm CURLOPT_PROGRESSFUNCTION
+   * with a dangling pointer and crash.
+   */
+  void ClearProgressCallback();
+
   bool UploadFile(const char *rel_url, const char *filename,
     std::map<std::string,std::string> extra_fields, ...);
 

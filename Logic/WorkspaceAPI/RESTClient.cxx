@@ -334,6 +334,18 @@ RESTClient<ServerTraits>::SetProgressCallback(void *cb_data, ProgressCallbackFun
   m_CallbackInfo = make_pair(cb_data, fn);
 }
 
+template <typename ServerTraits>
+void
+RESTClient<ServerTraits>::ClearProgressCallback()
+{
+  m_CallbackInfo = std::make_pair(static_cast<void *>(nullptr),
+                                  static_cast<ProgressCallbackFunction>(nullptr));
+  // Stop curl from invoking the (now stale) progress callback on later requests
+  curl_easy_setopt(m_Curl, CURLOPT_NOPROGRESS, 1L);
+  curl_easy_setopt(m_Curl, CURLOPT_PROGRESSFUNCTION, nullptr);
+  curl_easy_setopt(m_Curl, CURLOPT_PROGRESSDATA, nullptr);
+}
+
 template <class ServerTraits>
 bool
 RESTClient<ServerTraits>::PostMultipart(const char *rel_url, RESTMultipartData *data, ...)

@@ -583,6 +583,9 @@ DeepLearningSegmentationModel::SetSourceImage(ImageWrapperBase *layer)
     // Free wasted memory
     layer->ReleaseInternalPipeline("DLSExport");
     accum->UnregisterAllSources();
+    // The accumulator (and its progress source) is now destroyed; the client
+    // must not re-arm the progress callback on later requests.
+    cli.ClearProgressCallback();
 
     std::cout << "Pipeline time: "
               << std::chrono::duration_cast<std::chrono::milliseconds>(t1 - t0).count() << " ms "
