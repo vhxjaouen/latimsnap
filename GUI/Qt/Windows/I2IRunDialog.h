@@ -37,6 +37,9 @@ private slots:
 private:
   void PopulateLayers();
   void PopulateModels();
+  void RefreshAxisState();
+  std::string GetSelectedAxis() const;
+  std::string GetSelectedFusion() const;
   void SetBusy(bool busy);
   void ShowError(const QString &message);
 

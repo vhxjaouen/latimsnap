@@ -5,6 +5,7 @@
 #include "PropertyModel.h"
 #include "Registry.h"
 #include <mutex>
+#include <map>
 
 class GlobalUIModel;
 class ImageWrapperBase;
@@ -25,7 +26,7 @@ template <typename TPixel, unsigned int Dimension> class VectorImage;
  * MR -> CT synthesis) that becomes an overlay - not a segmentation label.
  *
  * Flow:
- *   StartTransfer(model_id)     -> ensure session + upload source, start job
+ *   StartTransfer(model_id, axis) -> ensure session + upload source, start job
  *   PollTransfer()              -> update progress; returns RUNNING/DONE/ERROR
  *   FetchResult()               -> download decoded image, add as overlay
  */
@@ -56,8 +57,16 @@ public:
   void SetSourceImage(ImageWrapperBase *layer);
   ImageWrapperBase *GetSourceImage() const { return m_SourceImage; }
 
-  /** Start a transfer for the given model spec id. */
-  bool StartTransfer(const std::string &model_id, std::string &error_out);
+  /** Start a transfer for the given model spec id.
+   *
+   *  ``axis`` selects which plane(s) a 2D model is applied to: "axial",
+   *  "sagittal", "frontal" (coronal), "all" (3-axis ensemble), or a
+   *  comma-separated list. Pass an empty string to use the model's default.
+   *
+   *  ``fusion`` selects how multiple planes are combined ("average"/"median"/
+   *  "fba"); ignored for a single axis or 3D models. Pass empty for default. */
+  bool StartTransfer(const std::string &model_id, const std::string &axis,
+                     const std::string &fusion, std::string &error_out);
 
   /** Poll the running job once; update progress. See PollResult. */
   int PollTransfer();
@@ -72,6 +81,10 @@ public:
   bool FetchAvailableModels(std::vector<std::string> &out_ids,
                             std::vector<std::string> &out_names);
 
+  /** True if the given model is a 2D model (which supports axis selection).
+   *  Only meaningful after FetchAvailableModels() succeeded. */
+  bool IsModel2D(const std::string &model_id) const;
+
   /** True if a transfer is currently in progress. */
   bool IsTransferInProgress() const { return this->GetIsRunning(); }
 
@@ -83,6 +96,9 @@ protected:
   using RESTSharedDataType = RESTSharedData<DLSServerTraits>;
 
   GlobalUIModel *m_ParentModel;
+
+  // model id -> spatial dim (2 or 3), populated by FetchAvailableModels()
+  std::map<std::string, int> m_ModelDimension;
 
   ImageWrapperBase *m_SourceImage = nullptr;
 

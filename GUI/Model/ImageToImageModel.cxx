@@ -161,7 +161,9 @@ ImageToImageModel::EnsureSessionAndUpload(RESTClientType &cli, std::string &erro
 }
 
 bool
-ImageToImageModel::StartTransfer(const std::string &model_id, std::string &error_out)
+ImageToImageModel::StartTransfer(const std::string &model_id,
+                                 const std::string &axis, const std::string &fusion,
+                                 std::string &error_out)
 {
   std::lock_guard<std::mutex> guard(m_Mutex);
   if(!m_SourceImage)
@@ -185,7 +187,15 @@ ImageToImageModel::StartTransfer(const std::string &model_id, std::string &error
     if(!EnsureSessionAndUpload(cli, error_out))
       return false;
 
-    if(!cli.Get("run_transfer/%s?model=%s", m_ActiveSession.c_str(), model_id.c_str()))
+    // Axis selection for 2D models; passed through to the server's spatial
+    // engine. Empty means use the model's default (so the param is omitted).
+    std::string cmd = "run_transfer/" + m_ActiveSession + "?model=" + model_id;
+    if(!axis.empty())
+      cmd += "&axis=" + axis;
+    if(!fusion.empty())
+      cmd += "&fusion=" + fusion;
+
+    if(!cli.Get(cmd.c_str()))
       {
       // The server may have restarted, invalidating the cached session id.
       // Retry once with a fresh session before giving up.
@@ -194,7 +204,12 @@ ImageToImageModel::StartTransfer(const std::string &model_id, std::string &error
       m_UploadedLayer = std::make_tuple(-1, -1);
       if(!EnsureSessionAndUpload(cli, error_out))
         return false;
-      if(!cli.Get("run_transfer/%s?model=%s", m_ActiveSession.c_str(), model_id.c_str()))
+      std::string retry = "run_transfer/" + m_ActiveSession + "?model=" + model_id;
+      if(!axis.empty())
+        retry += "&axis=" + axis;
+      if(!fusion.empty())
+        retry += "&fusion=" + fusion;
+      if(!cli.Get(retry.c_str()))
         {
         error_out = cli.GetErrorString();
         this->Reset();
@@ -483,10 +498,17 @@ ImageToImageModel::FetchAvailableModels(std::vector<std::string> &out_ids,
     if(!reader->parse(out.data(), out.data() + out.size(),
                       &root, &errs) || !root.isObject() || !root.isMember("models"))
       return false;
+    m_ModelDimension.clear();
     for(auto &m : root["models"])
       {
-      out_ids.push_back(m.get("id", "").asString());
-      out_names.push_back(m.get("name", m.get("id", "").asString()).asString());
+      std::string id = m.get("id", "").asString();
+      out_ids.push_back(id);
+      out_names.push_back(m.get("name", id).asString());
+      // Server reports the inferred dimensionality ("axes_supported" == 2D)
+      // so only 2D models offer the applying-axis choice.
+      int dim = m.get("dim", 0).asInt();
+      bool axes_supported = m.get("axes_supported", false).asBool();
+      m_ModelDimension[id] = axes_supported ? 2 : dim;
       }
     return true;
     }
@@ -494,6 +516,13 @@ ImageToImageModel::FetchAvailableModels(std::vector<std::string> &out_ids,
     {
     return false;
     }
+}
+
+bool
+ImageToImageModel::IsModel2D(const std::string &model_id) const
+{
+  auto it = m_ModelDimension.find(model_id);
+  return it != m_ModelDimension.end() && it->second == 2;
 }
 
 void

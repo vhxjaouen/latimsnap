@@ -87,6 +87,12 @@ class ModelSpec:
         self.output_dtype = spec.get("output_dtype", "float32")
         self.model = spec.get("model") or {}
         self.base_dir = os.path.dirname(os.path.abspath(spec.get("_path", "")))
+        # Spatial dimensionality is deduced from the model file where possible
+        # (ONNX input rank), falling back to the spec's declared "dim".
+        self.dim = _infer_dim_from_model(self)
+        if self.dim is None:
+            self.dim = int(spec.get("dim", 3))
+        self.is_2d = _dim_is_2d(self.dim)
 
 
 def _resolve_path(spec, key):
@@ -96,6 +102,35 @@ def _resolve_path(spec, key):
     if os.path.isabs(p):
         return p
     return os.path.join(spec.base_dir, p)
+
+
+def _infer_dim_from_model(spec):
+    """Infer the network's spatial dimensionality (2D or 3D) from the model file.
+
+    For ONNX we parse the graph structure (cheap - no tensor data) and use the
+    rank of the first spatial input tensor: a rank-4 ``(N, C, H, W)`` input is
+    2D, a rank-5 ``(N, C, D, H, W)`` input is 3D. Returns 2, 3 or None when it
+    cannot be determined.
+    """
+    if spec.framework != "onnx":
+        return None
+    path = _resolve_path(spec, "onnx_path")
+    if not path or not os.path.exists(path):
+        return None
+    try:
+        import onnx  # noqa: PLC0415
+        model = onnx.load(path, load_external_data=False)
+        for inp in model.graph.input:
+            rank = len(inp.type.tensor_type.shape.dim)
+            if rank in (4, 5):
+                return rank - 2
+    except Exception:  # noqa: BLE001
+        pass
+    return None
+
+
+def _dim_is_2d(dim):
+    return dim == 2
 
 
 # ---------------------------------------------------------------------------
@@ -312,6 +347,49 @@ def _monai_starts(image_size, patch_size, scan_interval):
     return starts
 
 
+def _in_plane_axes(planes):
+    """Spatial axes (Z/Y/X => 0/1/2 of the (Z,Y,X) spatial tuple) windowed
+    in-plane per plane."""
+    by_plane = {
+        "axial": {0, 1},     # slices over X; in-plane (Z, Y)
+        "coronal": {0, 2},   # slices over Y; in-plane (Z, X)
+        "sagittal": {1, 2},  # slices over Z; in-plane (Y, X)
+    }
+    axes = set()
+    for p in planes:
+        axes |= by_plane.get(p, set())
+    return axes
+
+
+def _pad_slices_to_patch(vol, spatial, spec, planes):
+    """Pad the trailing edge of any windowed (in-plane) axis < the 2D patch.
+
+    A per-slice (2D) model needs every in-plane axis to be at least patch size
+    for the sliding window to fit. The volume is (C, Z, Y, X); only the axes
+    that are windowed for the active plane(s) are padded (the slice axis is
+    left untouched), filling the appended background slab with the model's
+    background value (e.g. -1000 HU for CT). Returns the padded volume and a
+    ``(z, y, x)`` crop tuple (0 = no padding on that axis).
+    """
+    ph, pw = spatial.get("patch_size", [256, 256])[:2]
+    need = int(max(ph, pw))
+    dims = list(vol.shape[1:])          # [Z, Y, X]
+    pads = [0, 0, 0]
+    for ax in _in_plane_axes(planes):   # ax in {0,1,2} -> spatial index
+        if dims[ax] < need:
+            pads[ax] = need - dims[ax]
+    if not any(pads):
+        return vol, (0, 0, 0)
+    # Background fill = the preprocessing floor (e.g. -1000 HU for CT, 0 for
+    # MR). Overridable per-model via spatial.pad_value.
+    bg = float(spatial.get("pad_value", spec.preprocess.get("min", 0.0)))
+    # vol is (C, Z, Y, X): spatial axis i <-> array axis 1+i
+    padded = np.pad(vol, ((0, 0),
+                          (0, pads[0]), (0, pads[1]), (0, pads[2])),
+                    mode="constant", constant_values=bg)
+    return np.asarray(padded, dtype=np.float32), tuple(pads)
+
+
 def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap, sigma_scale=0.5):
     """2D sliding-window inference, MONAI-compatible.
 
@@ -319,30 +397,45 @@ def _sw2d(runner, input_name, im, output_channels, ph, pw, overlap, sigma_scale=
     edge, windows always fit inside the image - no replicate padding). All
     windows of the slice run in one batched call for GPU speed.
 
+    The effective window size is ``min(patch, image)`` per axis so planes whose
+    extent is smaller than the patch (e.g. the 88-slice dimension in sagittal /
+    coronal views of a 310x309x88 volume) run with a single full-image window.
+
     ``im``: (1, C, H, W). Returns (1, OC, H, W).
     """
     h, w = im.shape[2], im.shape[3]
+    he, we = min(ph, h), min(pw, w)   # effective window size per axis
     acc = np.zeros((1, output_channels, h, w), dtype=np.float32)
     wgt = np.zeros((1, 1, h, w), dtype=np.float32)
 
     w2 = _gauss2d(ph, pw, sigma_scale)[None, None]
-    step_h = max(1, int(ph * (1.0 - overlap)))
-    step_w = max(1, int(pw * (1.0 - overlap)))
-    starts_h, starts_w = _monai_starts([h, w], [ph, pw], [step_h, step_w])
+    step_h = max(1, int(he * (1.0 - overlap)))
+    step_w = max(1, int(we * (1.0 - overlap)))
+    starts_h = _monai_starts([h], [he], [step_h])[0]
+    starts_w = _monai_starts([w], [we], [step_w])[0]
 
     windows = []
     coords = []
     for yy in starts_h:
+        eh = min(yy + he, h)
+        wh = eh - yy
         for xx in starts_w:
-            windows.append(im[:, :, yy:yy + ph, xx:xx + pw])  # always inside
-            coords.append((yy, xx))
+            ew = min(xx + we, w)
+            ww = ew - xx
+            # Window is always padded to the effective patch size; the model
+            # sees a consistent (he, we) shape with trailing edge cut short.
+            patch = np.zeros((im.shape[0], im.shape[1], he, we), dtype=np.float32)
+            patch[:, :, :wh, :ww] = im[:, :, yy:eh, xx:ew]
+            windows.append(patch)
+            coords.append((yy, xx, wh, ww))  # (start_y, start_x, ext_y, ext_x)
 
     if windows:
-        batched = np.concatenate(windows, axis=0)   # (N, C, ph, pw)
-        outs = _invoke(runner, input_name, batched)  # (N, OC, ph, pw)
-        for n, (yy, xx) in enumerate(coords):
-            acc[:, :, yy:yy + ph, xx:xx + pw] += outs[n][None] * w2
-            wgt[:, :, yy:yy + ph, xx:xx + pw] += w2
+        batched = np.concatenate(windows, axis=0)   # (N, C, he, we)
+        outs = _invoke(runner, input_name, batched)  # (N, OC, he, we)
+        for n, (yy, xx, wh, ww) in enumerate(coords):
+            w2w = w2[:, :, :wh, :ww]
+            acc[:, :, yy:yy + wh, xx:xx + ww] += outs[n, :, :wh, :ww][None] * w2w
+            wgt[:, :, yy:yy + wh, xx:xx + ww] += w2w
     return acc / np.maximum(1e-8, wgt)
 
 
@@ -391,23 +484,49 @@ def _run_slice(runner, input_name, vol, output_channels, progress, spatial):
     if n_planes == 1:
         return results[0]
 
-    mode = spatial.get("ensemble", "fourier_burst")
-    stacked = np.concatenate(results, axis=0)  # (n, OC, X, Y, Z)
-    if mode == "mean":
-        return stacked.mean(axis=0, keepdims=True)
-    if mode == "fourier_burst":
-        fba = _fourier_burst(stacked, float(spatial.get("ensemble_p", 5.0)))
-        return fba[None]
+    # Ensemble multiple plane reconstructions. Each result is (1, OC, Z, Y, X).
+    mode = spatial.get("ensemble", "mean")
+    if mode in ("mean", "average", "avg"):
+        return np.mean(results, axis=0)          # (1, OC, Z, Y, X)
+    if mode == "median":
+        return np.median(results, axis=0)        # (1, OC, Z, Y, X)
+    if mode in ("fourier_burst", "fba", "fourier"):
+        fba = _fourier_burst(results, float(spatial.get("ensemble_p", 5.0)))
+        return fba[None]                         # _fourier_burst -> (OC,Z,Y,X)
     raise ValueError("unknown ensemble mode %r" % mode)
 
 
-def _fourier_burst(stacked, p):
-    vs = [np.fft.rfftn(v) for v in np.moveaxis(stacked, 0, 0)]
-    power = [np.abs(v) ** p for v in vs]
-    denom = np.sum(power, axis=0)
-    ws = [pw / denom for pw in power]
-    out_hat = sum(w * v for w, v in zip(ws, vs))
-    return np.fft.irfftn(out_hat, s=stacked.shape[1:]).astype(np.float32)
+def _fourier_burst(planes, p):
+    """Fourier Burst Accumulation (FBA) over aligned plane reconstructions.
+
+    ``planes`` is a list of ``(1, OC, Z, Y, X)`` float32 volumes, one per plane
+    (axial/sagittal/coronal). For every spatial frequency the accumulated
+    phase-magnitude is averaged with a power-law weight proportional to the
+    magnitude. Implemented fully on the CPU in float32 with contiguous
+    ``complex64`` FFTs so arbitrarily large volumes stay memory-bounded.
+
+    Returns an ``(OC, Z, Y, X)`` float32 volume.
+    """
+    # Stack to (n, 1, OC, Z, Y, X) - batch dims preserved as leading axes.
+    stacked = np.stack([np.ascontiguousarray(v, dtype=np.float32) for v in planes])
+    n = stacked.shape[0]
+    vs = []
+    for k in range(n):
+        vs.append(np.fft.rfftn(stacked[k], axes=(2, 3, 4)).astype(np.complex64))
+    del stacked
+
+    p = float(p)
+    power = [np.abs(c).astype(np.float32) ** p for c in vs]
+    denom = np.maximum(np.sum(power, axis=0), 1e-20)
+
+    out_hat = np.zeros_like(vs[0])
+    for pw, c in zip(power, vs):
+        out_hat += pw * (c / denom)
+    del power, vs, denom
+
+    spatial_shape = planes[0].shape[2:]
+    return np.fft.irfftn(out_hat, s=spatial_shape,
+                         axes=(2, 3, 4)).astype(np.float32)[0]
 
 
 # ---------------------------------------------------------------------------
@@ -434,20 +553,45 @@ class ModelRunner:
         else:
             raise ValueError("unsupported framework %r" % self.spec.framework)
 
-    def run(self, vol, progress=lambda f: None):
-        """vol: (C, Z, Y, X) float32. Returns (OC, Z, Y, X) float32."""
+    def run(self, vol, progress=lambda f: None, spatial_override=None):
+        """vol: (C, Z, Y, X) float32. Returns (OC, Z, Y, X) float32.
+
+        ``spatial_override`` optionally overrides entries of the spec's
+        ``spatial`` block at runtime (e.g. to select which plane(s) a 2D model
+        is applied to and how they are ensembled).
+        """
         spec = self.spec
         progress(0.05)
         vol = vol.astype(np.float32)
+
+        spatial = dict(spec.spatial)
+        if spatial_override:
+            spatial.update(spatial_override)
+
+        # For 2D models, plane-crossing dims smaller than the 2D patch (e.g. the
+        # 88-slice axis in sagittal/coronal views) must be padded up to patch
+        # size so the sliding window always fits. Fill with the model's
+        # background value (e.g. -1000 HU for CT), then crop back afterwards.
+        planes = spatial.get("ensemble_planes") or [spatial.get("plane", "axial")]
+        crop = (0, 0, 0)
+        if spatial.get("mode") == "slice":
+            vol, crop = _pad_slices_to_patch(vol, spatial, spec, planes)
+
         vol = _apply_preprocess(spec.preprocess.get("type"), spec.preprocess, vol)
         progress(0.12)
 
         inp = vol[None, ...]  # (1, C, Z, Y, X)
         out = _run_inference(self._runner, self._input_name, inp,
-                             spec.output_channels, progress, spec.spatial)
+                             spec.output_channels, progress, spatial)
         out = np.asarray(out[0])  # (OC, Z, Y, X)
         out = _apply_postprocess(spec.postprocess.get("type"), spec.postprocess, out)
         out = np.asarray(out, dtype=np.float32)
+
+        # Undo the padding (drop the appended background slab).
+        if any(crop):
+            out = out[:, :vol.shape[1] - crop[0],
+                         :vol.shape[2] - crop[1],
+                         :vol.shape[3] - crop[2]]
         progress(0.95)
         return out
 

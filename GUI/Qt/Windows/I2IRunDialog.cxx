@@ -9,6 +9,7 @@
 
 #include <QTimer>
 #include <QMessageBox>
+#include <QComboBox>
 #include <QPushButton>
 #include <QVariant>
 
@@ -23,6 +24,9 @@ I2IRunDialog::I2IRunDialog(ImageToImageModel *i2iModel, GlobalUIModel *parentMod
 
   PopulateLayers();
   PopulateModels();
+  connect(ui->inModel, &QComboBox::currentIndexChanged,
+          this, &I2IRunDialog::RefreshAxisState);
+  RefreshAxisState();
   SetBusy(false);
 }
 
@@ -83,9 +87,58 @@ I2IRunDialog::PopulateModels()
 }
 
 void
+I2IRunDialog::RefreshAxisState()
+{
+  // Only 2D models support choosing the applying axis (server infers dim).
+  bool enabled = false;
+  if(ui->inModel->currentData().isValid())
+    {
+    QString id = ui->inModel->currentData().toString();
+    enabled = m_Model->IsModel2D(id.toStdString());
+    }
+  ui->lblAxis->setEnabled(enabled);
+  ui->axisWidget->setEnabled(enabled);
+  ui->lblFusion->setEnabled(enabled);
+  ui->inFusion->setEnabled(enabled);
+  // Default to axial-only when axis selection becomes (or is) available.
+  if(enabled)
+    {
+    ui->chkAxial->setChecked(true);
+    ui->chkSagittal->setChecked(false);
+    ui->chkFrontal->setChecked(false);
+    }
+}
+
+std::string
+I2IRunDialog::GetSelectedAxis() const
+{
+  QStringList parts;
+  if(ui->chkAxial->isChecked())
+    parts << "axial";
+  if(ui->chkSagittal->isChecked())
+    parts << "sagittal";
+  if(ui->chkFrontal->isChecked())
+    parts << "frontal";
+  return parts.join(",").toStdString();
+}
+
+std::string
+I2IRunDialog::GetSelectedFusion() const
+{
+  // Average (default) / Median / Fourier burst (FBA). Empty means "average".
+  switch(ui->inFusion->currentIndex())
+    {
+    case 1: return "median";
+    case 2: return "fba";
+    default: return "average";
+    }
+}
+
+void
 I2IRunDialog::on_btnRefreshModels_clicked()
 {
   PopulateModels();
+  RefreshAxisState();
 }
 
 void
@@ -121,8 +174,18 @@ I2IRunDialog::on_btnRun_clicked()
   m_ActiveModelId = ui->inModel->currentData().toString();
   m_Model->SetSourceImage(layer);
 
+  // Only send an explicit axis for 2D models; the server ignores it otherwise.
+  std::string axis, fusion;
+  if(m_Model->IsModel2D(m_ActiveModelId.toStdString()))
+    {
+    axis = GetSelectedAxis();
+    fusion = GetSelectedFusion();
+    }
+  if(axis.empty())
+    axis = "axial";   // at least one plane must be selected
+
   std::string error;
-  if(!m_Model->StartTransfer(m_ActiveModelId.toStdString(), error))
+  if(!m_Model->StartTransfer(m_ActiveModelId.toStdString(), axis, fusion, error))
     {
     ShowError(QString::fromStdString(error));
     return;

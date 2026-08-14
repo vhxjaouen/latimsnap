@@ -23,6 +23,55 @@ SOFT_VERSION = "0.3.1"
 CONTRACT_VERSION = 1
 
 
+# Accepted runtime axis names for 2D models -> ordered plane ids to run in.
+# "frontal" is an alias for the anatomical coronal plane. A single axis runs
+# the model once; multiple axes are ensembled (FBA) by the spatial runner.
+# A comma-separated list (e.g. "axial,sagittal") lifts that limitation but is
+# kept symmetric, as is the "all" shortcut for the 3-axis ensemble.
+def _resolve_axis_planes(axis):
+    token_to_plane = {
+        "axial": "axial",
+        "sagittal": "sagittal",
+        "frontal": "coronal",
+        "coronal": "coronal",
+    }
+    if not axis:
+        raise HTTPException(status_code=400, detail="empty axis list")
+    if axis.lower() in ("all", "all3"):
+        return ["axial", "sagittal", "coronal"]
+    planes = []
+    for token in axis.split(","):
+        plane = token_to_plane.get(token.strip().lower())
+        if plane is None:
+            raise HTTPException(
+                status_code=400,
+                detail="unknown axis %r (expected a comma-separated list of "
+                       "axial/sagittal/frontal, or 'all')" % token)
+        if plane not in planes:
+            planes.append(plane)
+    if not planes:
+        raise HTTPException(status_code=400, detail="empty axis list")
+    return planes
+
+
+# Accepted fusion (ensemble) strategies for multi-plane 2D inference.
+def _resolve_fusion(fusion):
+    mapping = {
+        "average": "mean",
+        "avg": "mean",
+        "mean": "mean",
+        "median": "median",
+        "fba": "fourier_burst",
+        "fourier_burst": "fourier_burst",
+        "fourier": "fourier_burst",
+    }
+    if fusion is None or str(fusion).lower() not in mapping:
+        raise HTTPException(
+            status_code=400,
+            detail="unknown fusion %r (expected average/median/fba)" % fusion)
+    return mapping[str(fusion).lower()]
+
+
 class I2IState:
     """Per-server application state."""
     def __init__(self, models_dir=None):
@@ -76,7 +125,10 @@ def create_app(models_dir=None):
         with state.registry_lock:
             out = [
                 {"id": s.id, "name": s.name,
-                 "output_channels": s.output_channels}
+                 "output_channels": s.output_channels,
+                 "dim": s.dim,
+                 # 2D spatial models can be applied per-plane; 3D cannot.
+                 "axes_supported": s.is_2d}
                 for s in state.model_registry.values()
             ]
         return {"models": out}
@@ -101,7 +153,9 @@ def create_app(models_dir=None):
         return {"ok": True, "checksum": state.uploads[session_id]["checksum"]}
 
     @app.api_route("/run_transfer/{session_id}", methods=["GET", "POST"])
-    def run_transfer(session_id: str, model: str = Query(...)):
+    def run_transfer(session_id: str, model: str = Query(...),
+                     axis: str = Query(None),
+                     fusion: str = Query(None)):
         _require_session(session_id)
         cached = state.uploads.get(session_id)
         if not cached:
@@ -110,6 +164,20 @@ def create_app(models_dir=None):
             spec = state.model_registry.get(model)
         if spec is None:
             raise HTTPException(status_code=404, detail="unknown model %r" % model)
+
+        # Runtime axis selection for 2D models. The client picks the plane(s)
+        # to apply the model on and how to fuse them (average / median / FBA).
+        spatial_override = None
+        if axis:
+            if not spec.is_2d:
+                raise HTTPException(status_code=400,
+                                    detail="model %r is 3D; axis selection is not supported" % model)
+            override_planes = _resolve_axis_planes(axis)
+            spatial_override = {"ensemble_planes": override_planes}
+            if len(override_planes) > 1:
+                # Fuse the per-plane reconstructions using the requested
+                # strategy (defaults to a plain average).
+                spatial_override["ensemble"] = _resolve_fusion(fusion or "average")
 
         # Re-decode the source volume each run.
         try:
@@ -134,7 +202,7 @@ def create_app(models_dir=None):
             runner = ModelRunner(spec)
             runner.load()
 
-            outp = runner.run(src, progress)   # (OC, X, Y, Z)
+            outp = runner.run(src, progress, spatial_override=spatial_override)  # (OC, X, Y, Z)
             # Ensure at least one channel if the model returned a bare scalar vol.
             if outp.ndim == 3:
                 outp = outp[None, ...]
