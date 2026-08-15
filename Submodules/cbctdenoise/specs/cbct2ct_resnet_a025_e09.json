@@ -1,0 +1,38 @@
+{
+  "id": "cbct2ct_resnet_a025_e09",
+  "name": "CBCT->CT ResNet aNGF0.25 (e09) [39.05dB,MAE 29.7]",
+  "framework": "onnx",
+  "model": {
+    "onnx_path": "cbct2ct_resnet_a025_e09.onnx"
+  },
+  "input_channels": 1,
+  "output_channels": 1,
+  "preprocessing": {
+    "type": "minmax",
+    "min": -1000,
+    "max": 3000
+  },
+  "postprocessing": {
+    "type": "denorm_minmax",
+    "min": -1000,
+    "max": 3000
+  },
+  "spatial": {
+    "mode": "slice",
+    "dim": 2,
+    "patch_size": [
+      256,
+      256
+    ],
+    "overlap": 0.25,
+    "plane": "axial",
+    "padding": "replicate",
+    "ensemble_planes": [
+      "axial"
+    ],
+    "ensemble": "none",
+    "ensemble_p": 5.0,
+    "sigma_scale": 0.5
+  },
+  "output_dtype": "float32"
+}

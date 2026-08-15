@@ -1,0 +1,38 @@
+{
+  "id": "cbct2ct_rrdb_a25",
+  "name": "CBCT->CT RRDB ndl2 aNGF0.25 [37.95dB,MAE 38.8]",
+  "framework": "onnx",
+  "model": {
+    "onnx_path": "cbct2ct_rrdb_a25.onnx"
+  },
+  "input_channels": 1,
+  "output_channels": 1,
+  "preprocessing": {
+    "type": "minmax",
+    "min": -1000,
+    "max": 3000
+  },
+  "postprocessing": {
+    "type": "denorm_minmax",
+    "min": -1000,
+    "max": 3000
+  },
+  "spatial": {
+    "mode": "slice",
+    "dim": 2,
+    "patch_size": [
+      256,
+      256
+    ],
+    "overlap": 0.25,
+    "plane": "axial",
+    "padding": "replicate",
+    "ensemble_planes": [
+      "axial"
+    ],
+    "ensemble": "none",
+    "ensemble_p": 5.0,
+    "sigma_scale": 0.5
+  },
+  "output_dtype": "float32"
+}
